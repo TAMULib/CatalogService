@@ -30,7 +30,7 @@ public class CatalogAccessController {
     
     @Autowired
     GetItForMeService getItForMeService;
-    
+
 	@ApiMapping("/get-holdings")
 	@SkipAop
 	public ApiResponse getHoldings(@RequestParam(value="catalogName",defaultValue="evans") String catalogName, @RequestParam("bibId") String bibId) throws JsonProcessingException, IOException {

@@ -1,95 +1,148 @@
-<!DOCTYPE html>
 <html>
-	<head>
-		<title>Test Websocket</title>
-	</head>
-	<body>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>GIFM Viewer</title>
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="shortcut icon" href="../static/images/favicon.ico" type="image/x-icon" />
+	<link rel="stylesheet" href="../static/css/bootstrap.min.css" type="text/css" />
 
-	<select id="connectionTypeSelect">
-		<option value="websocket">websocket</option>
-		<option value="xhr-streaming">xhr-streaming</option>
-		<option value="xdr-streaming">xdr-streaming</option>
-		<option value="eventsource">eventsource</option>
-		<option value="iframe-eventsource">iframe-eventsource</option>
-		<option value="htmlfile">htmlfile</option>
-		<option value="iframe-htmlfile">iframe-htmlfile</option>
-		<option value="xhr-polling">xhr-polling</option>
-		<option value="xdr-polling">xdr-polling</option>
-		<option value="iframe-xhr-polling">iframe-xhr-polling</option>
-		<option value="jsonp-polling">jsonp-polling</option>
-	</select>
+	<style type="text/css">
+		/* Hide the page until the WRO css is loaded by the javascript */
+		body {
+			display: none;
+		}
+		
+		form#getButtons {
+			margin: 40px;
+			margin-bottom: 0;
+			padding: 10px;
+		}
 
-	<button id="connect">connect</button>
-	<input type="text" id="field" style="display:none;"/>
-	<button id="send" style="display:none;">send message</button>
+		label {
+			display: block;
+			margin: 4px;
+			padding: 6px;
+		}
+		
+		body > .container .row > div {
+			min-height: 120px;
+		}
 
-	<div id="result"></div>
-	
+		/* Demonstrates how the default button styling can be overridden */
+		#theOverriddenButtons .button-gifm {
+			border-radius: 0;
+			border: 2px solid #0769AD;
+			background-color: #5DB8F4;
+			color: #fff;
+		}
 
-	<script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
-	<script src="js/lib/sockjs-0.3.4.js"></script>
-    <script src="js/lib/stomp.js"></script>
-    <script>
-    	$(document).ready(function() {
-    		
-    		var connectionType = $("#connectionTypeSelect").val();
-    		
-    		$("#connect").on("click", function() {
-    			connect();
-    		});
-    		
-    		$("#send").on("click", function() {
-    			var action = $("#field").val();
-    			sendAction(action);
-    		});
-    		
-    		$("#connectionTypeSelect").on("change", function() {
-    			connectionType = $("#connectionTypeSelect").val();
-    			console.log(connectionType);
-    		});
+		#theOverriddenButtons .button-gifm:hover {
+			background-color: #dfdfdf;
+		}
 
+	</style>
 
-    	
-	
-	    	function setConnected(connected) {
-			 	$("#field").show();
-			 	$("#send").show();
-	        }
-	
-	        function connect() {
-	            var socket = new SockJS('/user', null, {protocols_whitelist: [connectionType]});
-	            stompClient = Stomp.over(socket);
-	            stompClient.connect({}, function(frame) {
-	                setConnected(true);
-	                console.log('Connected: ' + frame);
-	                stompClient.subscribe('/channel/user', function(message){
-	                    showMessage(message.body);
-	                });
-	            });
-	        }
-	
-	        function disconnect() {
-	            stompClient.disconnect();
-	            setConnected(false);
-	            console.log("Disconnected");
-	        }
-	
-	        function sendAction(action) {
-	        	
-	        	var params = {
-	        		"uin": "123456789"
-	        	}
-	        	
-	            stompClient.send("/ws/user/"+action, {}, JSON.stringify(params));
-	        }
-	
-	        function showMessage(message) {
-	        	console.log(message);
-	            $("#result").append(message+"<br>");
-	        }
-        
-    	});
+	<script src="../static/js/lib/modernizr-2.8.3.min.js"></script>
 
-    </script>
-    </body>
+</head>
+<body>
+	<header class="container-fluid global-nav">
+		<div class="row">
+			<div class="col-lg-12">					
+				<nav class="global-nav pull-right hidden-xs">
+					<ul class="nav global-nav pull-right hidden-xs">
+			        	<li><a href="#">Hours</a></li>
+			          	<li><a href="#">Libraries</a></li>
+			          	<li><a href="#">Ask Us</a></li>
+			        </ul>
+				</nav>
+			</div>
+		</div>
+	</header>
+
+	<header class="container-fluid site-title">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-3">
+					<h1 class="tamu-lib"><a href="http://library.tamu.edu">Texas A&amp;M University Libraries</a></h1>
+				</div>
+				<div class="col-md-9">
+					<div class="site"><h3>GIFM Viewer</h3></div>
+				</div>
+			</div>
+		</div>
+	</header>
+	<div class="container">
+		<div class="row">
+			<div class="col-xs-12 col-md-6">
+				<form id="getButtons">
+					<label for="bibId">Enter a BIBID to generate GIFM Buttons</label>
+					<div class="input-group">
+						<input type="text" class="form-control" name="bibId" id="bibId" value="1892485" />
+						<span class="input-group-btn">
+							<input class="btn btn-default" type="submit" value="Get Buttons" />
+			      		</span>
+					</div>
+				</form>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-xs-6 col-md-3">
+				<h3>The Default Buttons</h3>
+				<div id="theButtons"></div>
+			</div>
+			<div class="col-xs-6 col-md-3">
+				<h3>The Custom Styled Buttons</h3>
+				<div id="theOverriddenButtons"></div>
+			</div>
+		
+			<div class="col-xs-6 col-md-3">
+				<h3>The JSON Buttons</h3>
+				<div id="theJson"></div>
+			</div>
+		
+			<div class="col-xs-6 col-md-3">
+				<h3>The Voyager API Data</h3>
+				<div id="theData"></div>
+			</div>
+		</div>
+	</div>	
+	<script type="text/javascript" src="https://code.jquery.com/jquery-1.12.1.min.js"></script>
+	<script src="../static/js/lib/bootstrap.min.js"></script>
+	<script type="text/javascript">
+		var gifmBase = location.protocol+"//"+location.host+"/";
+
+		$(document).ready(function() {
+			$('head').append('<link rel="stylesheet" type="text/css" href="'+gifmBase+'wro/app.css">');
+			$("#getButtons").submit(function() {
+				getButtons($(this).find("#bibId").val());
+				return false;
+			});
+
+			function getButtons(bibId) {
+				$.ajax({
+					url: gifmBase+"catalog-access/get-html-buttons",
+					data: {"bibId": bibId}
+				}).then(function(data) {
+					$("#theButtons").html("");
+					$.each(data.payload.HashMap,function(mfhd,buttons) {
+						var buttonHtml = "";
+						$("#theButtons").append("<h4>"+mfhd+"</h4>");
+						buttonHtml += "<div id=\"mfhd_"+mfhd+"\">";
+						$.each(buttons,function(index,button) {
+							buttonHtml += button;
+						});
+						buttonHtml += '</div>';
+						$("#theButtons").append(buttonHtml);
+					});
+					$("#theOverriddenButtons").html($("#theButtons").html());
+				});
+				$("#theJson").load(gifmBase+"catalog-access/get-buttons?bibId="+bibId);
+				$("#theData").load(gifmBase+"catalog-access/get-holdings?bibId="+bibId);
+			}
+		});
+	</script>
+</body>
 </html>
