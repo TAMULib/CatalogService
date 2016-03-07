@@ -12,6 +12,7 @@ public final class RecallItButton extends AbstractGetItForMeButton {
 		this.templateParameterKeys.add("location");
 		setLinkText("Recall It!");
 		setSID("libcat:Borrow");
+		setCssClasses(this.getCssClasses()+" button-recallit");
 	}
 
 	@Override
@@ -23,7 +24,7 @@ public final class RecallItButton extends AbstractGetItForMeButton {
 	//button shows for curr, normal, 14d, and newbook item types
 	@Override
 	public boolean fitsItemType(String itemTypeCode) {
-		String[] itemTypeCodes = {"curr", "normal", "14d", "newbook"};
+		String[] itemTypeCodes = {"curr", "normal", "14d", "newbook","ser"};
 		return Arrays.asList(itemTypeCodes).contains(itemTypeCode);
 	}
 

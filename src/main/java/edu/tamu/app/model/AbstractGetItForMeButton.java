@@ -8,6 +8,7 @@ public abstract class AbstractGetItForMeButton implements GetItForMeButton {
 	
 	private String linkText="Default Link Text";
 	private String SID="libcat:InProcess";
+	private String cssClasses = "button-gifm";
 	
 	//button shows for all record types
 	@Override
@@ -49,6 +50,11 @@ public abstract class AbstractGetItForMeButton implements GetItForMeButton {
 	}
 
 	@Override
+	public void setLinkText(String linkText) {
+		this.linkText = linkText;		
+	}
+
+	@Override
 	public String getSID() {
 		return SID;
 	}
@@ -59,8 +65,13 @@ public abstract class AbstractGetItForMeButton implements GetItForMeButton {
 	}
 
 	@Override
-	public void setLinkText(String linkText) {
-		this.linkText = linkText;		
+	public String getCssClasses() {
+		return this.cssClasses;
+	}
+
+	@Override
+	public void setCssClasses(String cssClasses) {
+		this.cssClasses = cssClasses;
 	}
 
 }

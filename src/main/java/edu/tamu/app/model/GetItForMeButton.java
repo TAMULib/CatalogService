@@ -14,4 +14,6 @@ public interface GetItForMeButton {
 	List<String> getTemplateParameterKeys();
 	String getLinkText();
 	void setLinkText(String linkText);
+	String getCssClasses();
+	void setCssClasses(String cssClasses);
 }

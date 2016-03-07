@@ -40,6 +40,7 @@ public class CatalogAccessController {
 	@ApiMapping("/get-html-buttons")
 	@SkipAop
 	public ApiResponse getHtmlButtonsByBibId(@RequestParam(value="catalogName",defaultValue="evans") String catalogName, @RequestParam("bibId") String bibId, @RequestParam(value="returnType",defaultValue="html") String returnType) {
+System.out.println("\n\nCatalog Name: "+catalogName);
 		Map<String,List<Map<String,String>>> buttonData = getItForMeService.getButtonsByBibId(catalogName, bibId);
 		if (buttonData != null) {
 			Map<String,List<String>> buttonContents = new HashMap<String,List<String>>();
@@ -47,7 +48,7 @@ public class CatalogAccessController {
 			    buttonContents.put(entry.getKey(),new ArrayList<String>());
 			    Iterator<Map<String,String>> buttonPropIterator = entry.getValue().iterator();
 			    while (buttonPropIterator.hasNext()) {
-				    String html = "<a target=\"_blank\" class=\"button-gifm\" href=\"http://{linkHref}\">{linkText}</a>";
+				    String html = "<a target=\"_blank\" class=\"{cssClasses}\" href=\"http://{linkHref}\">{linkText}</a>";
 			    	Map<String,String> buttonProperties = (Map<String, String>) buttonPropIterator.next();
 			    	
 			    	Iterator<String> propKeysIterator = buttonProperties.keySet().iterator();

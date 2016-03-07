@@ -8,10 +8,10 @@ public final class BorrowItNowButton extends AbstractGetItForMeButton {
 	
 	public BorrowItNowButton() {
 		this.templateParameterKeys = new ArrayList<String>();
-		this.templateParameterKeys.add("callNumber");
-		this.templateParameterKeys.add("location");
+		this.templateParameterKeys.add("isbn");
 		setLinkText("Borrow It Now");
-		setSID("libcat:Borrow");		
+		setSID("libcat:Borrow");
+		setCssClasses(this.getCssClasses()+" button-borrowitnow");
 	}
 
 	@Override
@@ -23,7 +23,7 @@ public final class BorrowItNowButton extends AbstractGetItForMeButton {
 	//button shows for curr, normal, 14d, and newbook item types
 	@Override
 	public boolean fitsItemType(String itemTypeCode) {
-		String[] itemTypeCodes = {"curr", "normal", "14d", "newbook"};
+		String[] itemTypeCodes = {"curr", "normal", "14d", "newbook","ser"};
 		return Arrays.asList(itemTypeCodes).contains(itemTypeCode);
 	}
 

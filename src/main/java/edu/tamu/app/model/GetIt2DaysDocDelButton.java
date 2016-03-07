@@ -10,8 +10,14 @@ public final class GetIt2DaysDocDelButton extends AbstractGetItForMeButton {
 		this.templateParameterKeys = new ArrayList<String>();
 		this.templateParameterKeys.add("callNumber");
 		this.templateParameterKeys.add("location");
+		this.templateParameterKeys.add("location");
+		this.templateParameterKeys.add("title");
+		this.templateParameterKeys.add("author");
+		this.templateParameterKeys.add("isbn");
+		this.templateParameterKeys.add("publisher");
 		setLinkText("Get It: 2 days");
-		setSID("libcat:DocDel");		
+		setSID("libcat:DocDel");
+		setCssClasses(this.getCssClasses()+" button-docdel");
 	}
 
 	@Override
@@ -23,7 +29,7 @@ public final class GetIt2DaysDocDelButton extends AbstractGetItForMeButton {
 	//button shows for curr, normal, 14d, and newbook item types
 	@Override
 	public boolean fitsItemType(String itemTypeCode) {
-		String[] itemTypeCodes = {"curr", "normal", "14d", "newbook"};
+		String[] itemTypeCodes = {"curr", "normal", "14d", "newbook","ser"};
 		return Arrays.asList(itemTypeCodes).contains(itemTypeCode);
 	}
 
@@ -36,8 +42,8 @@ public final class GetIt2DaysDocDelButton extends AbstractGetItForMeButton {
 
 	@Override
 	public String getLinkTemplate(Map<String,String> templateParameters) {
-		//String callNumber, String locationName
 		return "getitforme.library.tamu.edu/illiad/EVANSLocal/openurl.asp?Action=10&Form=30&sid="+this.getSID()+
-				"&rfe_dat="+templateParameters.get("callNumber")+":"+templateParameters.get("location");
+				"&title="+templateParameters.get("title")+"&author="+templateParameters.get("author")+"&isbn="+templateParameters.get("isbn")+
+				"&publisher="+templateParameters.get("publisher")+"&rfe_dat="+templateParameters.get("callNumber")+":"+templateParameters.get("location");
 	}
 }
