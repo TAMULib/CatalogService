@@ -23,7 +23,7 @@ public final class GetIt1WeekButton extends AbstractGetItForMeButton {
 	//button shows for curr, normal, 14d, and newbook item types
 	@Override
 	public boolean fitsItemType(String itemTypeCode) {
-		String[] itemTypeCodes = {"curr", "normal", "14d", "newbook"};
+		String[] itemTypeCodes = {"curr", "normal", "14d", "newbook","ser"};
 		return Arrays.asList(itemTypeCodes).contains(itemTypeCode);
 	}
 
