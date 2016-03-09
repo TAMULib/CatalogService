@@ -47,7 +47,7 @@ public class CatalogAccessController {
 			    buttonContents.put(entry.getKey(),new ArrayList<String>());
 			    Iterator<Map<String,String>> buttonPropIterator = entry.getValue().iterator();
 			    while (buttonPropIterator.hasNext()) {
-				    String html = "<a target=\"_blank\" class=\"button-gifm\" href=\"http://{linkHref}\">{linkText}</a>";
+				    String html = "<a target=\"_blank\" class=\"{cssClasses}\" href=\"http://{linkHref}\">{linkText}</a>";
 			    	Map<String,String> buttonProperties = (Map<String, String>) buttonPropIterator.next();
 			    	
 			    	Iterator<String> propKeysIterator = buttonProperties.keySet().iterator();

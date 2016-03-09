@@ -11,6 +11,7 @@ public final class CushingButton extends AbstractGetItForMeButton {
 		this.templateParameterKeys.add("location");
 		setLinkText("Request from Cushing");
 		setSID("libcat:cushing");
+		setCssClasses(this.getCssClasses()+" button-cushing");
 	}
 
 	@Override

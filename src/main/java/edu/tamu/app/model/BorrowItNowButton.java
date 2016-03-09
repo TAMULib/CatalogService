@@ -8,29 +8,25 @@ public final class BorrowItNowButton extends AbstractGetItForMeButton {
 	
 	public BorrowItNowButton() {
 		this.templateParameterKeys = new ArrayList<String>();
-		this.templateParameterKeys.add("callNumber");
-		this.templateParameterKeys.add("location");
+		this.templateParameterKeys.add("isbn");
 		setLinkText("Borrow It Now");
-		setSID("libcat:Borrow");		
+		setSID("libcat:Borrow");
+		setCssClasses(this.getCssClasses()+" button-borrowitnow");
 	}
 
 	@Override
 	public boolean fitsLocation(String locationCode) {
-		String[] locationCodes = {"base", "bsc", "curr", "curr,text", "nbs","stk", "stk,mov1", "tdoc", "udoc", "wein", "psel,stk", "west,audio", "west,nbs", "west,stk", "west,udoc"};
-		return Arrays.asList(locationCodes).contains(locationCode);
+		return (this.locationCodes != null) ? Arrays.asList(this.locationCodes).contains(locationCode):super.fitsLocation(locationCode);
 	}
 
-	//button shows for curr, normal, 14d, and newbook item types
 	@Override
 	public boolean fitsItemType(String itemTypeCode) {
-		String[] itemTypeCodes = {"curr", "normal", "14d", "newbook"};
-		return Arrays.asList(itemTypeCodes).contains(itemTypeCode);
+		return (this.itemTypeCodes != null) ? Arrays.asList(this.itemTypeCodes).contains(itemTypeCode):super.fitsItemType(itemTypeCode);
 	}
 
 	@Override
 	public boolean fitsItemStatus(int itemStatusCode) {
-		Integer[] itemStatuses = {2,3,4,5,6,7,12,13,14,17,18};
-		return Arrays.asList(itemStatuses).contains(itemStatusCode);
+		return (this.itemStatusCodes != null) ? Arrays.asList(this.itemStatusCodes).contains(itemStatusCode):super.fitsItemStatus(itemStatusCode);
 	}
 
 	@Override
