@@ -3,6 +3,14 @@ package edu.tamu.app.model;
 import java.util.ArrayList;
 import java.util.Map;
 
+/**
+ * The Cushing Button represents a request for anything in the Cushing Library.
+ * 
+ * @author Jason Savell <jsavell@library.tamu.edu>
+ * @author Michael Nichols <mnichols@library.tamu.edu>
+ *
+ */
+
 public final class CushingButton extends AbstractGetItForMeButton {
 	
 	public CushingButton() {

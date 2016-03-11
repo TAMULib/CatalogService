@@ -1,6 +1,7 @@
 package edu.tamu.app.service;
 
 import java.io.FileInputStream;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
@@ -16,6 +17,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import edu.tamu.framework.util.HttpUtility;
+
+/**
+ * Registers and manages the available CatalogServices and provides them as needed to the rest of the application    
+ * 
+ * @author Jason Savell <jsavell@library.tamu.edu>
+ * @author James Creel <jcreel@library.tamu.edu>
+ *
+ */
 
 @Service
 public class CatalogServiceFactory {

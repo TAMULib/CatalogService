@@ -30,6 +30,16 @@ public class CatalogAccessController {
     
     @Autowired
     GetItForMeService getItForMeService;
+    
+    /**
+     * Provides the raw CatalogHolding data
+     * 
+     * @param catalogName
+     * @param bibId
+     * @return
+     * @throws JsonProcessingException
+     * @throws IOException
+     */
 
 	@ApiMapping("/get-holdings")
 	@SkipAop
@@ -37,10 +47,16 @@ public class CatalogAccessController {
 		return new ApiResponse(SUCCESS,getItForMeService.getHoldingsByBibId(catalogName,bibId));
 	}
 
+	/**
+	 * Provides fully formatted HTML buttons, keyed by item MFHD
+	 * @param catalogName
+	 * @param bibId
+	 * @param returnType
+	 * @return
+	 */
 	@ApiMapping("/get-html-buttons")
 	@SkipAop
 	public ApiResponse getHtmlButtonsByBibId(@RequestParam(value="catalogName",defaultValue="evans") String catalogName, @RequestParam("bibId") String bibId, @RequestParam(value="returnType",defaultValue="html") String returnType) {
-System.out.println("\n\nCatalog Name: "+catalogName);
 		Map<String,List<Map<String,String>>> buttonData = getItForMeService.getButtonsByBibId(catalogName, bibId);
 		if (buttonData != null) {
 			Map<String,List<String>> buttonContents = new HashMap<String,List<String>>();
@@ -64,6 +80,14 @@ System.out.println("\n\nCatalog Name: "+catalogName);
 		}
 		return new ApiResponse(ERROR,"Catalog or Holding not found");
 	}
+	
+	/**
+	 * Provides the raw button data in JSON format, keyed by MFHD.  
+	 * @param catalogName
+	 * @param bibId
+	 * @param returnType
+	 * @return
+	 */
 
 	@ApiMapping("/get-buttons")
 	@SkipAop
