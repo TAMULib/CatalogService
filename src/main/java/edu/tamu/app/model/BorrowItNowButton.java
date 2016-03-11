@@ -3,6 +3,15 @@ package edu.tamu.app.model;
 import java.util.ArrayList;
 import java.util.Map;
 
+/**
+ * The BorrowItNow Button represents an immediate request for an unavailable
+ * item that is in a circulating location in College Station
+ * 
+ * @author Jason Savell <jsavell@library.tamu.edu>
+ * @author Michael Nichols <mnichols@library.tamu.edu>
+ *
+ */
+
 public final class BorrowItNowButton extends AbstractGetItForMeButton {
 	
 	public BorrowItNowButton() {

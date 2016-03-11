@@ -2,6 +2,14 @@ package edu.tamu.app.service;
 
 import edu.tamu.framework.util.HttpUtility;
 
+/**
+ * A base implementation of the Catalog Service interface    
+ * 
+ * @author Jason Savell <jsavell@library.tamu.edu>
+ * @author James Creel <jcreel@library.tamu.edu>
+ *
+ */
+
 public abstract class AbstractCatalogService implements CatalogService {
 	
 	private String name;

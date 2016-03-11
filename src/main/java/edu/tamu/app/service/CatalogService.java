@@ -5,6 +5,13 @@ import java.util.List;
 import edu.tamu.app.model.CatalogHolding;
 import edu.tamu.framework.util.HttpUtility;
 
+/**
+ * An interface describing Catalog Service API connectors    
+ * 
+ * @author Jason Savell <jsavell@library.tamu.edu>
+ * @author James Creel <jcreel@library.tamu.edu>
+ *
+ */
 public interface CatalogService {
 
 	List<CatalogHolding> getHoldingsByBibId(String bibId);

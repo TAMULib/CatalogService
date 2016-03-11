@@ -3,6 +3,14 @@ package edu.tamu.app.model;
 import java.util.ArrayList;
 import java.util.Map;
 
+/**
+ * The RecallIt Button represents a request for a checked out item.
+ * 
+ * @author Jason Savell <jsavell@library.tamu.edu>
+ * @author Michael Nichols <mnichols@library.tamu.edu>
+ *
+ */
+
 public final class RecallItButton extends AbstractGetItForMeButton {
 	
 	public RecallItButton() {

@@ -4,6 +4,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * An abstract implementation of the GetItForMeButton with
+ * sensible defaults.
+ * 
+ * It's a good idea to extend this when creating a new GetItForMeButton.
+ * 
+ * @author Jason Savell <jsavell@library.tamu.edu>
+ * @author James Creel <jcreel@library.tamu.edu>
+ */
+
 public abstract class AbstractGetItForMeButton implements GetItForMeButton {
 	protected List<String> templateParameterKeys;
 	
@@ -15,7 +25,6 @@ public abstract class AbstractGetItForMeButton implements GetItForMeButton {
 	private String SID="libcat:InProcess";
 	private String cssClasses = "button-gifm";
 	
-	//button shows for all record types
 	@Override
 	public boolean fitsRecordType(String marcRecord) {
 		return true;

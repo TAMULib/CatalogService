@@ -6,6 +6,13 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
+/**
+ * Represents a (somewhat) generalize holding from a catalog 
+ * 
+ * @author Jason Savell <jsavell@library.tamu.edu>
+ *
+ */
+
 public class CatalogHolding {
 	private String marcRecordLeader;
 	private String mfhd;
@@ -107,6 +114,13 @@ public class CatalogHolding {
 		return (this.getCatalogItems().size() > 1);
 	}
 	
+	/**
+	 * A helper method to allow outside callers to access getters when all they know is the name of the parameter
+	 * 
+	 * @param String propertyName
+	 * @return String
+	 * @throws Exception
+	 */
 	public String getValueByPropertyName(String propertyName) throws Exception {
 		Class<?> c = Class.forName(this.getClass().getCanonicalName());
 	    Method m = null;

@@ -3,6 +3,14 @@ package edu.tamu.app.model;
 import java.util.ArrayList;
 import java.util.Map;
 
+/**
+ * The GetIt2Days Button represents a request for any item that is 'In Process'
+ * 
+ * @author Jason Savell <jsavell@library.tamu.edu>
+ * @author Michael Nichols <mnichols@library.tamu.edu>
+ *
+ */
+
 public final class GetIt2DaysButton extends AbstractGetItForMeButton {
 	
 	public GetIt2DaysButton() {

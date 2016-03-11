@@ -3,6 +3,14 @@ package edu.tamu.app.model;
 import java.util.ArrayList;
 import java.util.Map;
 
+/**
+ * The GetIt2DaysDocDel Button represents a request to get and hold an item.
+ * 
+ * @author Jason Savell <jsavell@library.tamu.edu>
+ * @author Michael Nichols <mnichols@library.tamu.edu>
+ *
+ */
+
 public final class GetIt2DaysDocDelButton extends AbstractGetItForMeButton {
 
 	public GetIt2DaysDocDelButton() {

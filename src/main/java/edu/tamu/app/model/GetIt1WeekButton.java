@@ -3,6 +3,13 @@ package edu.tamu.app.model;
 import java.util.ArrayList;
 import java.util.Map;
 
+/**
+ * The GetIt1Week Button represents a request for an Interlibrary loan of a lost/missing/recalled item 
+ * 
+ * @author Jason Savell <jsavell@library.tamu.edu>
+ * @author Michael Nichols <mnichols@library.tamu.edu>
+ *
+ */
 public final class GetIt1WeekButton extends AbstractGetItForMeButton {
 	
 	public GetIt1WeekButton() {
