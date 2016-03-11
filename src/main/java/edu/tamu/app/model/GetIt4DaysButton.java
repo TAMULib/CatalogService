@@ -22,8 +22,7 @@ public final class GetIt4DaysButton extends AbstractGetItForMeButton {
 
 	@Override
 	public boolean fitsLocation(String locationCode) {
-		String[] locationCodes = {"rs,hdr", "rs,jlf"};
-		return Arrays.asList(locationCodes).contains(locationCode);
+		return (this.locationCodes != null) ? Arrays.asList(this.locationCodes).contains(locationCode):super.fitsLocation(locationCode);
 	}
 
 	@Override

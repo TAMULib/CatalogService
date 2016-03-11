@@ -40,7 +40,6 @@ public class CatalogAccessController {
 	@ApiMapping("/get-html-buttons")
 	@SkipAop
 	public ApiResponse getHtmlButtonsByBibId(@RequestParam(value="catalogName",defaultValue="evans") String catalogName, @RequestParam("bibId") String bibId, @RequestParam(value="returnType",defaultValue="html") String returnType) {
-System.out.println("\n\nCatalog Name: "+catalogName);
 		Map<String,List<Map<String,String>>> buttonData = getItForMeService.getButtonsByBibId(catalogName, bibId);
 		if (buttonData != null) {
 			Map<String,List<String>> buttonContents = new HashMap<String,List<String>>();

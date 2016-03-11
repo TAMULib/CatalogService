@@ -1,29 +1,40 @@
 package edu.tamu.app.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
-import edu.tamu.app.model.BorrowItNowButton;
 import edu.tamu.app.model.CatalogHolding;
-import edu.tamu.app.model.CushingButton;
-import edu.tamu.app.model.GetIt1WeekButton;
-import edu.tamu.app.model.GetIt2DaysButton;
-import edu.tamu.app.model.GetIt2DaysDocDelButton;
-import edu.tamu.app.model.GetIt4DaysButton;
 import edu.tamu.app.model.GetItForMeButton;
-import edu.tamu.app.model.RecallItButton;
+import edu.tamu.app.utilities.sort.VolumeComparator;
+
 
 @Service
 public class GetItForMeService {
 	@Autowired
 	private CatalogServiceFactory catalogServiceFactory;
+	
+	@Value("${buttonsPackage}")
+	private String buttonsPackage;
+	
+	@Value("${activeButtons}")
+	private String[] activeButtons;
+	
+	@Autowired
+	Environment environment;
+	
+	private List<GetItForMeButton> registeredButtons = new ArrayList<GetItForMeButton>();
 	
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -32,21 +43,63 @@ public class GetItForMeService {
 		return catalogServiceFactory.getOrCreateCatalogService(catalogName).getHoldingsByBibId(bibId);
 	}
 	
+	@PostConstruct
+	private void registerButtons() {
+		for (String activeButton:activeButtons) {
+			try {
+				String rawLocationCodes = environment.getProperty(activeButton+".locationCodes");
+				String[] itemTypeCodes = environment.getProperty(activeButton+".itemTypeCodes",String[].class);
+				Integer[] itemStatusCodes = environment.getProperty(activeButton+".itemStatusCodes",Integer[].class);
+				String linkText = environment.getProperty(activeButton+".linkText");
+				String SID = environment.getProperty(activeButton+".SID");
+				
+				GetItForMeButton c = (GetItForMeButton) Class.forName(buttonsPackage+"."+activeButton).newInstance();
+				if (rawLocationCodes != null) {
+					c.setLocationCodes(rawLocationCodes.split(";"));
+				}
+				if (itemTypeCodes != null) {
+					c.setItemTypeCodes(itemTypeCodes);
+				}
+				if (itemStatusCodes != null) {
+					c.setItemStatusCodes(itemStatusCodes);
+				}
+				if (linkText != null) {
+					c.setLinkText(linkText);
+				}
+				if (SID != null) {
+					c.setSID(SID);
+				}
+				
+				this.registeredButtons.add(c);
+			} catch (InstantiationException e) {
+				logger.error("Tried to instantiate an instance of "+activeButton, e);
+				e.printStackTrace();
+			} catch (IllegalAccessException e) {
+				logger.error("Tried to access something on a "+activeButton, e);
+				e.printStackTrace();
+			} catch (IllegalArgumentException e) {
+				logger.error("Tried to access something on a "+activeButton, e);
+				e.printStackTrace();
+			} catch (SecurityException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ClassNotFoundException e) {
+				logger.error("Couldn't find class: "+activeButton, e);
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	private List<GetItForMeButton> getRegisteredButtons() {
+		return this.registeredButtons;
+	}
+	
 	public Map<String,List<Map<String,String>>> getButtonsByBibId(String catalogName,String bibId) {
 		List<CatalogHolding> catalogHoldings = this.getHoldingsByBibId(catalogName,bibId);
 		if (catalogHoldings != null) {
 			logger.debug("\n\nCATALOG HOLDINGS FOR "+bibId);
 			
-			List<GetItForMeButton> eligibleButtons = new ArrayList<GetItForMeButton>();
 			Map<String,List<Map<String,String>>> validButtons = new HashMap<String,List<Map<String,String>>>();
-			
-			eligibleButtons.add(new CushingButton());
-			eligibleButtons.add(new GetIt2DaysButton());
-			eligibleButtons.add(new GetIt4DaysButton());
-			eligibleButtons.add(new GetIt1WeekButton());
-			eligibleButtons.add(new RecallItButton());
-			eligibleButtons.add(new GetIt2DaysDocDelButton());
-			eligibleButtons.add(new BorrowItNowButton());
 			
 			catalogHoldings.forEach(holding -> {
 				logger.debug("MARC Record Leader: "+holding.getMarcRecordLeader());
@@ -55,7 +108,7 @@ public class GetItForMeService {
 				validButtons.put(holding.getMfhd(), new ArrayList<Map<String,String>>());
 				holding.getCatalogItems().forEach((uri,itemData) -> {
 					logger.debug("Checking holding URI: "+uri);
-					for (GetItForMeButton button:eligibleButtons) {
+					for (GetItForMeButton button:this.getRegisteredButtons()) {
 						logger.debug("Analyzing: "+button.toString());
 	
 						logger.debug("Location: "+itemData.get("permLocationCode")+": "+button.fitsLocation(itemData.get("permLocationCode")));
@@ -84,9 +137,10 @@ public class GetItForMeService {
 							logger.debug("It looks like: ");
 							logger.debug(button.getLinkTemplate(parameters));
 							Map<String,String> buttonContent = new HashMap<String,String>();
+							//multi-volume is a special case, we need to enrich the default button text with item level details
 							if (holding.isMultiVolume()) {
 								logger.debug("Generating a multi volume button");
-								buttonContent.put("linkText",button.getLinkText()+" | "+itemData.get("enumeration")+" "+itemData.get("chron"));
+								buttonContent.put("linkText",itemData.get("enumeration")+" "+itemData.get("chron")+" | "+button.getLinkText());
 								//TODO find out how a multi-volume link should be represented.
 								buttonContent.put("linkHref",button.getLinkTemplate(parameters));
 							} else {
@@ -99,6 +153,10 @@ public class GetItForMeService {
 						} else {
 							logger.debug("We should skip the button with text: "+button.getLinkText());
 						}
+					}
+					//for multi-volumes, get the items somewhat ordered by volume (there's no real definition of the order to work from)
+					if (holding.isMultiVolume()) {
+						Collections.sort(validButtons.get(holding.getMfhd()), new VolumeComparator());
 					}
 				});
 			});

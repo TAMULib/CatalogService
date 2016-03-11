@@ -16,4 +16,7 @@ public interface GetItForMeButton {
 	void setLinkText(String linkText);
 	String getCssClasses();
 	void setCssClasses(String cssClasses);
+	void setLocationCodes(String[] locationCodes);
+	void setItemTypeCodes(String[] itemTypeCodes);
+	void setItemStatusCodes(Integer[] itemStatusCodes);
 }

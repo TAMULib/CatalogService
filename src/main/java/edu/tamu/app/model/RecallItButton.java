@@ -17,22 +17,17 @@ public final class RecallItButton extends AbstractGetItForMeButton {
 
 	@Override
 	public boolean fitsLocation(String locationCode) {
-		String[] locationCodes = {"base", "bsc", "curr", "curr,text", "nbs","stk", "stk,mov1", "tdoc", "udoc", "wein", "psel,stk", "west,audio", "west,nbs", "west,stk", "west,udoc"};
-		return Arrays.asList(locationCodes).contains(locationCode);
+		return (this.locationCodes != null) ? Arrays.asList(this.locationCodes).contains(locationCode):super.fitsLocation(locationCode);
 	}
 
-	//button shows for curr, normal, 14d, and newbook item types
 	@Override
 	public boolean fitsItemType(String itemTypeCode) {
-		String[] itemTypeCodes = {"curr", "normal", "14d", "newbook","ser"};
-		return Arrays.asList(itemTypeCodes).contains(itemTypeCode);
+		return (this.itemTypeCodes != null) ? Arrays.asList(this.itemTypeCodes).contains(itemTypeCode):super.fitsItemType(itemTypeCode);
 	}
 
-	//button shows for all item status
 	@Override
 	public boolean fitsItemStatus(int itemStatusCode) {
-		Integer[] itemStatuses = {2,3,4,6,7};
-		return Arrays.asList(itemStatuses).contains(itemStatusCode);
+		return (this.itemStatusCodes != null) ? Arrays.asList(this.itemStatusCodes).contains(itemStatusCode):super.fitsItemStatus(itemStatusCode);
 	}
 
 	@Override
