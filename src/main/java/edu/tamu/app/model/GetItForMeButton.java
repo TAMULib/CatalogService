@@ -1,11 +1,10 @@
 package edu.tamu.app.model;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * The essence of a GetItForMe Button
- * 
+ *
  * @author Jason Savell <jsavell@library.tamu.edu>
  *
  */
@@ -15,8 +14,8 @@ public interface GetItForMeButton {
 	 * @param String marcRecord
 	 * @return boolean
 	 */
-	boolean fitsRecordType(String marcRecord);
-	
+	boolean fitsRecordType(String marcRecordLeader);
+
 	/**
 	 * Button eligibility test based on an item's location
 	 * @param itemLocationCode
@@ -37,7 +36,7 @@ public interface GetItForMeButton {
 	 * @return boolean
 	 */
 	boolean fitsItemStatus(int itemStatusCode);
-	
+
 	/**
 	 * Get the button's SID
 	 * A button's SID is a unique string used to identify the button's type to the service it links to
@@ -51,13 +50,13 @@ public interface GetItForMeButton {
 	 * @return void
 	 */
 	void setSID(String SID);
-	
+
 	/**
 	 * Get the button's LinkTemplate
-	 * A button's LinkTemplate is the HTML link that can be used in conjunction with the button's ParameterKeys to generate a unique button link for a given item 
+	 * A button's LinkTemplate is the web link that can be used in conjunction with the button's ParameterKeys to generate a unique button link for a given item
 	 * @return String
 	 */
-	String getLinkTemplate(Map<String,String> templateParameters);
+	String getLinkTemplate();
 
 	/**
 	 * Get the button's TemplateParameterKeys
@@ -65,19 +64,19 @@ public interface GetItForMeButton {
 	 * @return List<String>
 	 */
 	List<String> getTemplateParameterKeys();
-	
+
 	/**
 	 * Gets the user facing text for the button's link
 	 * @return String linkText
 	 */
-	
+
 	String getLinkText();
 	/**
 	 * Sets the user facing text for the button's link
 	 * @return void
 	 */
 	void setLinkText(String linkText);
-	
+
 	/**
 	 * Gets the CSS classes for a button. These are used to provide predictable, unique CSS classes for each button
 	 * @return String cssClasses
@@ -89,7 +88,7 @@ public interface GetItForMeButton {
 	 * @return void
 	 */
 	void setCssClasses(String cssClasses);
-	
+
 	/**
 	 * Sets the valid location codes for a button to be used in the fitsLocation() test
 	 */
@@ -99,7 +98,7 @@ public interface GetItForMeButton {
 	 * Sets the valid item types for a button to be used in the fitsItemType() test
 	 */
 	void setItemTypeCodes(String[] itemTypeCodes);
-	
+
 	/**
 	 * Sets the valid item status codes for a button to be used in the fitsItemStatus() test
 	 */
