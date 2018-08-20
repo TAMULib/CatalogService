@@ -90,4 +90,9 @@ public class CatalogAccessController {
 		}
 		return new ApiResponse(ERROR,"Catalog or Holding not found");
 	}
+
+	@RequestMapping("/get-button-config")
+	public ApiResponse getButtonConfiguration() {
+	    return new ApiResponse(SUCCESS,"Current Button Configuration",getItForMeService.getRegisteredButtons());
+	}
 }

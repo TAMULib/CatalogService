@@ -7,24 +7,24 @@ import java.util.Map;
 /**
  * An abstract implementation of the GetItForMeButton with
  * sensible defaults.
- * 
+ *
  * It's a good idea to extend this when creating a new GetItForMeButton.
- * 
+ *
  * @author Jason Savell <jsavell@library.tamu.edu>
  * @author James Creel <jcreel@library.tamu.edu>
  */
 
 public abstract class AbstractGetItForMeButton implements GetItForMeButton {
 	protected List<String> templateParameterKeys;
-	
+
 	protected String[] locationCodes;
 	protected String[] itemTypeCodes;
 	protected Integer[] itemStatusCodes;
-	
+
 	private String linkText="Default Link Text";
 	private String SID="libcat:InProcess";
 	private String cssClasses = "button-gifm";
-	
+
 	@Override
 	public boolean fitsRecordType(String marcRecord) {
 		return true;
@@ -49,7 +49,7 @@ public abstract class AbstractGetItForMeButton implements GetItForMeButton {
 	public String getLinkTemplate(Map<String,String> templateParameters) {
 		return "default template";
 	}
-	
+
 	@Override
 	public List<String> getTemplateParameterKeys() {
 		return this.templateParameterKeys;
@@ -62,7 +62,7 @@ public abstract class AbstractGetItForMeButton implements GetItForMeButton {
 
 	@Override
 	public void setLinkText(String linkText) {
-		this.linkText = linkText;		
+		this.linkText = linkText;
 	}
 
 	@Override
@@ -84,16 +84,29 @@ public abstract class AbstractGetItForMeButton implements GetItForMeButton {
 	public void setCssClasses(String cssClasses) {
 		this.cssClasses = cssClasses;
 	}
-	
+
+	public String[] getLocationCodes() {
+	    return locationCodes;
+	}
+
 	public void setLocationCodes(String[] locationCodes) {
 		this.locationCodes = locationCodes;
 	}
-	
+
+    public String[] getItemTypeCodes() {
+        return itemTypeCodes;
+    }
+
 	public void setItemTypeCodes(String[] itemTypeCodes) {
 		this.itemTypeCodes = itemTypeCodes;
 	}
 
+    public Integer[] getItemStatusCodes() {
+        return itemStatusCodes;
+    }
+
 	public void setItemStatusCodes(Integer[] itemStatusCodes) {
 		this.itemStatusCodes = itemStatusCodes;
 	}
+
 }
