@@ -86,4 +86,16 @@ public class MockCatalogService implements CatalogService {
 
     }
 
+    @Override
+    public String getSidPrefix() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void setSidPrefix(String sidPrefix) {
+        // TODO Auto-generated method stub
+
+    }
+
 }

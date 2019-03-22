@@ -39,4 +39,8 @@ public interface CatalogService {
 
     void setProtocol(String protocol);
 
+    String getSidPrefix();
+
+    void setSidPrefix(String sidPrefix);
+
 }

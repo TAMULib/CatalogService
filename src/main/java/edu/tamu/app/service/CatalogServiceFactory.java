@@ -71,17 +71,20 @@ public class CatalogServiceFactory {
                 String port = newCatalog.get("port").asText();
                 String app = newCatalog.get("app").asText();
                 String protocol = newCatalog.get("protocol").asText();
+                String sidPrefix = newCatalog.get("sidPrefix").asText();
 
                 switch (newCatalog.get("type").asText()) {
                 case "voyager":
                     catalogService = new VoyagerCatalogService();
-                    catalogService.setHost(host);
-                    catalogService.setPort(port);
-                    catalogService.setApp(app);
-                    catalogService.setProtocol(protocol);
                     catalogService.setType("voyager");
                     break;
                 }
+
+                catalogService.setHost(host);
+                catalogService.setPort(port);
+                catalogService.setApp(app);
+                catalogService.setProtocol(protocol);
+                catalogService.setSidPrefix(sidPrefix);
             }
         }
         return catalogService;

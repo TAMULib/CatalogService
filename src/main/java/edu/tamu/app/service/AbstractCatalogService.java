@@ -24,6 +24,8 @@ public abstract class AbstractCatalogService implements CatalogService {
 
     private String protocol;
 
+    private String sidPrefix;
+
     private HttpUtility httpUtility;
 
     public HttpUtility getHttpUtility() {
@@ -97,4 +99,13 @@ public abstract class AbstractCatalogService implements CatalogService {
     protected String getAPIBase() {
         return getProtocol() + "://" + getHost() + ":" + getPort() + "/" + getApp() + "/";
     }
+
+    public String getSidPrefix() {
+        return sidPrefix;
+    }
+
+    public void setSidPrefix(String sidPrefix) {
+        this.sidPrefix = sidPrefix;
+    }
+
 }

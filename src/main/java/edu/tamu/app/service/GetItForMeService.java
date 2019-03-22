@@ -61,7 +61,11 @@ public class GetItForMeService {
      * @return List<CatalogHolding>
      */
     public List<CatalogHolding> getHoldingsByBibId(String catalogName, String bibId) {
-        return catalogServiceFactory.getOrCreateCatalogService(catalogName).getHoldingsByBibId(bibId);
+        return getCatalogServiceByName(catalogName).getHoldingsByBibId(bibId);
+    }
+
+    protected CatalogService getCatalogServiceByName(String catalogName) {
+        return catalogServiceFactory.getOrCreateCatalogService(catalogName);
     }
 
     /**
@@ -183,7 +187,8 @@ public class GetItForMeService {
 
                             for (String parameterKey : parameterKeys) {
                                 if (parameterKey.equals("sid")) {
-                                    parameters.put(parameterKey, button.getSID());
+                                    parameters.put(parameterKey, getCatalogServiceByName(catalogName).getSidPrefix()
+                                            + ":" + button.getSID());
                                 } else {
                                     parameters.put(parameterKey, itemData.get(parameterKey));
                                 }
