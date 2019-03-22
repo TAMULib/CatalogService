@@ -23,7 +23,8 @@ import edu.tamu.app.model.CatalogHolding;
 import edu.tamu.weaver.utility.HttpUtility;
 
 /**
- * A CatalogService implementation for interfacing with the Voyager REST VXWS api
+ * A CatalogService implementation for interfacing with the Voyager REST VXWS
+ * api
  *
  * @author Jason Savell <jsavell@library.tamu.edu>
  * @author James Creel <jcreel@library.tamu.edu>
@@ -31,130 +32,141 @@ import edu.tamu.weaver.utility.HttpUtility;
  */
 
 class VoyagerCatalogService extends AbstractCatalogService {
-	private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-	/**
-	 * Fetches holdings from the Voyager API and translates them into catalogHoldings
-	 *
-	 * @param bibId
-	 * 				String
-	 *
-	 * @return List<CatalogHolding>
-	 *
-	 */
-	public List<CatalogHolding> getHoldingsByBibId(String bibId) {
-		try {
-			logger.debug("Asking for Record from: "+getAPIBase()+"record/"+bibId+"/?view=full");
-			String recordResult = HttpUtility.makeHttpRequest(getAPIBase()+"record/"+bibId+"/?view=full","GET");
-	        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-	    	DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+    /**
+     * Fetches holdings from the Voyager API and translates them into
+     * catalogHoldings
+     *
+     * @param bibId String
+     *
+     * @return List<CatalogHolding>
+     *
+     */
+    @Override
+    public List<CatalogHolding> getHoldingsByBibId(String bibId) {
+        try {
+            logger.debug("Asking for Record from: " + getAPIBase() + "record/" + bibId + "/?view=full");
+            String recordResult = HttpUtility.makeHttpRequest(getAPIBase() + "record/" + bibId + "/?view=full", "GET");
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 
-	    	Document doc = dBuilder.parse(new InputSource(new StringReader(recordResult)));
+            Document doc = dBuilder.parse(new InputSource(new StringReader(recordResult)));
 
-	    	doc.getDocumentElement().normalize();
-	    	NodeList dataFields = doc.getElementsByTagName("datafield");
-	    	int dataFieldCount = dataFields.getLength();
-	    	String issn = "";
-	    	String isbn = "";
-	    	String title = "";
-	    	String author = "";
-	    	String publisher = "";
-	    	String place = "";
-	    	String year = "";
-	    	String genre = "";
+            doc.getDocumentElement().normalize();
+            NodeList dataFields = doc.getElementsByTagName("datafield");
+            int dataFieldCount = dataFields.getLength();
+            String issn = "";
+            String isbn = "";
+            String title = "";
+            String author = "";
+            String publisher = "";
+            String place = "";
+            String year = "";
+            String genre = "";
 
-			String marcRecordLeader = doc.getElementsByTagName("leader").item(0).getTextContent();
+            String marcRecordLeader = doc.getElementsByTagName("leader").item(0).getTextContent();
 
-	    	for (int i=0;i<dataFieldCount;i++) {
-	    		Node currentNode = dataFields.item(i);
-	    		switch (currentNode.getAttributes().getNamedItem("tag").getTextContent()) {
-	    			case "022":
-	    				issn = currentNode.getChildNodes().item(0).getTextContent();
-	    				genre = "journal";
-	    			break;
-	    			case "020":
-	    				isbn = currentNode.getChildNodes().item(0).getTextContent().split(" ")[0];
-	    				genre = "book";
-    				break;
-	    			case "245":
-	    				title = currentNode.getChildNodes().item(0).getTextContent();
-	    			break;
-	    			case "100":
-	    				author = currentNode.getChildNodes().item(0).getTextContent();
-	    			break;
-	    			case "264":
-	    				NodeList publisherDataNodes = currentNode.getChildNodes();
-	    				int childCount = publisherDataNodes.getLength();
-	    				place = publisherDataNodes.item(0).getTextContent();
-	    				if (childCount > 1) {
-	    					publisher = publisherDataNodes.item(1).getTextContent();
-	    				}
-	    				if (childCount > 2) {
-	    					year = publisherDataNodes.item(2).getTextContent();
-	    				}
-	    			break;
-	    		}
-	    	}
+            for (int i = 0; i < dataFieldCount; i++) {
+                Node currentNode = dataFields.item(i);
+                switch (currentNode.getAttributes().getNamedItem("tag").getTextContent()) {
+                case "022":
+                    issn = currentNode.getChildNodes().item(0).getTextContent();
+                    genre = "journal";
+                    break;
+                case "020":
+                    isbn = currentNode.getChildNodes().item(0).getTextContent().split(" ")[0];
+                    genre = "book";
+                    break;
+                case "245":
+                    title = currentNode.getChildNodes().item(0).getTextContent();
+                    break;
+                case "100":
+                    author = currentNode.getChildNodes().item(0).getTextContent();
+                    break;
+                case "264":
+                    NodeList publisherDataNodes = currentNode.getChildNodes();
+                    int childCount = publisherDataNodes.getLength();
+                    place = publisherDataNodes.item(0).getTextContent();
+                    if (childCount > 1) {
+                        publisher = publisherDataNodes.item(1).getTextContent();
+                    }
+                    if (childCount > 2) {
+                        year = publisherDataNodes.item(2).getTextContent();
+                    }
+                    break;
+                }
+            }
 
-	    	logger.debug("Asking for holdings from: "+getAPIBase()+"record/"+bibId+"/holdings?view=items");
-	        String result = HttpUtility.makeHttpRequest(getAPIBase()+"record/"+bibId+"/holdings?view=items","GET");
-			logger.debug("Received holdings from: "+getAPIBase()+"record/"+bibId+"/holdings?view=items");
+            logger.debug("Asking for holdings from: " + getAPIBase() + "record/" + bibId + "/holdings?view=items");
+            String result = HttpUtility.makeHttpRequest(getAPIBase() + "record/" + bibId + "/holdings?view=items",
+                    "GET");
+            logger.debug("Received holdings from: " + getAPIBase() + "record/" + bibId + "/holdings?view=items");
 
-	    	doc = dBuilder.parse(new InputSource(new StringReader(result)));
+            doc = dBuilder.parse(new InputSource(new StringReader(result)));
 
-	    	doc.getDocumentElement().normalize();
-			NodeList holdings = doc.getElementsByTagName("holding");
-			int holdingCount = holdings.getLength();
+            doc.getDocumentElement().normalize();
+            NodeList holdings = doc.getElementsByTagName("holding");
+            int holdingCount = holdings.getLength();
 
-			List<CatalogHolding> catalogHoldings = new ArrayList<CatalogHolding>();
-			logger.debug("\n\nThe Holding Count: "+holdingCount);
+            List<CatalogHolding> catalogHoldings = new ArrayList<CatalogHolding>();
+            logger.debug("\n\nThe Holding Count: " + holdingCount);
 
-			for (int i=0;i<holdingCount;i++) {
-				logger.debug("Current Holding: "+holdings.item(i).getAttributes().getNamedItem("href").getTextContent());
-				NodeList childNodes = holdings.item(i).getChildNodes();
-				int childCount = childNodes.getLength();
-				logger.debug("The Count of Children: "+childCount);
-				Map<String,Map<String,String>> catalogItems = new HashMap<String,Map<String,String>>();
-				String mfhd = childNodes.item(0).getChildNodes().item(1).getTextContent();
-				logger.debug("MarcRecordLeader: "+marcRecordLeader);
-				logger.debug("MFHD: "+mfhd);
-				logger.debug("ISBN: "+isbn);
-				logger.debug("Item URL: "+childNodes.item(1).getAttributes().getNamedItem("href").getTextContent());
+            for (int i = 0; i < holdingCount; i++) {
+                logger.debug(
+                        "Current Holding: " + holdings.item(i).getAttributes().getNamedItem("href").getTextContent());
+                NodeList childNodes = holdings.item(i).getChildNodes();
+                int childCount = childNodes.getLength();
+                logger.debug("The Count of Children: " + childCount);
+                Map<String, Map<String, String>> catalogItems = new HashMap<String, Map<String, String>>();
+                String mfhd = childNodes.item(0).getChildNodes().item(1).getTextContent();
+                logger.debug("MarcRecordLeader: " + marcRecordLeader);
+                logger.debug("MFHD: " + mfhd);
+                logger.debug("ISBN: " + isbn);
+                logger.debug("Item URL: " + childNodes.item(1).getAttributes().getNamedItem("href").getTextContent());
 
-				for (int j=0;j<childCount;j++) {
-					if (childNodes.item(j).getNodeName() == "item") {
-						String itemResult = HttpUtility.makeHttpRequest(childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(),"GET");
+                for (int j = 0; j < childCount; j++) {
+                    if (childNodes.item(j).getNodeName() == "item") {
+                        String itemResult = HttpUtility.makeHttpRequest(
+                                childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(), "GET");
 
-						logger.debug("Got Item details from: "+childNodes.item(j).getAttributes().getNamedItem("href").getTextContent());
-						doc = dBuilder.parse(new InputSource(new StringReader(itemResult)));
-						doc.getDocumentElement().normalize();
-						NodeList itemDataNode = doc.getElementsByTagName("itemData");
+                        logger.debug("Got Item details from: "
+                                + childNodes.item(j).getAttributes().getNamedItem("href").getTextContent());
+                        doc = dBuilder.parse(new InputSource(new StringReader(itemResult)));
+                        doc.getDocumentElement().normalize();
+                        NodeList itemDataNode = doc.getElementsByTagName("itemData");
 
-						int itemDataCount = itemDataNode.getLength();
-						Map<String,String> itemData = new HashMap<String,String>();
-						for (int l=0;l<itemDataCount;l++) {
-							if (itemDataNode.item(l).getAttributes().getNamedItem("code") != null) {
-								itemData.put(itemDataNode.item(l).getAttributes().getNamedItem("name").getTextContent()+"Code",itemDataNode.item(l).getAttributes().getNamedItem("code").getTextContent());
-							}
-							itemData.put(itemDataNode.item(l).getAttributes().getNamedItem("name").getTextContent(),itemDataNode.item(l).getTextContent());
-						}
-						catalogItems.put(childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(),itemData);
-					}
-				}
-				catalogHoldings.add(new CatalogHolding(marcRecordLeader,mfhd,issn,isbn,title,author,publisher,place,year,genre,new HashMap<String,Map<String,String>>(catalogItems)));
-				catalogItems.clear();
-			}
-			return catalogHoldings;
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ParserConfigurationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (SAXException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
-	}
+                        int itemDataCount = itemDataNode.getLength();
+                        Map<String, String> itemData = new HashMap<String, String>();
+                        for (int l = 0; l < itemDataCount; l++) {
+                            if (itemDataNode.item(l).getAttributes().getNamedItem("code") != null) {
+                                itemData.put(
+                                        itemDataNode.item(l).getAttributes().getNamedItem("name").getTextContent()
+                                                + "Code",
+                                        itemDataNode.item(l).getAttributes().getNamedItem("code").getTextContent());
+                            }
+                            itemData.put(itemDataNode.item(l).getAttributes().getNamedItem("name").getTextContent(),
+                                    itemDataNode.item(l).getTextContent());
+                        }
+                        catalogItems.put(childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(),
+                                itemData);
+                    }
+                }
+                catalogHoldings.add(new CatalogHolding(marcRecordLeader, mfhd, issn, isbn, title, author, publisher,
+                        place, year, genre, new HashMap<String, Map<String, String>>(catalogItems)));
+                catalogItems.clear();
+            }
+            return catalogHoldings;
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (ParserConfigurationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (SAXException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
+    }
 }

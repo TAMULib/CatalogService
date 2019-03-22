@@ -13,30 +13,30 @@ import edu.tamu.app.model.CatalogHolding;
  */
 public interface CatalogService {
 
-	List<CatalogHolding> getHoldingsByBibId(String bibId);
+    List<CatalogHolding> getHoldingsByBibId(String bibId);
 
-	String getName();
+    String getName();
 
-	void setName(String name);
+    void setName(String name);
 
-	String getType();
+    String getType();
 
-	void  setType(String type);
+    void setType(String type);
 
-	String getHost();
+    String getHost();
 
-	void setHost(String host);
+    void setHost(String host);
 
-	String getPort();
+    String getPort();
 
-	void setPort(String port);
+    void setPort(String port);
 
-	String getApp();
+    String getApp();
 
-	void setApp(String app);
+    void setApp(String app);
 
-	String getProtocol();
+    String getProtocol();
 
-	void setProtocol(String protocol);
+    void setProtocol(String protocol);
 
 }
