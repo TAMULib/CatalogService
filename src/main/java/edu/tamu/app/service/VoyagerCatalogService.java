@@ -79,7 +79,11 @@ class VoyagerCatalogService extends AbstractCatalogService {
                     genre = "book";
                     break;
                 case "245":
-                    title = currentNode.getChildNodes().item(0).getTextContent();
+                    if (currentNode.getChildNodes().item(1) != null) {
+                        title = currentNode.getChildNodes().item(0).getTextContent()+currentNode.getChildNodes().item(1).getTextContent();
+                    } else {
+                        title = currentNode.getChildNodes().item(0).getTextContent();
+                    }
                     break;
                 case "100":
                     author = currentNode.getChildNodes().item(0).getTextContent();
