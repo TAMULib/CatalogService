@@ -1,6 +1,7 @@
 package edu.tamu.app.service;
 
 import java.util.List;
+import java.util.Map;
 
 import edu.tamu.app.model.CatalogHolding;
 
@@ -44,4 +45,9 @@ public interface CatalogService {
     String getSidPrefix();
 
     void setSidPrefix(String sidPrefix);
+
+    Map<String, String> getAuthentication();
+
+    void setAuthentication(Map<String, String> authentication);
+
 }

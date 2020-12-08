@@ -26,6 +26,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class CatalogServiceFactory {
+    private static final String NODE_CATALOGS = "catalogs";
+    private static final String NODE_TYPE = "type";
+    private static final String NODE_HOST = "host";
+    private static final String NODE_PORT = "port";
+    private static final String NODE_APP = "app";
+    private static final String NODE_PROTOCOL = "protocol";
+    private static final String NODE_SID_PREFIX = "sidPrefix";
+    private static final String NODE_REPOSITORY_BASE_URL = "repositoryBaseUrl";
+    private static final String NODE_APIKEY = "apikey";
+    private static final String NODE_AUTHENTICATION = "authentication";
+
+    private static final String TYPE_VOYAGER = "voyager";
+    private static final String TYPE_FOLIO = "folio";
 
     private Map<String, CatalogService> catalogServices = new HashMap<String, CatalogService>();
 
@@ -65,18 +78,23 @@ public class CatalogServiceFactory {
                 e.printStackTrace();
             }
 
-            JsonNode newCatalog = catalogsJson.get("catalogs").get(name);
+            JsonNode newCatalog = catalogsJson.get(NODE_CATALOGS).get(name);
             if (newCatalog != null) {
-                String host = newCatalog.get("host").asText();
-                String port = newCatalog.get("port").asText();
-                String app = newCatalog.get("app").asText();
-                String protocol = newCatalog.get("protocol").asText();
-                String sidPrefix = newCatalog.get("sidPrefix").asText();
+                String type = newCatalog.get(NODE_TYPE).asText();
+                String host = newCatalog.get(NODE_HOST).asText();
+                String port = newCatalog.get(NODE_PORT).asText();
+                String app = newCatalog.get(NODE_APP).asText();
+                String protocol = newCatalog.get(NODE_PROTOCOL).asText();
+                String sidPrefix = newCatalog.get(NODE_SID_PREFIX).asText();
 
-                switch (newCatalog.get("type").asText()) {
-                case "voyager":
+                switch (type) {
+                case TYPE_VOYAGER:
                     catalogService = new VoyagerCatalogService();
-                    catalogService.setType("voyager");
+                    catalogService.setType(type);
+                    break;
+                case TYPE_FOLIO:
+                    catalogService = buildFolio(newCatalog);
+                    catalogService.setType(type);
                     break;
                 }
 
@@ -87,6 +105,33 @@ public class CatalogServiceFactory {
                 catalogService.setSidPrefix(sidPrefix);
             }
         }
+
         return catalogService;
     }
+
+    private CatalogService buildFolio(JsonNode newCatalog) {
+        CatalogService catalogService = new FolioCatalogService();
+
+        Map<String, String> authentication = new HashMap<String, String>();
+
+        if (newCatalog.has(NODE_AUTHENTICATION)) {
+            if (newCatalog.get(NODE_AUTHENTICATION).has(NODE_APIKEY)) {
+                authentication.put(NODE_APIKEY, newCatalog.get(NODE_AUTHENTICATION).get(NODE_APIKEY).asText());
+            } else {
+                authentication.put(NODE_APIKEY, "");
+            }
+
+            if (newCatalog.get(NODE_AUTHENTICATION).has(NODE_REPOSITORY_BASE_URL)) {
+                authentication.put(NODE_REPOSITORY_BASE_URL, newCatalog.get(NODE_AUTHENTICATION).get(NODE_REPOSITORY_BASE_URL).asText());
+            } else {
+                authentication.put(NODE_REPOSITORY_BASE_URL, "");
+            }
+        }
+
+        catalogService = new FolioCatalogService();
+        catalogService.setAuthentication(authentication);
+
+        return catalogService;
+    }
+
 }

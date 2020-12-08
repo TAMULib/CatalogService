@@ -1,11 +1,26 @@
 package edu.tamu.app.service;
 
+import static edu.tamu.app.utility.Marc21Xml.RECORD_AUTHOR;
+import static edu.tamu.app.utility.Marc21Xml.RECORD_CALL_NUMBER;
+import static edu.tamu.app.utility.Marc21Xml.RECORD_EDITION;
+import static edu.tamu.app.utility.Marc21Xml.RECORD_FALLBACK_LOCATION_CODE;
+import static edu.tamu.app.utility.Marc21Xml.RECORD_GENRE;
+import static edu.tamu.app.utility.Marc21Xml.RECORD_ISBN;
+import static edu.tamu.app.utility.Marc21Xml.RECORD_ISSN;
+import static edu.tamu.app.utility.Marc21Xml.RECORD_MARC_RECORD_LEADER;
+import static edu.tamu.app.utility.Marc21Xml.RECORD_MFHD;
+import static edu.tamu.app.utility.Marc21Xml.RECORD_OCLC;
+import static edu.tamu.app.utility.Marc21Xml.RECORD_PLACE;
+import static edu.tamu.app.utility.Marc21Xml.RECORD_PUBLISHER;
+import static edu.tamu.app.utility.Marc21Xml.RECORD_RECORD_ID;
+import static edu.tamu.app.utility.Marc21Xml.RECORD_TITLE;
+import static edu.tamu.app.utility.Marc21Xml.RECORD_VALID_LARGE_VOLUME;
+import static edu.tamu.app.utility.Marc21Xml.RECORD_YEAR;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,6 +40,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import edu.tamu.app.model.CatalogHolding;
+import edu.tamu.app.utility.Marc21Xml;
 import edu.tamu.weaver.utility.HttpUtility;
 
 /**
@@ -37,19 +53,9 @@ import edu.tamu.weaver.utility.HttpUtility;
  */
 
 class VoyagerCatalogService extends AbstractCatalogService {
-    private static final List<String> LARGE_VOLUME_LOCATIONS = Arrays.asList("rs,hdr","rs,jlf");
-    private static final int LARGE_VOLUME_ITEM_LIMIT = 10;
     private static final int REQUEST_TIMEOUT = 120000;
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
-    private void appendMapValue(Map<String,String> map, String key, String newValue) {
-        if (map.containsKey(key) && map.get(key) != null && !map.get(key).isEmpty()) {
-            addMapValue(map, key, map.get(key) + newValue);
-        } else {
-            addMapValue(map, key, newValue);
-        }
-    }
 
     private void addMapValue(Map<String,String> map, String key, String newValue) {
         map.put(key, (newValue != null ? newValue:""));
@@ -72,144 +78,21 @@ class VoyagerCatalogService extends AbstractCatalogService {
             Map<String,String> recordValues = new HashMap<String,String>();
             Map<String,String> recordBackupValues = new HashMap<String,String>();
 
-            addMapValue(recordValues, "marcRecordLeader", doc.getElementsByTagName("leader").item(0).getTextContent());
+            addMapValue(recordValues, RECORD_MARC_RECORD_LEADER, doc.getElementsByTagName("leader").item(0).getTextContent());
             NodeList controlFields = doc.getElementsByTagName("controlfield");
             int controlFieldsCount = controlFields.getLength();
 
             for (int i = 0; i < controlFieldsCount; i++) {
-                Node currentControlNode = controlFields.item(i);
-                if (currentControlNode.getAttributes().getNamedItem("tag") != null && currentControlNode.getAttributes().getNamedItem("tag").getTextContent().contentEquals("001")) {
-                    addMapValue(recordValues,"recordId",currentControlNode.getChildNodes().item(0).getTextContent());
-                }
+                Marc21Xml.addControlFieldRecord(controlFields.item(i), recordValues);
             }
 
-            int childCount = 0;
-            List<String> nodeCodes = null;
-
             for (int i = 0; i < dataFieldCount; i++) {
-                Node currentNode = dataFields.item(i);
-                NodeList dataNodes = currentNode.getChildNodes();
-                switch (currentNode.getAttributes().getNamedItem("tag").getTextContent()) {
-                    case "022":
-                        if (dataNodes.item(0).getAttributes().getNamedItem("code").getTextContent().equals("a")) {
-                            addMapValue(recordValues,"issn",dataNodes.item(0).getTextContent());
-                        }
-                        addMapValue(recordValues,"genre","journal");
-                    break;
-                    case "020":
-                        if (dataNodes.item(0).getAttributes().getNamedItem("code").getTextContent().equals("a")) {
-                            addMapValue(recordValues,"isbn",dataNodes.item(0).getTextContent().split(" ")[0]);
-                        }
-                        addMapValue(recordValues,"genre","book");
-                    break;
-                    case "245":
-                        if (currentNode.getChildNodes().item(1) != null) {
-                            addMapValue(recordValues,"title", currentNode.getChildNodes().item(0).getTextContent()+currentNode.getChildNodes().item(1).getTextContent());
-                        } else {
-                            addMapValue(recordValues,"title", currentNode.getChildNodes().item(0).getTextContent());
-                        }
-                    break;
-                    case "100":
-                        childCount = dataNodes.getLength();
-                        nodeCodes = Arrays.asList("a","b","c","d","e");
-
-                        for (int x=0;x<childCount;x++) {
-                            final String currentCode = dataNodes.item(x).getAttributes().getNamedItem("code").getTextContent();
-                            if (nodeCodes.stream().anyMatch(c->c.equals(currentCode))) {
-                                appendMapValue(recordValues, "author",dataNodes.item(x).getTextContent());
-                            }
-                        }
-                    break;
-                    case "110":
-                        childCount = dataNodes.getLength();
-                        nodeCodes = Arrays.asList("a","b","c","d","e");
-
-                        for (int x=0;x<childCount;x++) {
-                            final String currentCode = dataNodes.item(x).getAttributes().getNamedItem("code").getTextContent();
-                            if (nodeCodes.stream().anyMatch(c->c.equals(currentCode))) {
-                                appendMapValue(recordBackupValues, "author",dataNodes.item(x).getTextContent());
-                            }
-                        }
-                    break;
-                    case "111":
-                        if (!recordBackupValues.containsKey("author")) {
-                            childCount = dataNodes.getLength();
-                            nodeCodes = Arrays.asList("a","c","d","e");
-
-                            for (int x=0;x<childCount;x++) {
-                                final String currentCode = dataNodes.item(x).getAttributes().getNamedItem("code").getTextContent();
-                                if (nodeCodes.stream().anyMatch(c->c.equals(currentCode))) {
-                                    appendMapValue(recordBackupValues, "author",dataNodes.item(x).getTextContent());
-                                }
-                            }
-                        }
-                    break;
-                    case "130":
-                        if (!recordBackupValues.containsKey("author")) {
-                            childCount = dataNodes.getLength();
-                            nodeCodes = Arrays.asList("a","d","f");
-
-                            for (int x=0;x<childCount;x++) {
-                                final String currentCode = dataNodes.item(x).getAttributes().getNamedItem("code").getTextContent();
-                                if (nodeCodes.stream().anyMatch(c->c.equals(currentCode))) {
-                                    appendMapValue(recordBackupValues, "author",dataNodes.item(x).getTextContent());
-                                }
-                            }
-                        }
-                    break;
-                    case "264":
-                        childCount = dataNodes.getLength();
-                        for (int x=0;x<childCount;x++) {
-                            switch (dataNodes.item(x).getAttributes().getNamedItem("code").getTextContent()) {
-                                case "a":
-                                    appendMapValue(recordValues, "place",dataNodes.item(x).getTextContent());
-                                break;
-                                case "b":
-                                    appendMapValue(recordValues, "publisher",dataNodes.item(x).getTextContent());
-                                break;
-                                case "c":
-                                    if (!recordValues.containsKey("year") || (recordValues.get("year") == null || recordValues.get("year").length() == 0)) {
-                                        addMapValue(recordValues,"year", dataNodes.item(x).getTextContent());
-                                    }
-                                break;
-                            }
-                        }
-                    break;
-                    case "260":
-                        childCount = dataNodes.getLength();
-                        for (int x=0;x<childCount;x++) {
-                            switch (dataNodes.item(x).getAttributes().getNamedItem("code").getTextContent()) {
-                                case "a":
-                                    appendMapValue(recordBackupValues, "place",dataNodes.item(x).getTextContent());
-                                break;
-                                case "b":
-                                    appendMapValue(recordBackupValues, "publisher", dataNodes.item(x).getTextContent());
-                                break;
-                                case "c":
-                                    addMapValue(recordBackupValues,"year", recordBackupValues.get("year") + dataNodes.item(x).getTextContent());
-                                break;
-                            }
-                        }
-                    break;
-                    case "250":
-                        addMapValue(recordValues,"edition", currentNode.getChildNodes().item(0).getTextContent());
-                    break;
-                    case "035":
-                        if (dataNodes.item(0).getAttributes().getNamedItem("code").getTextContent().equals("a")) {
-                            addMapValue(recordValues,"oclc",currentNode.getChildNodes().item(0).getTextContent());
-                        }
-                    break;
-                }
+                Marc21Xml.addDataFieldRecord(dataFields.item(i), recordValues, recordBackupValues);
             }
 
             //apply backup values if needed and available
-            Iterator<String> bpIterator = recordBackupValues.keySet().iterator();
-            while (bpIterator.hasNext()) {
-                String key = bpIterator.next();
-                if (!recordValues.containsKey(key) || (recordValues.get(key) == null || recordValues.get(key).length() == 0)) {
-                    addMapValue(recordValues,key,recordBackupValues.get(key));
-                }
-            }
+            Marc21Xml.applyBackupRecordValues(recordValues, recordBackupValues);
+
             return recordValues;
         } catch (IOException e) {
             // TODO Auto-generated catch block
@@ -222,74 +105,6 @@ class VoyagerCatalogService extends AbstractCatalogService {
             e.printStackTrace();
         }
         return null;
-    }
-
-    Map<String,String> buildCoreHolding(Node holdingNode) {
-        Map<String,String> holdingValues = new HashMap<String,String>();
-
-        NodeList childNodes = holdingNode.getChildNodes();
-        addMapValue(holdingValues, "mfhd", childNodes.item(0).getChildNodes().item(1).getTextContent());
-        String fallbackLocationCode = "";
-        String callNumber = "";
-
-
-        NodeList marcRecordNodes = childNodes.item(0).getChildNodes();
-        int marcRecordCount = marcRecordNodes.getLength();
-
-        for (int j = 0; j < marcRecordCount; j++) {
-            Node marcRecordNode = marcRecordNodes.item(j);
-            NodeList subfieldNodes = marcRecordNode.getChildNodes();
-            int subfieldCount = subfieldNodes.getLength();
-            if (marcRecordNode.getNodeName().contentEquals("datafield") && marcRecordNode.getAttributes().getNamedItem("tag") != null && marcRecordNode.getAttributes().getNamedItem("tag").getTextContent().equals("852")) {
-                for (int k = 0; k < subfieldCount; k++) {
-                    Node subfieldNode = subfieldNodes.item(k);
-                    if (subfieldNode.getAttributes().getNamedItem("code") != null) {
-                        if (subfieldNode.getAttributes().getNamedItem("code").getTextContent().equals("b")) {
-                            fallbackLocationCode = subfieldNode.getTextContent();
-                        } else if (subfieldNode.getAttributes().getNamedItem("code").getTextContent().equals("h") || subfieldNode.getAttributes().getNamedItem("code").getTextContent().equals("i") ) {
-                            callNumber += subfieldNode.getTextContent();
-                        }
-                    }
-                }
-            }
-        }
-
-        int childCount = childNodes.getLength();
-        logger.debug("The Count of Children: " + childCount);
-
-        Boolean validLargeVolume = false;
-        if (childCount-1 > LARGE_VOLUME_ITEM_LIMIT) {
-            for (String location : LARGE_VOLUME_LOCATIONS) {
-                if (fallbackLocationCode.equals(location)) {
-                    validLargeVolume = true;
-                    break;
-                }
-            }
-        }
-        addMapValue(holdingValues,"fallbackLocationCode", fallbackLocationCode);
-        addMapValue(holdingValues,"callNumber", callNumber);
-        addMapValue(holdingValues,"validLargeVolume",validLargeVolume.toString());
-        return holdingValues;
-    }
-
-    protected Map<String,String> buildCoreItem(Node itemNode) {
-        NodeList itemDataNode = itemNode.getChildNodes();
-
-        int itemDataCount = itemDataNode.getLength();
-        Map<String, String> itemData = new HashMap<String, String>();
-        for (int l = 0; l < itemDataCount; l++) {
-            if (itemDataNode.item(l).getAttributes().getNamedItem("code") != null) {
-                itemData.put(
-                        itemDataNode.item(l).getAttributes().getNamedItem("name").getTextContent()
-                                + "Code",
-                        itemDataNode.item(l).getAttributes().getNamedItem("code").getTextContent());
-                logger.debug(itemDataNode.item(l).getAttributes().getNamedItem("code").getTextContent()+"Code",itemDataNode.item(l).getAttributes().getNamedItem("code").getTextContent());
-            }
-            itemData.put(itemDataNode.item(l).getAttributes().getNamedItem("name").getTextContent(),
-                    itemDataNode.item(l).getTextContent());
-            logger.debug(itemDataNode.item(l).getAttributes().getNamedItem("name").getTextContent(),itemDataNode.item(l).getAttributes().getNamedItem("name").getTextContent());
-        }
-        return itemData;
     }
 
     /**
@@ -325,15 +140,15 @@ class VoyagerCatalogService extends AbstractCatalogService {
 
             for (int i = 0; i < holdingCount; i++) {
                 logger.debug("Current Holding: " + holdings.item(i).getAttributes().getNamedItem("href").getTextContent());
-                Map<String,String> holdingValues = buildCoreHolding(holdings.item(i));
+                Map<String,String> holdingValues = Marc21Xml.buildCoreHolding(holdings.item(i));
 
-                logger.debug("MarcRecordLeader: " + recordValues.get("marcRecordLeader"));
-                logger.debug("MFHD: " + holdingValues.get("mfhd"));
-                logger.debug("ISBN: " + recordValues.get("isbn"));
-                logger.debug("Fallback Location: " + holdingValues.get("fallbackLocationCode"));
-                logger.debug("Call Number: " + holdingValues.get("callNumber"));
+                logger.debug("MarcRecordLeader: " + recordValues.get(RECORD_MARC_RECORD_LEADER));
+                logger.debug("MFHD: " + holdingValues.get(RECORD_MFHD));
+                logger.debug("ISBN: " + recordValues.get(RECORD_ISBN));
+                logger.debug("Fallback Location: " + holdingValues.get(RECORD_FALLBACK_LOCATION_CODE));
+                logger.debug("Call Number: " + holdingValues.get(RECORD_CALL_NUMBER));
 
-                Boolean validLargeVolume = Boolean.valueOf(holdingValues.get("validLargeVolume"));
+                Boolean validLargeVolume = Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME));
 
                 logger.debug("Valid Large Volume: "+ validLargeVolume);
 
@@ -346,7 +161,7 @@ class VoyagerCatalogService extends AbstractCatalogService {
                     //when we have a lot of items and it's a large volume candidate, just use the item data that came with the holding response, even though it's incomplete data
                     for (int j = 0; j < childCount; j++) {
                         if (childNodes.item(j) != null && childNodes.item(j).getNodeName() == "item") {
-                            catalogItems.put(childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(), buildCoreItem(childNodes.item(j)));
+                            catalogItems.put(childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(), Marc21Xml.buildCoreItem(childNodes.item(j)));
                         }
                     }
                 } else {
@@ -368,7 +183,7 @@ class VoyagerCatalogService extends AbstractCatalogService {
                             int itemNodesCount = itemNodes.getLength();
                             for (int l=0;l<itemNodesCount;l++) {
                                 catalogItems.put(childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(),
-                                        buildCoreItem(itemNodes.item(l)));
+                                    Marc21Xml.buildCoreItem(itemNodes.item(l)));
                             }
                             //sleep for a moment between item requests to avoid triggering a 429 from the Voyager API
                             try {
@@ -379,8 +194,13 @@ class VoyagerCatalogService extends AbstractCatalogService {
                         }
                     }
                 }
-                catalogHoldings.add(new CatalogHolding(recordValues.get("marcRecordLeader"), holdingValues.get("mfhd"), recordValues.get("issn"), recordValues.get("isbn"), recordValues.get("title"), recordValues.get("author"), recordValues.get("publisher"),
-                        recordValues.get("place"), recordValues.get("year"), recordValues.get("genre"), recordValues.get("edition"), holdingValues.get("fallbackLocationCode"), recordValues.get("oclc"), recordValues.get("recordId"), holdingValues.get("callNumber"), validLargeVolume, new HashMap<String, Map<String, String>>(catalogItems)));
+
+                catalogHoldings.add(new CatalogHolding(recordValues.get(RECORD_MARC_RECORD_LEADER), holdingValues.get(RECORD_MFHD),
+                    recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
+                    recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
+                    recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
+                    holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC), recordValues.get(RECORD_RECORD_ID),
+                    holdingValues.get(RECORD_CALL_NUMBER), validLargeVolume, new HashMap<String, Map<String, String>>(catalogItems)));
                 catalogItems.clear();
             }
             return catalogHoldings;
@@ -428,7 +248,7 @@ class VoyagerCatalogService extends AbstractCatalogService {
                 }
             }
 
-            Map<String,String> holdingValues = buildCoreHolding(holdingNode);
+            Map<String,String> holdingValues = Marc21Xml.buildCoreHolding(holdingNode);
 
             Map<String, Map<String, String>> catalogItems = new HashMap<String, Map<String, String>>();
 
@@ -437,12 +257,16 @@ class VoyagerCatalogService extends AbstractCatalogService {
 
             for (int j = 0; j < childCount; j++) {
                 if (childNodes.item(j) != null && childNodes.item(j).getNodeName() == "item") {
-                    catalogItems.put(childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(), buildCoreItem(childNodes.item(j)));
+                    catalogItems.put(childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(), Marc21Xml.buildCoreItem(childNodes.item(j)));
                 }
             }
 
-            return new CatalogHolding(recordValues.get("marcRecordLeader"), holdingValues.get("mfhd"), recordValues.get("issn"), recordValues.get("isbn"), recordValues.get("title"), recordValues.get("author"), recordValues.get("publisher"),
-                    recordValues.get("place"), recordValues.get("year"), recordValues.get("genre"), recordValues.get("edition"), holdingValues.get("fallbackLocationCode"), recordValues.get("oclc"), recordValues.get("recordId"), holdingValues.get("callNumber"), Boolean.valueOf(holdingValues.get("validLargeVolume")), new HashMap<String, Map<String, String>>(catalogItems));
+            return new CatalogHolding(recordValues.get(RECORD_MARC_RECORD_LEADER), holdingValues.get(RECORD_MFHD),
+                recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
+                recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
+                recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
+                holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC), recordValues.get(RECORD_RECORD_ID),
+                holdingValues.get(RECORD_CALL_NUMBER), Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME)), new HashMap<String, Map<String, String>>(catalogItems));
 
         } catch (IOException e) {
             // TODO Auto-generated catch block
