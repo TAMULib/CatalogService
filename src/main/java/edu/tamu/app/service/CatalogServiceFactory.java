@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -26,24 +27,28 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class CatalogServiceFactory {
-    private static final String NODE_CATALOGS = "catalogs";
-    private static final String NODE_TYPE = "type";
-    private static final String NODE_HOST = "host";
-    private static final String NODE_PORT = "port";
-    private static final String NODE_APP = "app";
-    private static final String NODE_PROTOCOL = "protocol";
-    private static final String NODE_SID_PREFIX = "sidPrefix";
-    private static final String NODE_REPOSITORY_BASE_URL = "repositoryBaseUrl";
-    private static final String NODE_APIKEY = "apikey";
-    private static final String NODE_AUTHENTICATION = "authentication";
+    public static final String FIELD_CATALOGS = "catalogs";
+    public static final String FIELD_TYPE = "type";
+    public static final String FIELD_HOST = "host";
+    public static final String FIELD_PORT = "port";
+    public static final String FIELD_APP = "app";
+    public static final String FIELD_PROTOCOL = "protocol";
+    public static final String FIELD_SID_PREFIX = "sidPrefix";
+    public static final String FIELD_REPOSITORY_BASE_URL = "repositoryBaseUrl";
+    public static final String FIELD_APIKEY = "apiKey";
+    public static final String FIELD_AUTHENTICATION = "authentication";
+    public static final String FIELD_TENANT = "tenant";
 
-    private static final String TYPE_VOYAGER = "voyager";
-    private static final String TYPE_FOLIO = "folio";
+    public static final String TYPE_VOYAGER = "voyager";
+    public static final String TYPE_FOLIO = "folio";
 
     private Map<String, CatalogService> catalogServices = new HashMap<String, CatalogService>();
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private RestTemplate restTemplate;
 
     @Value("${catalogs.file.location:''}")
     private String catalogsFile;
@@ -78,14 +83,14 @@ public class CatalogServiceFactory {
                 e.printStackTrace();
             }
 
-            JsonNode newCatalog = catalogsJson.get(NODE_CATALOGS).get(name);
+            JsonNode newCatalog = catalogsJson.get(FIELD_CATALOGS).get(name);
             if (newCatalog != null) {
-                String type = newCatalog.get(NODE_TYPE).asText();
-                String host = newCatalog.get(NODE_HOST).asText();
-                String port = newCatalog.get(NODE_PORT).asText();
-                String app = newCatalog.get(NODE_APP).asText();
-                String protocol = newCatalog.get(NODE_PROTOCOL).asText();
-                String sidPrefix = newCatalog.get(NODE_SID_PREFIX).asText();
+                String type = newCatalog.get(FIELD_TYPE).asText();
+                String host = newCatalog.get(FIELD_HOST).asText();
+                String port = newCatalog.get(FIELD_PORT).asText();
+                String app = newCatalog.get(FIELD_APP).asText();
+                String protocol = newCatalog.get(FIELD_PROTOCOL).asText();
+                String sidPrefix = newCatalog.get(FIELD_SID_PREFIX).asText();
 
                 switch (type) {
                 case TYPE_VOYAGER:
@@ -110,27 +115,33 @@ public class CatalogServiceFactory {
     }
 
     private CatalogService buildFolio(JsonNode newCatalog) {
-        CatalogService catalogService = new FolioCatalogService();
+        CatalogService catalogService = new FolioCatalogService(restTemplate);
 
         Map<String, String> authentication = new HashMap<String, String>();
 
-        if (newCatalog.has(NODE_AUTHENTICATION)) {
-            if (newCatalog.get(NODE_AUTHENTICATION).has(NODE_APIKEY)) {
-                authentication.put(NODE_APIKEY, newCatalog.get(NODE_AUTHENTICATION).get(NODE_APIKEY).asText());
+        if (newCatalog.has(FIELD_AUTHENTICATION)) {
+            JsonNode fieldAuthentication = newCatalog.get(FIELD_AUTHENTICATION);
+
+            if (fieldAuthentication.has(FIELD_APIKEY)) {
+                authentication.put(FIELD_APIKEY, fieldAuthentication.get(FIELD_APIKEY).asText());
             } else {
-                authentication.put(NODE_APIKEY, "");
+                authentication.put(FIELD_APIKEY, "");
             }
 
-            if (newCatalog.get(NODE_AUTHENTICATION).has(NODE_REPOSITORY_BASE_URL)) {
-                authentication.put(NODE_REPOSITORY_BASE_URL, newCatalog.get(NODE_AUTHENTICATION).get(NODE_REPOSITORY_BASE_URL).asText());
+            if (fieldAuthentication.has(FIELD_REPOSITORY_BASE_URL)) {
+                authentication.put(FIELD_REPOSITORY_BASE_URL, fieldAuthentication.get(FIELD_REPOSITORY_BASE_URL).asText());
             } else {
-                authentication.put(NODE_REPOSITORY_BASE_URL, "");
+                authentication.put(FIELD_REPOSITORY_BASE_URL, "");
+            }
+
+            if (fieldAuthentication.has(FIELD_TENANT)) {
+                authentication.put(FIELD_TENANT, fieldAuthentication.get(FIELD_TENANT).asText());
+            } else {
+                authentication.put(FIELD_TENANT, "");
             }
         }
 
-        catalogService = new FolioCatalogService();
         catalogService.setAuthentication(authentication);
-
         return catalogService;
     }
 

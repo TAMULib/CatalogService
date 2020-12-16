@@ -16,7 +16,7 @@ public interface CatalogService {
 
     List<CatalogHolding> getHoldingsByBibId(String bibId);
 
-    CatalogHolding getHolding(String bibId, String holdingId);
+    CatalogHolding getHolding(String id, String holdingId);
 
     String getName();
 

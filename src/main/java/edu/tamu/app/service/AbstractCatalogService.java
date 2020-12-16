@@ -2,6 +2,8 @@ package edu.tamu.app.service;
 
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
+
 import edu.tamu.weaver.utility.HttpUtility;
 
 /**
@@ -101,7 +103,27 @@ public abstract class AbstractCatalogService implements CatalogService {
     }
 
     protected String getAPIBase() {
-        return getProtocol() + "://" + getHost() + ":" + getPort() + "/" + getApp() + "/";
+        StringBuilder builder = new StringBuilder();
+
+        if (StringUtils.isNotEmpty(getProtocol())) {
+          builder.append(getProtocol());
+          builder.append(":");
+        }
+
+        builder.append("//");
+        builder.append(getHost());
+
+        if (StringUtils.isNotEmpty(getPort())) {
+          builder.append(":");
+          builder.append(getPort());
+        }
+
+        if (StringUtils.isNotEmpty(getApp())) {
+          builder.append("/");
+          builder.append(getApp());
+        }
+
+        return builder.toString();
     }
 
     @Override

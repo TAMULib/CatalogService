@@ -12,15 +12,21 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class Marc21Xml  {
+    public static final String TAG = "tag";
+
     public static final String RECORD_AUTHOR = "author";
+    public static final String RECORD_BOOK = "book";
     public static final String RECORD_CALL_NUMBER = "callNumber";
+    public static final String RECORD_CODE = "code";
     public static final String RECORD_EDITION = "edition";
     public static final String RECORD_FALLBACK_LOCATION_CODE = "fallbackLocationCode";
     public static final String RECORD_GENRE = "genre";
     public static final String RECORD_ISBN = "isbn";
     public static final String RECORD_ISSN = "issn";
+    public static final String RECORD_JOURNAL = "journal";
     public static final String RECORD_MARC_RECORD_LEADER = "marcRecordLeader";
     public static final String RECORD_MFHD = "mfhd";
+    public static final String RECORD_NAME = "name";
     public static final String RECORD_OCLC = "oclc";
     public static final String RECORD_PLACE = "place";
     public static final String RECORD_PUBLISHER = "publisher";
@@ -28,6 +34,8 @@ public class Marc21Xml  {
     public static final String RECORD_TITLE = "title";
     public static final String RECORD_VALID_LARGE_VOLUME = "validLargeVolume";
     public static final String RECORD_YEAR = "year";
+
+    private static final String NODE_DATA_FIELD = "datafield";
 
     private static final Logger logger = LoggerFactory.getLogger(Marc21Xml.class);
 
@@ -41,10 +49,10 @@ public class Marc21Xml  {
      * @param recordValues
      */
     public static void addControlFieldRecord(Node node, Map<String, String> recordValues) {
-        if (node.getAttributes().getNamedItem("tag") != null
-            && node.getAttributes().getNamedItem("tag").getTextContent().contentEquals("001")) {
+        if (node.getAttributes().getNamedItem(TAG) != null
+            && node.getAttributes().getNamedItem(TAG).getTextContent().contentEquals("001")) {
 
-            addMapValue(recordValues, "recordId", node.getChildNodes().item(0).getTextContent());
+            addMapValue(recordValues, RECORD_RECORD_ID, node.getChildNodes().item(0).getTextContent());
         }
     }
 
@@ -60,26 +68,26 @@ public class Marc21Xml  {
         List<String> nodeCodes = null;
         int childCount = 0;
 
-        switch (node.getAttributes().getNamedItem("tag").getTextContent()) {
+        switch (node.getAttributes().getNamedItem(TAG).getTextContent()) {
             case "022":
-                if (dataNodes.item(0).getAttributes().getNamedItem("code").getTextContent().equals("a")) {
-                    addMapValue(recordValues, "issn", dataNodes.item(0).getTextContent());
+                if (dataNodes.item(0).getAttributes().getNamedItem(RECORD_CODE).getTextContent().equals("a")) {
+                    addMapValue(recordValues, RECORD_ISSN, dataNodes.item(0).getTextContent());
                 }
-                addMapValue(recordValues, "genre", "journal");
+                addMapValue(recordValues, RECORD_GENRE, RECORD_JOURNAL);
             break;
             case "020":
-                if (dataNodes.item(0).getAttributes().getNamedItem("code").getTextContent().equals("a")) {
-                    addMapValue(recordValues, "isbn", dataNodes.item(0).getTextContent().split(" ")[0]);
+                if (dataNodes.item(0).getAttributes().getNamedItem(RECORD_CODE).getTextContent().equals("a")) {
+                    addMapValue(recordValues, RECORD_ISBN, dataNodes.item(0).getTextContent().split(" ")[0]);
                 }
-                addMapValue(recordValues, "genre", "book");
+                addMapValue(recordValues, RECORD_GENRE, RECORD_BOOK);
             break;
             //the title field may have more than one field, so combine them when it does
             case "245":
                 if (node.getChildNodes().item(1) != null) {
-                    addMapValue(recordValues, "title", node.getChildNodes().item(0).getTextContent()
+                    addMapValue(recordValues, RECORD_TITLE, node.getChildNodes().item(0).getTextContent()
                         + node.getChildNodes().item(1).getTextContent());
                 } else {
-                    addMapValue(recordValues, "title", node.getChildNodes().item(0).getTextContent());
+                    addMapValue(recordValues, RECORD_TITLE, node.getChildNodes().item(0).getTextContent());
                 }
             break;
             //The author field is made up of many subfields identified by the xml attribute 'code'
@@ -92,9 +100,9 @@ public class Marc21Xml  {
                 nodeCodes = Arrays.asList("a","b","c","d","e");
 
                 for (int x = 0; x < childCount; x++) {
-                    final String currentCode = dataNodes.item(x).getAttributes().getNamedItem("code").getTextContent();
+                    final String currentCode = dataNodes.item(x).getAttributes().getNamedItem(RECORD_CODE).getTextContent();
                     if (nodeCodes.stream().anyMatch(c->c.equals(currentCode))) {
-                        appendMapValue(recordValues, "author",dataNodes.item(x).getTextContent());
+                        appendMapValue(recordValues, RECORD_AUTHOR, dataNodes.item(x).getTextContent());
                     }
                 }
             break;
@@ -103,34 +111,34 @@ public class Marc21Xml  {
                 nodeCodes = Arrays.asList("a","b","c","d","e");
 
                 for (int x=0;x<childCount;x++) {
-                    final String currentCode = dataNodes.item(x).getAttributes().getNamedItem("code").getTextContent();
+                    final String currentCode = dataNodes.item(x).getAttributes().getNamedItem(RECORD_CODE).getTextContent();
                     if (nodeCodes.stream().anyMatch(c->c.equals(currentCode))) {
-                        appendMapValue(recordBackupValues, "author",dataNodes.item(x).getTextContent());
+                        appendMapValue(recordBackupValues, RECORD_AUTHOR, dataNodes.item(x).getTextContent());
                     }
                 }
             break;
             case "111":
-                if (!recordBackupValues.containsKey("author")) {
+                if (!recordBackupValues.containsKey(RECORD_AUTHOR)) {
                     childCount = dataNodes.getLength();
                     nodeCodes = Arrays.asList("a","c","d","e");
 
                     for (int x=0;x<childCount;x++) {
-                        final String currentCode = dataNodes.item(x).getAttributes().getNamedItem("code").getTextContent();
+                        final String currentCode = dataNodes.item(x).getAttributes().getNamedItem(RECORD_CODE).getTextContent();
                         if (nodeCodes.stream().anyMatch(c->c.equals(currentCode))) {
-                            appendMapValue(recordBackupValues, "author",dataNodes.item(x).getTextContent());
+                            appendMapValue(recordBackupValues, RECORD_AUTHOR, dataNodes.item(x).getTextContent());
                         }
                     }
                 }
             break;
             case "130":
-                if (!recordBackupValues.containsKey("author")) {
+                if (!recordBackupValues.containsKey(RECORD_AUTHOR)) {
                     childCount = dataNodes.getLength();
                     nodeCodes = Arrays.asList("a","d","f");
 
                     for (int x=0;x<childCount;x++) {
-                        final String currentCode = dataNodes.item(x).getAttributes().getNamedItem("code").getTextContent();
+                        final String currentCode = dataNodes.item(x).getAttributes().getNamedItem(RECORD_CODE).getTextContent();
                         if (nodeCodes.stream().anyMatch(c->c.equals(currentCode))) {
-                            appendMapValue(recordBackupValues, "author",dataNodes.item(x).getTextContent());
+                            appendMapValue(recordBackupValues, RECORD_AUTHOR, dataNodes.item(x).getTextContent());
                         }
                     }
                 }
@@ -138,20 +146,20 @@ public class Marc21Xml  {
             case "264":
                 childCount = dataNodes.getLength();
                 for (int x=0;x<childCount;x++) {
-                    switch (dataNodes.item(x).getAttributes().getNamedItem("code").getTextContent()) {
+                    switch (dataNodes.item(x).getAttributes().getNamedItem(RECORD_CODE).getTextContent()) {
                         case "a":
-                            appendMapValue(recordValues, "place",dataNodes.item(x).getTextContent());
+                            appendMapValue(recordValues, RECORD_PLACE,dataNodes.item(x).getTextContent());
                         break;
                         case "b":
-                            appendMapValue(recordValues, "publisher",dataNodes.item(x).getTextContent());
+                            appendMapValue(recordValues, RECORD_PUBLISHER,dataNodes.item(x).getTextContent());
                         break;
                         //IIRC, years will have multiple fields, but we're only interested in the
                         // first value. The other fields are values like '.'
                         case "c":
-                            if (!recordValues.containsKey("year") || (recordValues.get("year") == null
-                                || recordValues.get("year").length() == 0)) {
+                            if (!recordValues.containsKey(RECORD_YEAR) || (recordValues.get(RECORD_YEAR) == null
+                                || recordValues.get(RECORD_YEAR).length() == 0)) {
 
-                                addMapValue(recordValues,"year", dataNodes.item(x).getTextContent());
+                                addMapValue(recordValues,RECORD_YEAR, dataNodes.item(x).getTextContent());
                             }
                         break;
                     }
@@ -162,26 +170,26 @@ public class Marc21Xml  {
             case "260":
                 childCount = dataNodes.getLength();
                 for (int x = 0; x < childCount; x++) {
-                    switch (dataNodes.item(x).getAttributes().getNamedItem("code").getTextContent()) {
+                    switch (dataNodes.item(x).getAttributes().getNamedItem(RECORD_CODE).getTextContent()) {
                         case "a":
-                            appendMapValue(recordBackupValues, "place", dataNodes.item(x).getTextContent());
+                            appendMapValue(recordBackupValues, RECORD_PLACE, dataNodes.item(x).getTextContent());
                         break;
                         case "b":
-                            appendMapValue(recordBackupValues, "publisher", dataNodes.item(x).getTextContent());
+                            appendMapValue(recordBackupValues, RECORD_PUBLISHER, dataNodes.item(x).getTextContent());
                         break;
                         case "c":
-                            addMapValue(recordBackupValues,"year", recordBackupValues.get("year")
+                            addMapValue(recordBackupValues,RECORD_YEAR, recordBackupValues.get(RECORD_YEAR)
                                 + dataNodes.item(x).getTextContent());
                         break;
                     }
                 }
             break;
             case "250":
-                addMapValue(recordValues, "edition", node.getChildNodes().item(0).getTextContent());
+                addMapValue(recordValues, RECORD_EDITION, node.getChildNodes().item(0).getTextContent());
             break;
             case "035":
-                if (dataNodes.item(0).getAttributes().getNamedItem("code").getTextContent().equals("a")) {
-                    addMapValue(recordValues, "oclc", node.getChildNodes().item(0).getTextContent());
+                if (dataNodes.item(0).getAttributes().getNamedItem(RECORD_CODE).getTextContent().equals("a")) {
+                    addMapValue(recordValues, RECORD_OCLC, node.getChildNodes().item(0).getTextContent());
                 }
             break;
         }
@@ -204,17 +212,29 @@ public class Marc21Xml  {
     }
 
     /**
-     * Build the core holding.
+     * Build the core holding, when a prefix is not needed.
      *
      * @param holdingNode
      * @return
      *   A map of the build holding values.
      */
     public static Map<String, String> buildCoreHolding(Node holdingNode) {
+        return buildCoreHolding("", holdingNode);
+    }
+
+    /**
+     * Build the core holding, when a prefix may be needed.
+     *
+     * @param prefix
+     * @param holdingNode
+     * @return
+     *   A map of the build holding values.
+     */
+    public static Map<String, String> buildCoreHolding(String prefix, Node holdingNode) {
         Map<String, String> holdingValues = new HashMap<String,String>();
 
         NodeList childNodes = holdingNode.getChildNodes();
-        addMapValue(holdingValues, "mfhd", childNodes.item(0).getChildNodes().item(1).getTextContent());
+        addMapValue(holdingValues, RECORD_MFHD, childNodes.item(0).getChildNodes().item(1).getTextContent());
 
         //the fallbackLocationCode is a holding level value that will be needed if an item has no location
         String fallbackLocationCode = "";
@@ -229,18 +249,18 @@ public class Marc21Xml  {
             Node marcRecordNode = marcRecordNodes.item(j);
             NodeList subfieldNodes = marcRecordNode.getChildNodes();
             int subfieldCount = subfieldNodes.getLength();
-            if (marcRecordNode.getNodeName().contentEquals("datafield")
-                && marcRecordNode.getAttributes().getNamedItem("tag") != null
-                && marcRecordNode.getAttributes().getNamedItem("tag").getTextContent().equals("852")) {
+            if (marcRecordNode.getNodeName().equalsIgnoreCase(prefix + NODE_DATA_FIELD)
+                && marcRecordNode.getAttributes().getNamedItem(TAG) != null
+                && marcRecordNode.getAttributes().getNamedItem(TAG).getTextContent().equals("852")) {
 
                 for (int k = 0; k < subfieldCount; k++) {
                     Node subfieldNode = subfieldNodes.item(k);
-                    if (subfieldNode.getAttributes().getNamedItem("code") != null) {
-                        if (subfieldNode.getAttributes().getNamedItem("code").getTextContent().equals("b")) {
+                    if (subfieldNode.getAttributes().getNamedItem(RECORD_CODE) != null) {
+                        if (subfieldNode.getAttributes().getNamedItem(RECORD_CODE).getTextContent().equals("b")) {
                             fallbackLocationCode = subfieldNode.getTextContent();
                         //callNumber needs to be built up from multiple subfields
-                        } else if (subfieldNode.getAttributes().getNamedItem("code").getTextContent().equals("h")
-                            || subfieldNode.getAttributes().getNamedItem("code").getTextContent().equals("i") ) {
+                        } else if (subfieldNode.getAttributes().getNamedItem(RECORD_CODE).getTextContent().equals("h")
+                            || subfieldNode.getAttributes().getNamedItem(RECORD_CODE).getTextContent().equals("i") ) {
                             callNumber += subfieldNode.getTextContent();
                         }
                     }
@@ -263,9 +283,9 @@ public class Marc21Xml  {
             }
         }
 
-        addMapValue(holdingValues,"fallbackLocationCode", fallbackLocationCode);
-        addMapValue(holdingValues,"callNumber", callNumber);
-        addMapValue(holdingValues,"validLargeVolume",validLargeVolume.toString());
+        addMapValue(holdingValues, RECORD_FALLBACK_LOCATION_CODE, fallbackLocationCode);
+        addMapValue(holdingValues, RECORD_CALL_NUMBER, callNumber);
+        addMapValue(holdingValues, RECORD_VALID_LARGE_VOLUME, validLargeVolume.toString());
         return holdingValues;
     }
 
@@ -287,19 +307,19 @@ public class Marc21Xml  {
         Map<String, String> itemData = new HashMap<String, String>();
 
         for (int l = 0; l < itemDataCount; l++) {
-            if (itemDataNode.item(l).getAttributes().getNamedItem("code") != null) {
-                itemData.put(itemDataNode.item(l).getAttributes().getNamedItem("name").getTextContent()
-                    + "Code", itemDataNode.item(l).getAttributes().getNamedItem("code").getTextContent());
+            if (itemDataNode.item(l).getAttributes().getNamedItem(RECORD_CODE) != null) {
+                itemData.put(itemDataNode.item(l).getAttributes().getNamedItem(RECORD_NAME).getTextContent()
+                    + RECORD_CODE, itemDataNode.item(l).getAttributes().getNamedItem(RECORD_CODE).getTextContent());
 
-                logger.debug(itemDataNode.item(l).getAttributes().getNamedItem("code").getTextContent()
-                    + "Code", itemDataNode.item(l).getAttributes().getNamedItem("code").getTextContent());
+                logger.debug(itemDataNode.item(l).getAttributes().getNamedItem(RECORD_CODE).getTextContent()
+                    + RECORD_CODE, itemDataNode.item(l).getAttributes().getNamedItem(RECORD_CODE).getTextContent());
             }
 
-            itemData.put(itemDataNode.item(l).getAttributes().getNamedItem("name").getTextContent(),
+            itemData.put(itemDataNode.item(l).getAttributes().getNamedItem(RECORD_NAME).getTextContent(),
                 itemDataNode.item(l).getTextContent());
 
-            logger.debug(itemDataNode.item(l).getAttributes().getNamedItem("name").getTextContent(),
-                itemDataNode.item(l).getAttributes().getNamedItem("name").getTextContent());
+            logger.debug(itemDataNode.item(l).getAttributes().getNamedItem(RECORD_NAME).getTextContent(),
+                itemDataNode.item(l).getAttributes().getNamedItem(RECORD_NAME).getTextContent());
         }
 
         return itemData;

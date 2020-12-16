@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -31,7 +30,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.client.RestTemplate;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -41,14 +40,13 @@ import org.xml.sax.SAXException;
 
 import edu.tamu.app.model.CatalogHolding;
 import edu.tamu.app.utility.Marc21Xml;
-import edu.tamu.weaver.utility.HttpUtility;
 
 class FolioCatalogService extends AbstractCatalogService {
-    private static final String VERB_GET_RECORD = "getRecord";
+    private static final String VERB_GET_RECORD = "GetRecord";
     private static final String METADATA_PREFIX = "marc21_withholdings";
     private static final String ERROR_ATTR_CODE = "code";
 
-    private static final String NODE_APIKEY = "apikey";
+    private static final String NODE_PREFIX = "marc:";
     private static final String NODE_CONTROL_FIELD = "controlfield";
     private static final String NODE_DATA_FIELD = "datafield";
     private static final String NODE_ERROR = "error";
@@ -56,24 +54,25 @@ class FolioCatalogService extends AbstractCatalogService {
     private static final String NODE_LEADER = "leader";
     private static final String NODE_MARC_RECORD_LEADER = "marcRecordLeader";
     private static final String NODE_METADATA = "metadata";
-    private static final String NODE_OAI = "oai:folio";
-    private static final String NODE_OAI_DC = "oai_dc:dc";
+    private static final String NODE_OAI = "oai";
     private static final String NODE_RECORD = "record";
-    private static final String NODE_REPOSITORY_BASE_URL = "repositoryBaseUrl";
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    @Value("${app.http.timeout}")
-    private int httpTimeout;
+    private RestTemplate restTemplate;
 
-    @Override
-    public List<CatalogHolding> getHoldingsByBibId(String bibId) {
-        return requestHoldings(bibId, null);
+    public FolioCatalogService(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
     }
 
     @Override
-    public CatalogHolding getHolding(String bibId, String holdingId) {
-        List<CatalogHolding> holdings = requestHoldings(bibId, holdingId);
+    public List<CatalogHolding> getHoldingsByBibId(String instanceId) {
+        return requestHoldings(instanceId, null);
+    }
+
+    @Override
+    public CatalogHolding getHolding(String instanceId, String holdingId) {
+        List<CatalogHolding> holdings = requestHoldings(instanceId, holdingId);
 
         if (holdings.size() > 0) {
             return holdings.get(0);
@@ -82,27 +81,28 @@ class FolioCatalogService extends AbstractCatalogService {
         return null;
     }
 
-    private String httpRequest(String bibId) throws IOException {
-        String apiKey = getAuthentication().get(NODE_APIKEY);
-        String repositoryBaseUrl = getAuthentication().get(NODE_REPOSITORY_BASE_URL);
+    private String httpRequest(String instanceId) throws IOException {
+        Map<String, String> authentication = getAuthentication();
+        String apiKey = authentication.get(CatalogServiceFactory.FIELD_APIKEY);
+        String repositoryBaseUrl = authentication.get(CatalogServiceFactory.FIELD_REPOSITORY_BASE_URL);
+        String tenant = authentication.get(CatalogServiceFactory.FIELD_TENANT);
 
-        String id = String.format("%s:%s/%s", NODE_OAI, repositoryBaseUrl, bibId);
-        String url = "/oai?verb=%s&metadataPrefix=%s&identifier=%s&apikey=%s";
-        String path = String.format(url, VERB_GET_RECORD, METADATA_PREFIX, id, apiKey);
+        String identifier = String.format("%s:%s:%s/%s", NODE_OAI, repositoryBaseUrl, tenant, instanceId);
+        String queryString = String.format("verb=%s&metadataPrefix=%s&apikey=%s&identifier=%s",
+          VERB_GET_RECORD, METADATA_PREFIX, apiKey, identifier);
 
-        logger.debug("Asking for holdings from: " + getAPIBase() + path);
+        String url = String.format("%s?%s", getAPIBase(), queryString);
 
-        return HttpUtility.makeHttpRequest(getAPIBase() + path, "GET",
-            Optional.empty(), Optional.empty(), httpTimeout);
+        logger.debug("Asking for holdings from: " + url);
+
+        return restTemplate.getForObject(url, String.class);
     }
 
-    private List<CatalogHolding> requestHoldings(String bibId, String holdingId) {
+    private List<CatalogHolding> requestHoldings(String instanceId, String holdingId) {
         List<CatalogHolding> holdings = new ArrayList<>();
 
-        // TODO: handle response codes: 200, 400, 404, 422?
-
         try {
-            String result = httpRequest(bibId);
+            String result = httpRequest(instanceId);
 
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -133,7 +133,7 @@ class FolioCatalogService extends AbstractCatalogService {
                 NodeList recordNodes = verbNodes.item(0).getChildNodes();
 
                 for (int i = 0; i < recordNodes.getLength(); i++) {
-                    if (recordNodes.item(i).getNodeName().equalsIgnoreCase(NODE_RECORD)) {
+                    if (nodeNameMatches(recordNodes.item(i).getNodeName(), NODE_RECORD)) {
                         Node metadataNode = Marc21Xml.getFirstNamedChildNode(recordNodes.item(i), NODE_METADATA);
                         List<CatalogHolding> recordHoldings = processMetadata(metadataNode);
 
@@ -163,19 +163,18 @@ class FolioCatalogService extends AbstractCatalogService {
     }
 
     private List<CatalogHolding> processMetadata(Node metadataNode) {
-        if (metadataNode == null) {
-            return new ArrayList<CatalogHolding>();
+
+        if (metadataNode != null) {
+            NodeList childNodes = metadataNode.getChildNodes();
+
+            for (int i = 0; i < childNodes.getLength(); i++) {
+                if (nodeNameMatches(childNodes.item(i).getNodeName(), NODE_RECORD)) {
+                    return processMarc(childNodes.item(i).getChildNodes());
+                }
+            }
         }
 
-        return processOai(Marc21Xml.getFirstNamedChildNode(metadataNode, NODE_OAI_DC));
-    }
-
-    private List<CatalogHolding> processOai(Node oaiNode) {
-        if (oaiNode == null || !oaiNode.hasChildNodes()) {
-            return new ArrayList<CatalogHolding>();
-        }
-
-        return processMarc(oaiNode.getChildNodes());
+        return new ArrayList<CatalogHolding>();
     }
 
     private List<CatalogHolding> processMarc(NodeList marcList) {
@@ -188,7 +187,7 @@ class FolioCatalogService extends AbstractCatalogService {
         for (int i = 0; i < marcList.getLength(); i++) {
             Node node = marcList.item(i);
 
-            if (node.getNodeName().equalsIgnoreCase(NODE_LEADER)) {
+            if (nodeNameMatches(node.getNodeName(), NODE_LEADER)) {
                 Marc21Xml.addMapValue(recordValues, NODE_MARC_RECORD_LEADER, node.getTextContent());
                 break;
             }
@@ -197,7 +196,7 @@ class FolioCatalogService extends AbstractCatalogService {
         for (int i = 0; i < marcList.getLength(); i++) {
             Node node = marcList.item(i);
 
-            if (node.getNodeName().equalsIgnoreCase(NODE_CONTROL_FIELD)) {
+            if (nodeNameMatches(node.getNodeName(), NODE_CONTROL_FIELD)) {
                 Marc21Xml.addControlFieldRecord(node, recordValues);
             }
         }
@@ -205,10 +204,10 @@ class FolioCatalogService extends AbstractCatalogService {
         for (int i = 0; i < marcList.getLength(); i++) {
             Node node = marcList.item(i);
 
-            if (node.getNodeName().equalsIgnoreCase(NODE_DATA_FIELD)) {
+            if (nodeNameMatches(node.getNodeName(), NODE_DATA_FIELD)) {
                 Marc21Xml.addDataFieldRecord(node, recordValues, recordBackupValues);
             }
-            else if (node.getNodeName().equalsIgnoreCase(NODE_HOLDING)) {
+            else if (nodeNameMatches(node.getNodeName(), NODE_HOLDING)) {
                 holdingNodes.add(node);
             }
         }
@@ -222,7 +221,7 @@ class FolioCatalogService extends AbstractCatalogService {
             Node holdingNode = holdingNodes.get(i);
 
             logger.debug("Current Holding: " + holdingNode.getAttributes().getNamedItem("href").getTextContent());
-            Map<String, String> holdingValues = Marc21Xml.buildCoreHolding(holdingNode);
+            Map<String, String> holdingValues = Marc21Xml.buildCoreHolding(NODE_PREFIX, holdingNode);
 
             logger.debug("MarcRecordLeader: " + recordValues.get(RECORD_MARC_RECORD_LEADER));
             logger.debug("MFHD: " + holdingValues.get(RECORD_MFHD));
@@ -256,6 +255,13 @@ class FolioCatalogService extends AbstractCatalogService {
         }
 
         return holdings;
+    }
+
+    /**
+     * Attempt to (case-insensitively) match the tag name (nodeName) against the desired match with the marc prefix.
+     */
+    private boolean nodeNameMatches(String nodeName, String matchName) {
+      return nodeName.equalsIgnoreCase(NODE_PREFIX + matchName);
     }
 
 }
