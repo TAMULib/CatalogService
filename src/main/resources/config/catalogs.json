@@ -24,7 +24,7 @@
       "protocol": "https",
       "sidPrefix": "",
       "authentication": {
-        "apikey": "",
+        "apiKey": "",
         "repositoryBaseUrl": "folio-edge.library.tamu.edu",
         "tenant": ""
       }
