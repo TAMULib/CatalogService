@@ -111,11 +111,11 @@ class FolioCatalogService extends AbstractCatalogService {
 
             doc.getDocumentElement().normalize();
 
-            NodeList nodes = doc.getElementsByTagName(NODE_ERROR);
+            NodeList errorNodes = doc.getElementsByTagName(NODE_ERROR);
 
             // TODO: this potentially has one or more errors, be sure to determine how to handle the "or more" part.
-            if (nodes.getLength() > 0) {
-                Node node = nodes.item(0);
+            if (errorNodes.getLength() > 0) {
+                Node node = errorNodes.item(0);
                 Node code = node.getAttributes().getNamedItem(ERROR_ATTR_CODE);
 
                 String codeValue = code == null ? "" : code.getTextContent();
@@ -133,20 +133,18 @@ class FolioCatalogService extends AbstractCatalogService {
                 NodeList recordNodes = verbNodes.item(0).getChildNodes();
 
                 for (int i = 0; i < recordNodes.getLength(); i++) {
-                    if (nodeNameMatches(recordNodes.item(i).getNodeName(), NODE_RECORD)) {
-                        Node metadataNode = Marc21Xml.getFirstNamedChildNode(recordNodes.item(i), NODE_METADATA);
-                        List<CatalogHolding> recordHoldings = processMetadata(metadataNode);
+                    Node metadataNode = Marc21Xml.getFirstNamedChildNode(recordNodes.item(i), NODE_METADATA);
+                    List<CatalogHolding> recordHoldings = processMetadata(metadataNode);
 
-                        if (recordHoldings.size() > 0) {
-                            if (holdingId == null) {
-                                holdings.addAll(recordHoldings);
-                            }
-                            else {
-                                for (int j = 0; j < recordHoldings.size(); j++) {
-                                    if (recordHoldings.get(j).getMfhd().equalsIgnoreCase(holdingId)) {
-                                        holdings.add(recordHoldings.get(j));
-                                        break;
-                                    }
+                    if (recordHoldings.size() > 0) {
+                        if (holdingId == null) {
+                            holdings.addAll(recordHoldings);
+                        }
+                        else {
+                            for (int j = 0; j < recordHoldings.size(); j++) {
+                                if (recordHoldings.get(j).getMfhd().equalsIgnoreCase(holdingId)) {
+                                    holdings.add(recordHoldings.get(j));
+                                    break;
                                 }
                             }
                         }
@@ -205,10 +203,12 @@ class FolioCatalogService extends AbstractCatalogService {
             Node node = marcList.item(i);
 
             if (nodeNameMatches(node.getNodeName(), NODE_DATA_FIELD)) {
-                Marc21Xml.addDataFieldRecord(node, recordValues, recordBackupValues);
-            }
-            else if (nodeNameMatches(node.getNodeName(), NODE_HOLDING)) {
-                holdingNodes.add(node);
+
+              if (Marc21Xml.isHoldingsData(node)) {
+                  holdingNodes.add(node);
+              }
+
+              Marc21Xml.addDataFieldRecord(node, recordValues, recordBackupValues);
             }
         }
 
@@ -220,7 +220,6 @@ class FolioCatalogService extends AbstractCatalogService {
         for (int i = 0; i < holdingNodes.size(); i++) {
             Node holdingNode = holdingNodes.get(i);
 
-            logger.debug("Current Holding: " + holdingNode.getAttributes().getNamedItem("href").getTextContent());
             Map<String, String> holdingValues = Marc21Xml.buildCoreHolding(NODE_PREFIX, holdingNode);
 
             logger.debug("MarcRecordLeader: " + recordValues.get(RECORD_MARC_RECORD_LEADER));

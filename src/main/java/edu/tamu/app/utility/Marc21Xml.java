@@ -148,10 +148,10 @@ public class Marc21Xml  {
                 for (int x=0;x<childCount;x++) {
                     switch (dataNodes.item(x).getAttributes().getNamedItem(RECORD_CODE).getTextContent()) {
                         case "a":
-                            appendMapValue(recordValues, RECORD_PLACE,dataNodes.item(x).getTextContent());
+                            appendMapValue(recordValues, RECORD_PLACE, dataNodes.item(x).getTextContent());
                         break;
                         case "b":
-                            appendMapValue(recordValues, RECORD_PUBLISHER,dataNodes.item(x).getTextContent());
+                            appendMapValue(recordValues, RECORD_PUBLISHER, dataNodes.item(x).getTextContent());
                         break;
                         //IIRC, years will have multiple fields, but we're only interested in the
                         // first value. The other fields are values like '.'
@@ -234,7 +234,13 @@ public class Marc21Xml  {
         Map<String, String> holdingValues = new HashMap<String,String>();
 
         NodeList childNodes = holdingNode.getChildNodes();
-        addMapValue(holdingValues, RECORD_MFHD, childNodes.item(0).getChildNodes().item(1).getTextContent());
+
+        String mfhd = "";
+        if (childNodes.getLength() > 0 && childNodes.item(0).getChildNodes().getLength() > 1) {
+          mfhd = childNodes.item(0).getChildNodes().item(1).getTextContent();
+        }
+
+        addMapValue(holdingValues, RECORD_MFHD, mfhd);
 
         //the fallbackLocationCode is a holding level value that will be needed if an item has no location
         String fallbackLocationCode = "";
@@ -250,8 +256,7 @@ public class Marc21Xml  {
             NodeList subfieldNodes = marcRecordNode.getChildNodes();
             int subfieldCount = subfieldNodes.getLength();
             if (marcRecordNode.getNodeName().equalsIgnoreCase(prefix + NODE_DATA_FIELD)
-                && marcRecordNode.getAttributes().getNamedItem(TAG) != null
-                && marcRecordNode.getAttributes().getNamedItem(TAG).getTextContent().equals("852")) {
+                && isNodeHoldingsLocation(marcRecordNode)) {
 
                 for (int k = 0; k < subfieldCount; k++) {
                     Node subfieldNode = subfieldNodes.item(k);
@@ -374,4 +379,61 @@ public class Marc21Xml  {
         return null;
     }
 
+    /**
+     * Check if the node represents a holdings location.
+     */
+    public static boolean isNodeHoldingsLocation(Node node) {
+        if (node.getAttributes().getNamedItem(TAG) == null) {
+            return false;
+        }
+
+        String tag = node.getAttributes().getNamedItem(TAG).getTextContent();
+        return tag.equals("852") || tag.equals("952");
+    }
+
+    /**
+     * Check if the node represents holdings data.
+     */
+    public static boolean isHoldingsData(Node node) {
+        if (node.getAttributes().getNamedItem(TAG) == null) {
+          return false;
+        }
+
+        String tag = node.getAttributes().getNamedItem(TAG).getTextContent();
+
+        int code = 0;
+
+        try {
+            code = Integer.valueOf(tag);
+        }
+        catch (NumberFormatException e) {
+            return false;
+        }
+
+        if (code > 851 && code < 856) {
+          return true;
+        }
+
+        if (code > 851 && code < 856) {
+          return true;
+        }
+
+        if (code > 862 && code < 869) {
+          return true;
+        }
+
+        if (code > 875 && code < 879) {
+          return true;
+        }
+
+        switch (code) {
+            case 880:
+            case 883:
+            case 884:
+            case 952:
+                return true;
+        }
+
+        return false;
+    }
 }
