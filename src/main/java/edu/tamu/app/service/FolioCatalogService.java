@@ -50,7 +50,6 @@ class FolioCatalogService extends AbstractCatalogService {
     private static final String NODE_CONTROL_FIELD = "controlfield";
     private static final String NODE_DATA_FIELD = "datafield";
     private static final String NODE_ERROR = "error";
-    private static final String NODE_HOLDING= "holding";
     private static final String NODE_LEADER = "leader";
     private static final String NODE_MARC_RECORD_LEADER = "marcRecordLeader";
     private static final String NODE_METADATA = "metadata";
@@ -134,7 +133,7 @@ class FolioCatalogService extends AbstractCatalogService {
 
                 for (int i = 0; i < recordNodes.getLength(); i++) {
                     Node metadataNode = Marc21Xml.getFirstNamedChildNode(recordNodes.item(i), NODE_METADATA);
-                    List<CatalogHolding> recordHoldings = processMetadata(metadataNode);
+                    List<CatalogHolding> recordHoldings = processMetadata(instanceId, metadataNode);
 
                     if (recordHoldings.size() > 0) {
                         if (holdingId == null) {
@@ -160,27 +159,28 @@ class FolioCatalogService extends AbstractCatalogService {
         return holdings;
     }
 
-    private List<CatalogHolding> processMetadata(Node metadataNode) {
+    private List<CatalogHolding> processMetadata(String instanceId, Node metadataNode) {
+        List<CatalogHolding> holdings = new ArrayList<CatalogHolding>();
 
         if (metadataNode != null) {
             NodeList childNodes = metadataNode.getChildNodes();
 
             for (int i = 0; i < childNodes.getLength(); i++) {
                 if (nodeNameMatches(childNodes.item(i).getNodeName(), NODE_RECORD)) {
-                    return processMarc(childNodes.item(i).getChildNodes());
+                    holdings.add(processMarcRecord(instanceId, childNodes.item(i)));
                 }
             }
         }
 
-        return new ArrayList<CatalogHolding>();
+        return holdings;
     }
 
-    private List<CatalogHolding> processMarc(NodeList marcList) {
-        List<CatalogHolding> holdings = new ArrayList<>();
-
+    private CatalogHolding processMarcRecord(String instanceId, Node marcRecord) {
         Map<String, String> recordValues = new HashMap<>();
         Map<String, String> recordBackupValues = new HashMap<>();
-        List<Node> holdingNodes = new ArrayList<>();
+
+        NodeList marcList = marcRecord.getChildNodes();
+        int marcListCount = marcList.getLength();
 
         for (int i = 0; i < marcList.getLength(); i++) {
             Node node = marcList.item(i);
@@ -203,11 +203,6 @@ class FolioCatalogService extends AbstractCatalogService {
             Node node = marcList.item(i);
 
             if (nodeNameMatches(node.getNodeName(), NODE_DATA_FIELD)) {
-
-              if (Marc21Xml.isHoldingsData(node)) {
-                  holdingNodes.add(node);
-              }
-
               Marc21Xml.addDataFieldRecord(node, recordValues, recordBackupValues);
             }
         }
@@ -215,45 +210,41 @@ class FolioCatalogService extends AbstractCatalogService {
         //apply backup values if needed and available
         Marc21Xml.applyBackupRecordValues(recordValues, recordBackupValues);
 
-        logger.debug("\n\nThe Holding Count: " + holdingNodes.size());
+        // TODO: the current implementation of buildCoreHolding() expects a slightly different nesting structure in the XML.
+        Map<String, String> holdingValues = Marc21Xml.buildCoreHolding(NODE_PREFIX, marcRecord);
 
-        for (int i = 0; i < holdingNodes.size(); i++) {
-            Node holdingNode = holdingNodes.get(i);
+        logger.debug("MarcRecordLeader: " + recordValues.get(RECORD_MARC_RECORD_LEADER));
+        logger.debug("MFHD: " + holdingValues.get(RECORD_MFHD));
+        logger.debug("ISBN: " + recordValues.get(RECORD_ISBN));
+        logger.debug("Fallback Location: " + holdingValues.get(RECORD_FALLBACK_LOCATION_CODE));
+        logger.debug("Call Number: " + holdingValues.get(RECORD_CALL_NUMBER));
 
-            Map<String, String> holdingValues = Marc21Xml.buildCoreHolding(NODE_PREFIX, holdingNode);
+        Boolean validLargeVolume = Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME));
 
-            logger.debug("MarcRecordLeader: " + recordValues.get(RECORD_MARC_RECORD_LEADER));
-            logger.debug("MFHD: " + holdingValues.get(RECORD_MFHD));
-            logger.debug("ISBN: " + recordValues.get(RECORD_ISBN));
-            logger.debug("Fallback Location: " + holdingValues.get(RECORD_FALLBACK_LOCATION_CODE));
-            logger.debug("Call Number: " + holdingValues.get(RECORD_CALL_NUMBER));
+        logger.debug("Valid Large Volume: "+ validLargeVolume);
 
-            Boolean validLargeVolume = Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME));
+        Map<String, Map<String, String>> catalogItems = new HashMap<String, Map<String, String>>();
 
-            logger.debug("Valid Large Volume: "+ validLargeVolume);
+        for (int i = 0; i < marcListCount; i++) {
+            if (nodeNameMatches(marcList.item(i).getNodeName().toString(), NODE_DATA_FIELD) &&
+                Marc21Xml.attributeTagMatches(marcList.item(i), "952")) {
 
-            Map<String, Map<String, String>> catalogItems = new HashMap<String, Map<String, String>>();
-
-            NodeList childNodes = holdingNode.getChildNodes();
-            int childCount = childNodes.getLength();
-
-            for (int j = 0; j < childCount; j++) {
-                if (childNodes.item(j) != null && childNodes.item(j).getNodeName() == "item") {
-                    catalogItems.put(childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(), Marc21Xml.buildCoreItem(childNodes.item(j)));
+                NodeList childNodes = marcList.item(i).getChildNodes();
+                for (int j = 0; j < childNodes.getLength(); j++) {
+                    if (Marc21Xml.attributeCodeMatches(childNodes.item(j), "m")) {
+                        buildCoreItem(instanceId, childNodes.item(j).getTextContent(), childNodes, catalogItems);
+                        break;
+                    }
                 }
             }
-
-            holdings.add(new CatalogHolding(recordValues.get(RECORD_MARC_RECORD_LEADER), holdingValues.get(RECORD_MFHD),
-                recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
-                recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
-                recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
-                holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC), recordValues.get(RECORD_RECORD_ID),
-                holdingValues.get(RECORD_CALL_NUMBER), validLargeVolume, new HashMap<String, Map<String, String>>(catalogItems)));
-
-            catalogItems.clear();
         }
 
-        return holdings;
+        return new CatalogHolding(recordValues.get(RECORD_MARC_RECORD_LEADER), holdingValues.get(RECORD_MFHD),
+            recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
+            recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
+            recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
+            holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC), recordValues.get(RECORD_RECORD_ID),
+            holdingValues.get(RECORD_CALL_NUMBER), validLargeVolume, new HashMap<String, Map<String, String>>(catalogItems));
     }
 
     /**
@@ -261,6 +252,24 @@ class FolioCatalogService extends AbstractCatalogService {
      */
     private boolean nodeNameMatches(String nodeName, String matchName) {
       return nodeName.equalsIgnoreCase(NODE_PREFIX + matchName);
+    }
+
+    /**
+     * Build the core item, based on the current information we can get from folio.
+     */
+    private void buildCoreItem(String instanceId, String barcode, NodeList nodes, Map<String, Map<String, String>> catalogItems) {
+        Map<String, String> itemData = new HashMap<String, String>();
+
+        itemData.put("bibId", instanceId);
+        itemData.put("itemBarcode", barcode);
+
+        for (int i = 0; i < nodes.getLength(); i++) {
+            if (Marc21Xml.attributeCodeMatches(nodes.item(i), "c")) {
+                itemData.put("location", nodes.item(i).getTextContent());
+            }
+        }
+
+        catalogItems.put(barcode, itemData);
     }
 
 }

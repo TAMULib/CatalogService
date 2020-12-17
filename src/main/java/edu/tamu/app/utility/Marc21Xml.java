@@ -13,6 +13,7 @@ import org.w3c.dom.NodeList;
 
 public class Marc21Xml  {
     public static final String TAG = "tag";
+    public static final String CODE = "code";
 
     public static final String RECORD_AUTHOR = "author";
     public static final String RECORD_BOOK = "book";
@@ -256,7 +257,7 @@ public class Marc21Xml  {
             NodeList subfieldNodes = marcRecordNode.getChildNodes();
             int subfieldCount = subfieldNodes.getLength();
             if (marcRecordNode.getNodeName().equalsIgnoreCase(prefix + NODE_DATA_FIELD)
-                && isNodeHoldingsLocation(marcRecordNode)) {
+                && attributeTagMatches(marcRecordNode, "852")) {
 
                 for (int k = 0; k < subfieldCount; k++) {
                     Node subfieldNode = subfieldNodes.item(k);
@@ -380,60 +381,24 @@ public class Marc21Xml  {
     }
 
     /**
-     * Check if the node represents a holdings location.
+     * Check if the attribute on the node called "tag" exists and matches the given string.
      */
-    public static boolean isNodeHoldingsLocation(Node node) {
+    public static boolean attributeTagMatches(Node node, String match) {
         if (node.getAttributes().getNamedItem(TAG) == null) {
             return false;
         }
 
-        String tag = node.getAttributes().getNamedItem(TAG).getTextContent();
-        return tag.equals("852") || tag.equals("952");
+        return node.getAttributes().getNamedItem(TAG).getTextContent().equals(match);
     }
 
     /**
-     * Check if the node represents holdings data.
+     * Check if the attribute on the node called "code" exists and matches the given string.
      */
-    public static boolean isHoldingsData(Node node) {
-        if (node.getAttributes().getNamedItem(TAG) == null) {
-          return false;
-        }
-
-        String tag = node.getAttributes().getNamedItem(TAG).getTextContent();
-
-        int code = 0;
-
-        try {
-            code = Integer.valueOf(tag);
-        }
-        catch (NumberFormatException e) {
+    public static boolean attributeCodeMatches(Node node, String match) {
+        if (node.getAttributes().getNamedItem(CODE) == null) {
             return false;
         }
 
-        if (code > 851 && code < 856) {
-          return true;
-        }
-
-        if (code > 851 && code < 856) {
-          return true;
-        }
-
-        if (code > 862 && code < 869) {
-          return true;
-        }
-
-        if (code > 875 && code < 879) {
-          return true;
-        }
-
-        switch (code) {
-            case 880:
-            case 883:
-            case 884:
-            case 952:
-                return true;
-        }
-
-        return false;
+        return node.getAttributes().getNamedItem(CODE).getTextContent().equals(match);
     }
 }
