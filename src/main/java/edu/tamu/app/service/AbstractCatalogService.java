@@ -118,9 +118,11 @@ public abstract class AbstractCatalogService implements CatalogService {
           builder.append(getPort());
         }
 
+        builder.append("/");
+
         if (StringUtils.isNotEmpty(getApp())) {
-          builder.append("/");
           builder.append(getApp());
+          builder.append("/");
         }
 
         return builder.toString();
