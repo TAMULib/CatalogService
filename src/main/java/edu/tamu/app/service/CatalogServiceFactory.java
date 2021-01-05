@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -26,11 +27,28 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class CatalogServiceFactory {
+    public static final String FIELD_CATALOGS = "catalogs";
+    public static final String FIELD_TYPE = "type";
+    public static final String FIELD_HOST = "host";
+    public static final String FIELD_PORT = "port";
+    public static final String FIELD_APP = "app";
+    public static final String FIELD_PROTOCOL = "protocol";
+    public static final String FIELD_SID_PREFIX = "sidPrefix";
+    public static final String FIELD_REPOSITORY_BASE_URL = "repositoryBaseUrl";
+    public static final String FIELD_APIKEY = "apiKey";
+    public static final String FIELD_AUTHENTICATION = "authentication";
+    public static final String FIELD_TENANT = "tenant";
+
+    public static final String TYPE_VOYAGER = "voyager";
+    public static final String TYPE_FOLIO = "folio";
 
     private Map<String, CatalogService> catalogServices = new HashMap<String, CatalogService>();
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private RestTemplate restTemplate;
 
     @Value("${catalogs.file.location:''}")
     private String catalogsFile;
@@ -65,18 +83,23 @@ public class CatalogServiceFactory {
                 e.printStackTrace();
             }
 
-            JsonNode newCatalog = catalogsJson.get("catalogs").get(name);
+            JsonNode newCatalog = catalogsJson.get(FIELD_CATALOGS).get(name);
             if (newCatalog != null) {
-                String host = newCatalog.get("host").asText();
-                String port = newCatalog.get("port").asText();
-                String app = newCatalog.get("app").asText();
-                String protocol = newCatalog.get("protocol").asText();
-                String sidPrefix = newCatalog.get("sidPrefix").asText();
+                String type = newCatalog.get(FIELD_TYPE).asText();
+                String host = newCatalog.get(FIELD_HOST).asText();
+                String port = newCatalog.get(FIELD_PORT).asText();
+                String app = newCatalog.get(FIELD_APP).asText();
+                String protocol = newCatalog.get(FIELD_PROTOCOL).asText();
+                String sidPrefix = newCatalog.get(FIELD_SID_PREFIX).asText();
 
-                switch (newCatalog.get("type").asText()) {
-                case "voyager":
+                switch (type) {
+                case TYPE_VOYAGER:
                     catalogService = new VoyagerCatalogService();
-                    catalogService.setType("voyager");
+                    catalogService.setType(type);
+                    break;
+                case TYPE_FOLIO:
+                    catalogService = buildFolio(newCatalog);
+                    catalogService.setType(type);
                     break;
                 }
 
@@ -87,6 +110,39 @@ public class CatalogServiceFactory {
                 catalogService.setSidPrefix(sidPrefix);
             }
         }
+
         return catalogService;
     }
+
+    private CatalogService buildFolio(JsonNode newCatalog) {
+        CatalogService catalogService = new FolioCatalogService(restTemplate);
+
+        Map<String, String> authentication = new HashMap<String, String>();
+
+        if (newCatalog.has(FIELD_AUTHENTICATION)) {
+            JsonNode fieldAuthentication = newCatalog.get(FIELD_AUTHENTICATION);
+
+            if (fieldAuthentication.has(FIELD_APIKEY)) {
+                authentication.put(FIELD_APIKEY, fieldAuthentication.get(FIELD_APIKEY).asText());
+            } else {
+                authentication.put(FIELD_APIKEY, "");
+            }
+
+            if (fieldAuthentication.has(FIELD_REPOSITORY_BASE_URL)) {
+                authentication.put(FIELD_REPOSITORY_BASE_URL, fieldAuthentication.get(FIELD_REPOSITORY_BASE_URL).asText());
+            } else {
+                authentication.put(FIELD_REPOSITORY_BASE_URL, "");
+            }
+
+            if (fieldAuthentication.has(FIELD_TENANT)) {
+                authentication.put(FIELD_TENANT, fieldAuthentication.get(FIELD_TENANT).asText());
+            } else {
+                authentication.put(FIELD_TENANT, "");
+            }
+        }
+
+        catalogService.setAuthentication(authentication);
+        return catalogService;
+    }
+
 }

@@ -1,19 +1,33 @@
-{"catalogs":{
-	"evans":
-		{"type":"voyager",
-		 "host":"surprise.tamu.edu",
-		 "port":7014,
-		 "app":"vxws",
-		 "protocol":"http",
-		 "sidPrefix":"libcat"
-		 },
-	"msl":
-		{"type":"voyager",
-		 "host":"surprise.tamu.edu",
-		 "port":7414,
-		 "app":"vxws",
-		 "protocol":"http",
-		 "sidPrefix":"chiron"
-		 }
-	}
+{
+  "catalogs": {
+    "evans": {
+      "type": "voyager",
+      "host": "surprise.tamu.edu",
+      "port": 7014,
+      "app": "vxws",
+      "protocol": "http",
+      "sidPrefix": "libcat"
+    },
+    "msl": {
+      "type": "voyager",
+      "host": "surprise.tamu.edu",
+      "port": 7414,
+      "app": "vxws",
+      "protocol": "http",
+      "sidPrefix": "chiron"
+    },
+    "folio": {
+      "type": "folio",
+      "host": "folio-edge.library.tamu.edu",
+      "port": "",
+      "app": "oai",
+      "protocol": "https",
+      "sidPrefix": "",
+      "authentication": {
+        "apiKey": "",
+        "repositoryBaseUrl": "folio-edge.library.tamu.edu",
+        "tenant": ""
+      }
+    }
+  }
 }

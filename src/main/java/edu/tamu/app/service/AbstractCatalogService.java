@@ -1,5 +1,9 @@
 package edu.tamu.app.service;
 
+import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
+
 import edu.tamu.weaver.utility.HttpUtility;
 
 /**
@@ -25,6 +29,8 @@ public abstract class AbstractCatalogService implements CatalogService {
     private String protocol;
 
     private String sidPrefix;
+
+    private Map<String, String> authentication;
 
     private HttpUtility httpUtility;
 
@@ -97,15 +103,49 @@ public abstract class AbstractCatalogService implements CatalogService {
     }
 
     protected String getAPIBase() {
-        return getProtocol() + "://" + getHost() + ":" + getPort() + "/" + getApp() + "/";
+        StringBuilder builder = new StringBuilder();
+
+        if (StringUtils.isNotEmpty(getProtocol())) {
+          builder.append(getProtocol());
+          builder.append(":");
+        }
+
+        builder.append("//");
+        builder.append(getHost());
+
+        if (StringUtils.isNotEmpty(getPort())) {
+          builder.append(":");
+          builder.append(getPort());
+        }
+
+        builder.append("/");
+
+        if (StringUtils.isNotEmpty(getApp())) {
+          builder.append(getApp());
+          builder.append("/");
+        }
+
+        return builder.toString();
     }
 
+    @Override
     public String getSidPrefix() {
         return sidPrefix;
     }
 
+    @Override
     public void setSidPrefix(String sidPrefix) {
         this.sidPrefix = sidPrefix;
+    }
+
+    @Override
+    public Map<String, String> getAuthentication() {
+        return authentication;
+    }
+
+    @Override
+    public void setAuthentication(Map<String, String> authentication) {
+        this.authentication = authentication;
     }
 
 }
