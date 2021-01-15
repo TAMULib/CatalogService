@@ -1,6 +1,7 @@
 package edu.tamu.app.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import edu.tamu.app.model.CatalogHolding;
 import edu.tamu.app.service.CatalogService;
@@ -57,51 +58,55 @@ public class MockCatalogService implements CatalogService {
     }
 
     @Override
-    public void setName(String name) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void setType(String type) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void setHost(String host) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void setPort(String port) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void setApp(String app) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void setProtocol(String protocol) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
     public String getSidPrefix() {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
+    public Map<String, String> getAuthentication() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void setName(String name) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void setType(String type) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void setHost(String host) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void setPort(String port) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void setApp(String app) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void setProtocol(String protocol) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
     public void setSidPrefix(String sidPrefix) {
         // TODO Auto-generated method stub
+    }
 
+    @Override
+    public void setAuthentication(Map<String, String> authentication) {
+        // TODO Auto-generated method stub
     }
 
 }

@@ -9,7 +9,6 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.mail.javamail.ConfigurableMimeFileTypeMap;
@@ -29,7 +28,6 @@ import edu.tamu.weaver.validation.resolver.WeaverValidatedModelMethodProcessor;
 @Configuration
 @EntityScan(basePackages = { "edu.tamu.app.model" })
 @EnableJpaRepositories(basePackages = { "edu.tamu.app.model.repo" })
-@PropertySource("classpath:buttons.properties")
 public class AppWebMvcConfig extends WebMvcConfigurerAdapter {
 
     @Value("${app.security.allow-access}")
