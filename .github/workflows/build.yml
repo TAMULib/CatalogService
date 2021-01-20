@@ -21,4 +21,11 @@ jobs:
           java-version: 1.8
 
       - name: "Maven Test"
-        run: mvn clean package
+        run: mvn clean test cobertura:cobertura jacoco:report coveralls:report -DdryRun=true
+
+      - name: "Send to Coveralls"
+        uses: MikeEdgar/github-action@raw_coverage_file
+        with:
+          github-token: ${{ secrets.github_token }}
+          path-to-file: './target/coveralls.json'
+          coverage-format: raw
