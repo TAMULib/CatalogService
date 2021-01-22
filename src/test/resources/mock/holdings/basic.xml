@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<basic>
+  <hasTag tag="">tag</hasTag>
+  <hasTag001 tag="001">tag 001</hasTag001>
+  <hasRecord tag="">record</hasRecord>
+  <hasRecord022a tag="022"><child code="a">record 022 a</child></hasRecord022a>
+  <hasRecord022b tag="022"><child code="b">record 022 b</child></hasRecord022b>
+  <hasRecord020a tag="020"><child code="a">record 020 a</child></hasRecord020a>
+  <hasRecord020b tag="020"><child code="b">record 020 b</child></hasRecord020b>
+  <hasRecord245one tag="245"><child>record 245 one</child></hasRecord245one>
+  <hasRecord245two tag="245"><child>record 245 one</child><child>record 245 two</child></hasRecord245two>
+  <hasRecord100 tag="100"><child code="a">record 100 a</child><child code="1">record 100 1</child></hasRecord100>
+  <hasRecord110 tag="110"><child code="a">record 110 a</child><child code="1">record 110 1</child></hasRecord110>
+  <hasRecord111 tag="111"><child code="a">record 111 a</child><child code="1">record 111 1</child></hasRecord111>
+  <hasRecord130 tag="130"><child code="a">record 130 a</child><child code="1">record 130 1</child></hasRecord130>
+  <hasRecord264 tag="264"><child code="a">record 264 a</child><child code="b">record 264 b</child><child code="c">record 264 c</child><child code="1">record 264 1</child></hasRecord264>
+  <hasRecord260 tag="260"><child code="a">record 260 a</child><child code="b">record 260 b</child><child code="c">record 260 c</child><child code="1">record 260 1</child></hasRecord260>
+  <hasRecord250 tag="250"><child code="a">record 250 a</child></hasRecord250>
+  <hasRecord035a tag="035"><child code="a">record 035 a</child></hasRecord035a>
+  <hasRecord035b tag="035"><child code="b">record 035 b</child></hasRecord035b>
+  <hasNamedChildren><first>first</first><second>second</second><first>another first</first></hasNamedChildren>
+  <hasNoChildNodes>no nodes</hasNoChildNodes>
+</basic>

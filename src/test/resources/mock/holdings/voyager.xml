@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+    <reply-text>ok</reply-text>
+    <reply-code>0</reply-code>
+    <holdings>
+        <institution id="LOCAL">
+            <instName>Texas A&amp;M University General Libraries Catalog</instName>
+            <holding href="http://surprise.tamu.edu/vxws/record/1234567/holdings/2081234">
+                <marcRecord>
+                    <leader>00302cx  a22001094  4500</leader>
+                    <controlfield tag="001">2086405</controlfield>
+                    <controlfield tag="004">1234567</controlfield>
+                    <controlfield tag="005">20021125102847.0</controlfield>
+                    <controlfield tag="008">0004240p    8   1001uu   0901128</controlfield>
+                    <datafield ind2=" " ind1=" " tag="583">
+                        <subfield code="a">bk relocated from bsc to stk per</subfield>
+                        <subfield code="h">WArant-Kasper</subfield>
+                        <subfield code="c">20021125</subfield>
+                        <subfield code="k">gstringf</subfield>
+                    </datafield>
+                    <datafield ind2=" " ind1=" " tag="583">
+                        <subfield code="a">bscreview</subfield>
+                        <subfield code="c">20000808</subfield>
+                    </datafield>
+                    <datafield ind2="0" ind1="0" tag="852">
+                        <subfield code="b">stk</subfield>
+                        <subfield code="h">PZ7.R79835</subfield>
+                        <subfield code="i">Ham 1999</subfield>
+                    </datafield>
+                    <datafield tag="954" ind1="" ind2="">
+                        <subfield code="a">LibCat: TAMU General Libraries</subfield>
+                    </datafield>
+                </marcRecord>
+                <item href="http://surprise.tamu.edu/vxws/record/1234567/items/2741234">
+                    <itemData id="32" name="permLocation" code="stk">Evans Library Stacks</itemData>
+                    <itemData id="0" name="tempLocation" />
+                    <itemData id="32" name="location" code="stk">Evans Library Stacks</itemData>
+                    <itemData name="callNumber">PZ7.R79835 Ham 1999</itemData>
+                    <itemData name="copy">c. 0</itemData>
+                    <itemData name="itemBarcode">A14826313371</itemData>
+                    <itemData name="enumeration" />
+                    <itemData name="chron" />
+                    <itemData name="year" />
+                    <itemData name="caption" />
+                    <itemData name="freeText" />
+                    <itemData name="typeCode">4</itemData>
+                    <itemData name="typeDesc">normal</itemData>
+                    <itemData name="tempType">0</itemData>
+                    <itemData name="itemStatus">Lost - 2020-09-30</itemData>
+                    <itemData name="spineLabel" />
+                    <itemData name="itemNote">1</itemData>
+                    <itemData name="onReserve">N</itemData>
+                </item>
+            </holding>
+            <holding href="http://surprise.tamu.edu/vxws/record/1234567/holdings/2093509">
+                <marcRecord>
+                    <leader>00183nx  a22000854  4500</leader>
+                    <controlfield tag="001">2093509</controlfield>
+                    <controlfield tag="004">1234567</controlfield>
+                    <controlfield tag="005">20000525100333.0</controlfield>
+                    <controlfield tag="008">0005252u    8   1001uu   0901128</controlfield>
+                    <datafield ind2="0" ind1="0" tag="852">
+                        <subfield code="b">curr</subfield>
+                        <subfield code="h">PZ7.R79835</subfield>
+                        <subfield code="i">Ham 1999</subfield>
+                    </datafield>
+                    <datafield tag="954" ind1="" ind2="">
+                        <subfield code="a">LibCat: TAMU General Libraries</subfield>
+                    </datafield>
+                </marcRecord>
+                <item href="http://surprise.tamu.edu/vxws/record/1234567/items/2711234">
+                    <itemData id="26" name="permLocation" code="curr">Curriculum Collection (Evans Library, 4th floor)</itemData>
+                    <itemData id="0" name="tempLocation" />
+                    <itemData id="26" name="location" code="curr">Curriculum Collection (Evans Library, 4th floor)</itemData>
+                    <itemData name="callNumber">PZ7.R79835 Ham 1999</itemData>
+                    <itemData name="copy">c. 0</itemData>
+                    <itemData name="itemBarcode">A14826185215</itemData>
+                    <itemData name="enumeration" />
+                    <itemData name="chron" />
+                    <itemData name="year" />
+                    <itemData name="caption" />
+                    <itemData name="freeText" />
+                    <itemData name="typeCode">12</itemData>
+                    <itemData name="typeDesc">curr</itemData>
+                    <itemData name="tempType">0</itemData>
+                    <itemData name="itemStatus">Charged - Due on 2021-02-14</itemData>
+                    <itemData name="spineLabel" />
+                    <itemData name="itemNote">0</itemData>
+                    <itemData name="onReserve">N</itemData>
+                </item>
+            </holding>
+            <holding href="http://surprise.tamu.edu/vxws/record/1234567/holdings/3091501">
+                <marcRecord>
+                    <leader>00191cx  a22000854  4500</leader>
+                    <controlfield tag="001">3091501</controlfield>
+                    <controlfield tag="004">1234567</controlfield>
+                    <controlfield tag="005">20140819174047.0</controlfield>
+                    <controlfield tag="008">0707192u    8   1001uueng0901128</controlfield>
+                    <datafield ind2=" " ind1="0" tag="852">
+                        <subfield code="b">cush,scif</subfield>
+                        <subfield code="h">PR6068.O93</subfield>
+                        <subfield code="i">H37615 1999</subfield>
+                    </datafield>
+                    <datafield tag="954" ind1="" ind2="">
+                        <subfield code="a">LibCat: TAMU General Libraries</subfield>
+                    </datafield>
+                </marcRecord>
+                <item href="http://surprise.tamu.edu/vxws/record/1234567/items/3671234">
+                    <itemData id="117" name="permLocation" code="cush,scif">Cushing Library/Science Fiction (Does not check out)</itemData>
+                    <itemData id="0" name="tempLocation" />
+                    <itemData id="117" name="location" code="cush,scif">Cushing Library/Science Fiction (Does not check out)</itemData>
+                    <itemData name="callNumber">PR6068.O93 H37615 1999</itemData>
+                    <itemData name="copy">c. 0</itemData>
+                    <itemData name="itemBarcode" />
+                    <itemData name="enumeration" />
+                    <itemData name="chron" />
+                    <itemData name="year" />
+                    <itemData name="caption" />
+                    <itemData name="freeText" />
+                    <itemData name="typeCode">1</itemData>
+                    <itemData name="typeDesc">non</itemData>
+                    <itemData name="tempType">0</itemData>
+                    <itemData name="itemStatus">Not Charged</itemData>
+                    <itemData name="spineLabel" />
+                    <itemData name="itemNote">0</itemData>
+                    <itemData name="onReserve">N</itemData>
+                </item>
+            </holding>
+        </institution>
+    </holdings>
+</response>

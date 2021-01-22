@@ -41,7 +41,7 @@ import org.xml.sax.SAXException;
 import edu.tamu.app.model.CatalogHolding;
 import edu.tamu.app.utility.Marc21Xml;
 
-class FolioCatalogService extends AbstractCatalogService {
+public class FolioCatalogService extends AbstractCatalogService {
     private static final String VERB_GET_RECORD = "GetRecord";
     private static final String METADATA_PREFIX = "marc21_withholdings";
     private static final String ERROR_ATTR_CODE = "code";
@@ -59,6 +59,10 @@ class FolioCatalogService extends AbstractCatalogService {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private RestTemplate restTemplate;
+
+    public FolioCatalogService() {
+        super();
+    }
 
     public FolioCatalogService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
