@@ -69,6 +69,9 @@ public class User extends AbstractWeaverUserDetails {
         setUsername(user.getUsername());
         setFirstName(user.getFirstName());
         setLastName(user.getLastName());
+        // TODO: these probably should be added.
+        //setEmail(user.getEmail());
+        //setNetid(user.getNetid());
         setRole(user.getRole());
     }
 
@@ -77,6 +80,9 @@ public class User extends AbstractWeaverUserDetails {
         setUsername(credentials.getUin());
         setFirstName(credentials.getFirstName());
         setLastName(credentials.getLastName());
+        // TODO: these probably should be added.
+        //setEmail(credentials.getEmail());
+        //setNetid(credentials.getNetid());
         setRole(Role.valueOf(credentials.getRole()));
     }
 
@@ -109,7 +115,7 @@ public class User extends AbstractWeaverUserDetails {
     @JsonSerialize(as = Role.class)
     public void setRole(IRole role) {
         this.role = (Role) role;
-}
+    }
 
     /**
      * @return the netid
@@ -213,5 +219,5 @@ public class User extends AbstractWeaverUserDetails {
     @JsonIgnore
     public String getPassword() {
         return null;
-}
+    }
 }
