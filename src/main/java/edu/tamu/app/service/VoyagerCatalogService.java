@@ -52,7 +52,7 @@ import edu.tamu.weaver.utility.HttpUtility;
  *
  */
 
-class VoyagerCatalogService extends AbstractCatalogService {
+public class VoyagerCatalogService extends AbstractCatalogService {
     private static final int REQUEST_TIMEOUT = 120000;
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());

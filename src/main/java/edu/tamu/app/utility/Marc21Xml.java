@@ -313,6 +313,12 @@ public class Marc21Xml  {
         Map<String, String> itemData = new HashMap<String, String>();
 
         for (int l = 0; l < itemDataCount; l++) {
+
+            // TODO: something like this may be needed to avoid processing "text" elements and nodes without any attributes. 
+            //if (!itemDataNode.item(l).hasAttributes() || itemDataNode.item(l).getNodeType() != Node.ELEMENT_NODE) {
+            //    continue;
+            //}
+
             if (itemDataNode.item(l).getAttributes().getNamedItem(RECORD_CODE) != null) {
                 itemData.put(itemDataNode.item(l).getAttributes().getNamedItem(RECORD_NAME).getTextContent()
                     + RECORD_CODE, itemDataNode.item(l).getAttributes().getNamedItem(RECORD_CODE).getTextContent());
