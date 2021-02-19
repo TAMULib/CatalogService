@@ -14,7 +14,7 @@
   </parent>
 
   <properties>
-    <start-class>edu.tamu.app.WebServerInit</start-class>
+    <start-class>edu.tamu.catalog.WebServerInit</start-class>
   </properties>
 
   <packaging>war</packaging>
