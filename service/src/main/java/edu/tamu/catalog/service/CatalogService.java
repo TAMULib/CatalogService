@@ -3,7 +3,7 @@ package edu.tamu.catalog.service;
 import java.util.List;
 import java.util.Map;
 
-import edu.tamu.catalog.model.CatalogHolding;
+import edu.tamu.catalog.domain.model.HoldingsRecord;
 
 /**
  * An interface describing Catalog Service API connectors
@@ -14,9 +14,9 @@ import edu.tamu.catalog.model.CatalogHolding;
  */
 public interface CatalogService {
 
-    List<CatalogHolding> getHoldingsByBibId(String bibId);
+    List<HoldingsRecord> getHoldingsByBibId(String bibId);
 
-    CatalogHolding getHolding(String id, String holdingId);
+    HoldingsRecord getHolding(String id, String holdingId);
 
     String getName();
 

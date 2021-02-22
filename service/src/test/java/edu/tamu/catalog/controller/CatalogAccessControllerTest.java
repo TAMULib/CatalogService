@@ -17,7 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import edu.tamu.catalog.model.CatalogHolding;
+import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.service.CatalogServiceFactory;
 import edu.tamu.catalog.service.FolioCatalogService;
 import edu.tamu.weaver.response.ApiResponse;
@@ -41,7 +41,7 @@ public class CatalogAccessControllerTest {
 
     @Test
     public void testGetHoldingsSuccess() {
-        when(folioCatalogService.getHoldingsByBibId(any(String.class))).thenReturn(new ArrayList<CatalogHolding>());
+        when(folioCatalogService.getHoldingsByBibId(any(String.class))).thenReturn(new ArrayList<HoldingsRecord>());
 
         ApiResponse response = catalogAccessController.getHoldings("evans", "foo");
         assertEquals("Did not receive expected successful response", SUCCESS, response.getMeta().getStatus());
@@ -58,7 +58,7 @@ public class CatalogAccessControllerTest {
     @Test
     public void testGetHoldingSuccess() {
         Map<String, Map<String, String>> catalogItems = new HashMap<>();
-        CatalogHolding holding = new CatalogHolding("marcRecordLeader", "mfhd", "issn", "isbn", "title", "author", "publisher", "place", "year", "genre", "edition", "fallBackLocationCode", "oclc", "recordId", "callNumber", catalogItems);
+        HoldingsRecord holding = new HoldingsRecord("marcRecordLeader", "mfhd", "issn", "isbn", "title", "author", "publisher", "place", "year", "genre", "edition", "fallBackLocationCode", "oclc", "recordId", "callNumber", catalogItems);
 
         when(folioCatalogService.getHolding(any(String.class), any(String.class))).thenReturn(holding);
 

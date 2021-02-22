@@ -39,7 +39,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import edu.tamu.catalog.model.CatalogHolding;
+import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.utility.Marc21Xml;
 import edu.tamu.weaver.utility.HttpUtility;
 
@@ -117,7 +117,7 @@ public class VoyagerCatalogService extends AbstractCatalogService {
      *
      */
     @Override
-    public List<CatalogHolding> getHoldingsByBibId(String bibId) {
+    public List<HoldingsRecord> getHoldingsByBibId(String bibId) {
         try {
             Map<String,String> recordValues = buildCoreRecord(bibId);
 
@@ -135,7 +135,7 @@ public class VoyagerCatalogService extends AbstractCatalogService {
             NodeList holdings = doc.getElementsByTagName("holding");
             int holdingCount = holdings.getLength();
 
-            List<CatalogHolding> catalogHoldings = new ArrayList<CatalogHolding>();
+            List<HoldingsRecord> catalogHoldings = new ArrayList<HoldingsRecord>();
             logger.debug("\n\nThe Holding Count: " + holdingCount);
 
             for (int i = 0; i < holdingCount; i++) {
@@ -195,7 +195,7 @@ public class VoyagerCatalogService extends AbstractCatalogService {
                     }
                 }
 
-                catalogHoldings.add(new CatalogHolding(recordValues.get(RECORD_MARC_RECORD_LEADER), holdingValues.get(RECORD_MFHD),
+                catalogHoldings.add(new HoldingsRecord(recordValues.get(RECORD_MARC_RECORD_LEADER), holdingValues.get(RECORD_MFHD),
                     recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
                     recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
                     recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
@@ -218,7 +218,7 @@ public class VoyagerCatalogService extends AbstractCatalogService {
     }
 
     @Override
-    public CatalogHolding getHolding(String bibId, String holdingId) {
+    public HoldingsRecord getHolding(String bibId, String holdingId) {
         logger.debug("Asking for holding from: " + getAPIBase() + "record/" + bibId + "/holdings?view=items");
         try {
             Map<String,String> recordValues = buildCoreRecord(bibId);
@@ -261,7 +261,7 @@ public class VoyagerCatalogService extends AbstractCatalogService {
                 }
             }
 
-            return new CatalogHolding(recordValues.get(RECORD_MARC_RECORD_LEADER), holdingValues.get(RECORD_MFHD),
+            return new HoldingsRecord(recordValues.get(RECORD_MARC_RECORD_LEADER), holdingValues.get(RECORD_MFHD),
                 recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
                 recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
                 recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),

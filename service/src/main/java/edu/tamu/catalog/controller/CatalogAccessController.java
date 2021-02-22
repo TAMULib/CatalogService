@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import edu.tamu.catalog.model.CatalogHolding;
+import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.service.CatalogService;
 import edu.tamu.catalog.service.CatalogServiceFactory;
 import edu.tamu.weaver.response.ApiResponse;
@@ -36,7 +36,7 @@ public class CatalogAccessController {
      */
 	@RequestMapping("/get-holdings")
 	public ApiResponse getHoldings(@RequestParam(value="catalogName", defaultValue="evans") String catalogName, @RequestParam("bibId") String bibId) {
-	    List<CatalogHolding> catalogHoldings = getCatalogServiceByName(catalogName).getHoldingsByBibId(bibId);
+	    List<HoldingsRecord> catalogHoldings = getCatalogServiceByName(catalogName).getHoldingsByBibId(bibId);
         if (catalogHoldings != null) {
             return new ApiResponse(SUCCESS, catalogHoldings);
         } else {
@@ -56,7 +56,7 @@ public class CatalogAccessController {
      */
     @RequestMapping("/get-holding")
     public ApiResponse getHolding(@RequestParam(value="catalogName", defaultValue="evans") String catalogName, @RequestParam("bibId") String bibId, @RequestParam("holdingId") String holdingId) {
-        CatalogHolding catalogHolding = getCatalogServiceByName(catalogName).getHolding(bibId, holdingId);
+        HoldingsRecord catalogHolding = getCatalogServiceByName(catalogName).getHolding(bibId, holdingId);
         if (catalogHolding != null) {
             return new ApiResponse(SUCCESS, catalogHolding);
         } else {

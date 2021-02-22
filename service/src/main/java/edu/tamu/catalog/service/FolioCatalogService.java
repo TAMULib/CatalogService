@@ -38,7 +38,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import edu.tamu.catalog.model.CatalogHolding;
+import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.utility.Marc21Xml;
 
 public class FolioCatalogService extends AbstractCatalogService {
@@ -69,13 +69,13 @@ public class FolioCatalogService extends AbstractCatalogService {
     }
 
     @Override
-    public List<CatalogHolding> getHoldingsByBibId(String instanceId) {
+    public List<HoldingsRecord> getHoldingsByBibId(String instanceId) {
         return requestHoldings(instanceId, null);
     }
 
     @Override
-    public CatalogHolding getHolding(String instanceId, String holdingId) {
-        List<CatalogHolding> holdings = requestHoldings(instanceId, holdingId);
+    public HoldingsRecord getHolding(String instanceId, String holdingId) {
+        List<HoldingsRecord> holdings = requestHoldings(instanceId, holdingId);
 
         if (holdings.size() > 0) {
             return holdings.get(0);
@@ -101,8 +101,8 @@ public class FolioCatalogService extends AbstractCatalogService {
         return restTemplate.getForObject(url, String.class);
     }
 
-    private List<CatalogHolding> requestHoldings(String instanceId, String holdingId) {
-        List<CatalogHolding> holdings = new ArrayList<>();
+    private List<HoldingsRecord> requestHoldings(String instanceId, String holdingId) {
+        List<HoldingsRecord> holdings = new ArrayList<>();
 
         try {
             String result = httpRequest(instanceId);
@@ -137,7 +137,7 @@ public class FolioCatalogService extends AbstractCatalogService {
 
                 for (int i = 0; i < recordNodes.getLength(); i++) {
                     Node metadataNode = Marc21Xml.getFirstNamedChildNode(recordNodes.item(i), NODE_METADATA);
-                    List<CatalogHolding> recordHoldings = processMetadata(instanceId, metadataNode);
+                    List<HoldingsRecord> recordHoldings = processMetadata(instanceId, metadataNode);
 
                     if (recordHoldings.size() > 0) {
                         if (holdingId == null) {
@@ -163,8 +163,8 @@ public class FolioCatalogService extends AbstractCatalogService {
         return holdings;
     }
 
-    private List<CatalogHolding> processMetadata(String instanceId, Node metadataNode) {
-        List<CatalogHolding> holdings = new ArrayList<CatalogHolding>();
+    private List<HoldingsRecord> processMetadata(String instanceId, Node metadataNode) {
+        List<HoldingsRecord> holdings = new ArrayList<HoldingsRecord>();
 
         if (metadataNode != null) {
             NodeList childNodes = metadataNode.getChildNodes();
@@ -179,7 +179,7 @@ public class FolioCatalogService extends AbstractCatalogService {
         return holdings;
     }
 
-    private CatalogHolding processMarcRecord(String instanceId, Node marcRecord) {
+    private HoldingsRecord processMarcRecord(String instanceId, Node marcRecord) {
         Map<String, String> recordValues = new HashMap<>();
         Map<String, String> recordBackupValues = new HashMap<>();
 
@@ -243,7 +243,7 @@ public class FolioCatalogService extends AbstractCatalogService {
             }
         }
 
-        return new CatalogHolding(recordValues.get(RECORD_MARC_RECORD_LEADER), holdingValues.get(RECORD_MFHD),
+        return new HoldingsRecord(recordValues.get(RECORD_MARC_RECORD_LEADER), holdingValues.get(RECORD_MFHD),
             recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
             recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
             recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
