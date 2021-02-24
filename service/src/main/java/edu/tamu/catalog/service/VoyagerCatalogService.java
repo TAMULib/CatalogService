@@ -39,6 +39,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import edu.tamu.catalog.domain.model.FeesFines;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.utility.Marc21Xml;
 import edu.tamu.weaver.utility.HttpUtility;
@@ -278,6 +279,11 @@ public class VoyagerCatalogService extends AbstractCatalogService {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+        return null;
+    }
+
+    @Override
+    public FeesFines getFeesFines(String uin) {
         return null;
     }
 }
