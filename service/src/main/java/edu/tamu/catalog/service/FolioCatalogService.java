@@ -21,14 +21,13 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -287,7 +286,7 @@ public class FolioCatalogService extends AbstractCatalogService {
     }
 
     @Override
-    public FeesFines getFeesFines(String uin) {
+    public FeesFines getFeesFines(String uin) throws ParseException {
         String path = "patron/account/";
         String additional = "&includeLoans=false&includeCharges=true&includeHolds=false";
         String url = String.format("%s%s%s?apikey={apikey}%s", getAPIBase(), path, uin, additional);
@@ -305,9 +304,11 @@ public class FolioCatalogService extends AbstractCatalogService {
         List<FeeFine> list = new ArrayList<>();
 
         if (node.has("charges")) {
-            JsonNode charges = node.get("charges");
+            Iterator<JsonNode> iter = node.get("charges").elements();
 
-            charges.forEach((JsonNode charge) -> {
+            while (iter.hasNext()) {
+                JsonNode charge = iter.next();
+
                 double amount = 0;
                 if (charge.has("chargeAmount") && charge.get("chargeAmount").has("amount")) {
                     amount = charge.get("chargeAmount").get("amount").asDouble();
@@ -323,7 +324,7 @@ public class FolioCatalogService extends AbstractCatalogService {
                 }
 
                 list.add(new FeeFine(amount, fineId, type, date, title));
-            });
+            }
         }
 
         return new FeesFines(uin, total, list.size(), list);
@@ -336,17 +337,11 @@ public class FolioCatalogService extends AbstractCatalogService {
      * @return
      * @throws ParseException
      */
-    private Date folioDateToDate(String folioDate) {
+    private Date folioDateToDate(String folioDate) throws ParseException {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
         formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-        try {
-            return Date.from(formatter.parse(folioDate).toInstant());
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-
-        return null;
+        return Date.from(formatter.parse(folioDate).toInstant());
     }
 
 }

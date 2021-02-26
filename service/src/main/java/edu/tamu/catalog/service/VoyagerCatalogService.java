@@ -279,6 +279,7 @@ public class VoyagerCatalogService extends AbstractCatalogService {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+
         return null;
     }
 

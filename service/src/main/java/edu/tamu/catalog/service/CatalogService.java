@@ -1,5 +1,6 @@
 package edu.tamu.catalog.service;
 
+import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 
@@ -19,7 +20,7 @@ public interface CatalogService {
 
     HoldingsRecord getHolding(String id, String holdingId);
 
-    FeesFines getFeesFines(String uin);
+    FeesFines getFeesFines(String uin) throws ParseException;
 
     String getName();
 
