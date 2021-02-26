@@ -19,10 +19,14 @@ import static edu.tamu.catalog.utility.Marc21Xml.RECORD_YEAR;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -38,7 +42,10 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import edu.tamu.catalog.domain.model.HoldingsRecord;
+import edu.tamu.catalog.domain.model.LoanItem;
 import edu.tamu.catalog.utility.Marc21Xml;
 
 public class FolioCatalogService extends AbstractCatalogService {
@@ -82,6 +89,69 @@ public class FolioCatalogService extends AbstractCatalogService {
         }
 
         return null;
+    }
+
+    @Override
+    public List<LoanItem> getLoanItems(String uin) {
+        String path = "patron/account/";
+        String additional = "&includeLoans=true&includeCharges=false&includeHolds=false";
+        String url = String.format("%s%s%s?apikey={apikey}%s", getAPIBase(), path, uin, additional);
+        String apiKey = getAuthentication().get(CatalogServiceFactory.FIELD_APIKEY);
+
+        JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
+
+        List<LoanItem> list = new ArrayList<LoanItem>();
+
+        if (node.has("loans")) {
+            JsonNode loans = node.get("charges");
+
+            loans.forEach((JsonNode loan) -> {
+                if (node.has("item")) {
+                    JsonNode item = node.get("item");
+
+                    Date loanDate = loan.has("loanDate") ? folioDateToDate(loan.get("loanDate").asText()) : null;
+                    Date loanDueDate = loan.has("loanDueDate") ? folioDateToDate(loan.get("loanDueDate").asText()) : null;
+                    String overDueString = getNodeValue(loan, "overdue");
+                    boolean overDue = false;
+                    if (overDueString != null) {
+                        overDue = Boolean.valueOf(overDueString);
+                    }
+
+                    String loanId = getNodeValue(loan, "id");
+                    String itemId = getNodeValue(item, "itemId");
+                    String instanceId = getNodeValue(item, "instanceId");
+                    String title = getNodeValue(item, "title");
+                    String author = getNodeValue(item, "author");
+
+                    list.add(new LoanItem(loanId, itemId, instanceId, loanDate, loanDueDate, overDue, title, author));
+                }
+            });
+        }
+        return list;
+    }
+
+    /**
+     * Convert from Folio dates, "yyyy-MM-dd'T'HH:mm:ss.SSSZ", to the Java Date.
+     *
+     * @param folioDate
+     * @return
+     * @throws ParseException
+     */
+    private Date folioDateToDate(String folioDate) {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+        try {
+            return Date.from(formatter.parse(folioDate).toInstant());
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    private String getNodeValue(JsonNode node, String fieldName) {
+        return node.has(fieldName) ? node.get(fieldName).asText() : null;
     }
 
     private String httpRequest(String instanceId) throws IOException {
