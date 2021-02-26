@@ -103,14 +103,14 @@ public class FolioCatalogService extends AbstractCatalogService {
         List<LoanItem> list = new ArrayList<LoanItem>();
 
         if (node.has("loans")) {
-            JsonNode loans = node.get("charges");
+            JsonNode loans = node.get("loans");
 
             loans.forEach((JsonNode loan) -> {
-                if (node.has("item")) {
-                    JsonNode item = node.get("item");
+                if (loan.has("item")) {
+                    JsonNode item = loan.get("item");
 
                     Date loanDate = loan.has("loanDate") ? folioDateToDate(loan.get("loanDate").asText()) : null;
-                    Date loanDueDate = loan.has("loanDueDate") ? folioDateToDate(loan.get("loanDueDate").asText()) : null;
+                    Date loanDueDate = loan.has("dueDate") ? folioDateToDate(loan.get("dueDate").asText()) : null;
                     String overDueString = getNodeValue(loan, "overdue");
                     boolean overDue = false;
                     if (overDueString != null) {
