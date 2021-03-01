@@ -29,11 +29,14 @@ public class PatronController {
      * @param String catalogName (optional)
      * @param String user
      * @return
-     * @throws ParseException
+     * @throws Exception
      */
     @GetMapping("/{uin}/fines")
     public @ResponseBody ResponseEntity<FeesFines> fines(@RequestParam(value="catalogName", defaultValue="folio") String catalogName, @PathVariable String uin) throws Exception {
-        return new ResponseEntity<>(getCatalogServiceByName(catalogName).getFeesFines(uin), HttpStatus.OK);
+        FeesFines feesFines = getCatalogServiceByName(catalogName).getFeesFines(uin);
+
+        return ResponseEntity.status(HttpStatus.OK)
+            .body(feesFines);
     }
 
     private CatalogService getCatalogServiceByName(String catalogName) {
