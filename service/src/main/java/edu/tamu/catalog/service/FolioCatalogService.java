@@ -103,7 +103,9 @@ public class FolioCatalogService extends AbstractCatalogService {
         String queryString = String.format("verb=%s&metadataPrefix=%s&apikey=%s&identifier=%s",
           VERB_GET_RECORD, METADATA_PREFIX, apiKey, identifier);
 
-        String url = String.format("%s?%s", getAPIBase(), queryString);
+        String oaiPath = "oai/";
+
+        String url = String.format("%s%s?%s", getAPIBase(), oaiPath, queryString);
 
         logger.debug("Asking for holdings from: " + url);
 

@@ -3,7 +3,7 @@
   "type": "folio",
   "host": "folio-edge.library.tamu.edu",
   "port": "",
-  "app": "oai",
+  "app": "",
   "protocol": "https",
   "sidPrefix": "",
   "authentication": {
