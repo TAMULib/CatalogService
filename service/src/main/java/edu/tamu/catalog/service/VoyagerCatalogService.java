@@ -284,7 +284,7 @@ public class VoyagerCatalogService extends AbstractCatalogService {
     }
 
     @Override
-    public FeesFines getFeesFines(String uin) {
-        return null;
+    public FeesFines getFeesFines(String uin) throws Exception {
+        throw new UnsupportedOperationException("Not supported by the requested catalog.");
     }
 }

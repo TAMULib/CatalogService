@@ -1,9 +1,13 @@
 package edu.tamu.catalog.exception;
 
+import java.text.ParseException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
@@ -12,17 +16,23 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler({RestClientResponseException.class})
-    public ResponseEntity<String> notFound(RestClientResponseException e, WebRequest request) {
-
-        if (e.getRawStatusCode() == HttpStatus.NOT_FOUND.value()) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-        }
-
-        throw e;
+    public ResponseEntity<String> clientError(HttpClientErrorException e, WebRequest request) {
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.valueOf(e.getRawStatusCode()));
     }
 
-    @ExceptionHandler({NotFoundException.class})
-    public ResponseEntity<String> notFound(NotFoundException e, WebRequest request) {
-        return new ResponseEntity<>("404 Not Found", HttpStatus.NOT_FOUND);
+    @ExceptionHandler({HttpServerErrorException.class})
+    public ResponseEntity<String> serverError(HttpServerErrorException e, WebRequest request) {
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.valueOf(e.getRawStatusCode()));
     }
+
+    @ExceptionHandler({UnsupportedOperationException.class})
+    public ResponseEntity<String> unsupportedOperationError(UnsupportedOperationException e, WebRequest request) {
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler({ParseException.class})
+    public ResponseEntity<String> parseError(ParseException e, WebRequest request) {
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
 }
