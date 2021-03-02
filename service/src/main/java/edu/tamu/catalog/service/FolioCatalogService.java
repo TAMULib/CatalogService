@@ -19,10 +19,15 @@ import static edu.tamu.catalog.utility.Marc21Xml.RECORD_YEAR;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -38,6 +43,10 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
+import edu.tamu.catalog.domain.model.FeeFine;
+import edu.tamu.catalog.domain.model.FeesFines;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.utility.Marc21Xml;
 
@@ -94,7 +103,9 @@ public class FolioCatalogService extends AbstractCatalogService {
         String queryString = String.format("verb=%s&metadataPrefix=%s&apikey=%s&identifier=%s",
           VERB_GET_RECORD, METADATA_PREFIX, apiKey, identifier);
 
-        String url = String.format("%s?%s", getAPIBase(), queryString);
+        String oaiPath = "oai/";
+
+        String url = String.format("%s%s?%s", getAPIBase(), oaiPath, queryString);
 
         logger.debug("Asking for holdings from: " + url);
 
@@ -274,6 +285,67 @@ public class FolioCatalogService extends AbstractCatalogService {
         }
 
         catalogItems.put(barcode, itemData);
+    }
+
+    @Override
+    public FeesFines getFeesFines(String uin) throws ParseException {
+        String apiKey = getAuthentication().get(CatalogServiceFactory.FIELD_APIKEY);
+        String url = "{base}{path}{uin}?apiKey={key}&includeLoans=false&includeCharges=true&includeHolds=false";
+
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put("base", getAPIBase());
+        parameters.put("path", "patron/account/");
+        parameters.put("uin", uin);
+        parameters.put("key", apiKey);
+
+        JsonNode node = restTemplate.getForObject(url, JsonNode.class, parameters);
+
+        Double total = null;
+        if (node.has("totalCharges") && node.get("totalCharges").has("amount")) {
+            total = node.get("totalCharges").get("amount").asDouble();
+        }
+
+        List<FeeFine> list = new ArrayList<>();
+
+        if (node.has("charges")) {
+            Iterator<JsonNode> iter = node.get("charges").elements();
+
+            while (iter.hasNext()) {
+                JsonNode charge = iter.next();
+
+                double amount = 0;
+                if (charge.has("chargeAmount") && charge.get("chargeAmount").has("amount")) {
+                    amount = charge.get("chargeAmount").get("amount").asDouble();
+                }
+
+                String fineId = charge.has("feeFineId") ? charge.get("feeFineId").asText() : null;
+                String type = charge.has("reason") ? charge.get("reason").asText() : null;
+                Date date = charge.has("accrualDate") ? folioDateToDate(charge.get("accrualDate").asText()) : null;
+
+                String title = null;
+                if (charge.has("item") && charge.get("item").has("title")) {
+                    title = charge.get("item").get("title").asText();
+                }
+
+                list.add(new FeeFine(amount, fineId, type, date, title));
+            }
+        }
+
+        return new FeesFines(uin, total, list.size(), list);
+    }
+
+    /**
+     * Convert from Folio dates, "yyyy-MM-dd'T'HH:mm:ss.SSSZ", to the Java Date.
+     *
+     * @param folioDate
+     * @return
+     * @throws ParseException
+     */
+    private Date folioDateToDate(String folioDate) throws ParseException {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+        return Date.from(formatter.parse(folioDate).toInstant());
     }
 
 }
