@@ -34,10 +34,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.NestedServletException;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -57,6 +54,9 @@ public class PatronControllerTest {
 
     @Value("classpath:mock/patron/account.json")
     private Resource patronAccountResource;
+
+    @Value("classpath:mock/patron/accountDateParseError.json")
+    private Resource patronAccountDateParseErrorResource;
 
     @Autowired
     private MockMvc mockMvc;
@@ -165,6 +165,22 @@ public class PatronControllerTest {
     }
 
     @Test
+    public void testFinesDateParseError() throws Exception  {
+        String uin = "1234567890";
+
+        restServer.expect(once(), requestTo(getFinesUrl(uin)))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(getMockPatronAccountDateParseError(), MediaType.APPLICATION_JSON));
+
+        mockMvc.perform(get("/patron/{uin}/fines", uin)
+            .contentType(MediaType.APPLICATION_JSON)
+        )
+        .andExpect(status().isInternalServerError());
+
+        restServer.verify();
+    }
+
+    @Test
     public void testFinesNotSupportedForCatalog() throws Exception  {
         String uin = "1234567890";
 
@@ -215,6 +231,10 @@ public class PatronControllerTest {
 
     private String getMockPatronAccount() throws JsonParseException, JsonMappingException, IOException {
         return IOUtils.toString(patronAccountResource.getInputStream(), "UTF-8");
+    }
+
+    private String getMockPatronAccountDateParseError() throws JsonParseException, JsonMappingException, IOException {
+        return IOUtils.toString(patronAccountDateParseErrorResource.getInputStream(), "UTF-8");
     }
 
     private String getFinesUrl(String uin) {
