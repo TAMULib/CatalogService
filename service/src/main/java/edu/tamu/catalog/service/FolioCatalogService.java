@@ -289,14 +289,16 @@ public class FolioCatalogService extends AbstractCatalogService {
 
     @Override
     public FeesFines getFeesFines(String uin) throws ParseException {
-        String path = "patron/account/";
-        String additional = "&includeLoans=false&includeCharges=true&includeHolds=false";
-        String url = String.format("%s%s%s?apikey={apikey}%s", getAPIBase(), path, uin, additional);
         String apiKey = getAuthentication().get(CatalogServiceFactory.FIELD_APIKEY);
+        String url = "{base}{path}{uin}?apiKey={key}&includeLoans=false&includeCharges=true&includeHolds=false";
 
-        logger.debug(String.format("Asking for fines from: %s", url));
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put("base", getAPIBase());
+        parameters.put("path", "patron/account/");
+        parameters.put("uin", uin);
+        parameters.put("key", apiKey);
 
-        JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
+        JsonNode node = restTemplate.getForObject(url, JsonNode.class, parameters);
 
         Double total = null;
         if (node.has("totalCharges") && node.get("totalCharges").has("amount")) {
