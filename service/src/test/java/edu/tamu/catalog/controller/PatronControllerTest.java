@@ -189,14 +189,10 @@ public class PatronControllerTest {
             .andExpect(method(HttpMethod.GET))
             .andRespond(withStatus(HttpStatus.BAD_REQUEST));
 
-        try{
-            mockMvc.perform(get("/patron/{uin}/fines", uin)
-                .contentType(MediaType.APPLICATION_JSON)
-            )
-            .andExpect(status().isBadRequest());
-        } catch (NestedServletException e) {
-            throw (Exception) e.getCause();
-        }
+        mockMvc.perform(get("/patron/{uin}/fines", uin)
+            .contentType(MediaType.APPLICATION_JSON)
+        )
+        .andExpect(status().isBadRequest());
 
         restServer.verify();
     }
@@ -209,14 +205,10 @@ public class PatronControllerTest {
             .andExpect(method(HttpMethod.GET))
             .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
 
-        try {
-            mockMvc.perform(get("/patron/{uin}/fines", uin)
-                .contentType(MediaType.APPLICATION_JSON)
-            )
-            .andExpect(status().isInternalServerError());
-        } catch (NestedServletException e) {
-            throw (Exception) e.getCause();
-        }
+        mockMvc.perform(get("/patron/{uin}/fines", uin)
+            .contentType(MediaType.APPLICATION_JSON)
+        )
+        .andExpect(status().isInternalServerError());
 
         restServer.verify();
     }
