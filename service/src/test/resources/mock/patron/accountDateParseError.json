@@ -39,5 +39,42 @@
     }
   ],
   "holds": [],
-  "loans": []
+  "loans": [
+      {
+      "id": "71932c99-61f2-4a6e-b2bd-6aa2dc9f5313",
+      "item": {
+        "instanceId": "69dd6864-4d52-387c-b5b2-8db1ce8f5013",
+        "itemId": "04dbd368-5952-3779-9bcd-563cd2c53746",
+        "title": "Rising strong / Brené Brown.",
+        "author": "Brown, Brené,"
+      },
+      "loanDate": "2018-05-10T22:00:40.000+0000",
+      "dueDate": "2021-10-09T02:00:00.000+0000",
+      "overdue": false
+    },
+    {
+      "id": "d135ea73-f80e-45b6-9046-9414334d64ff",
+      "item": {
+        "instanceId": "829fecd3-67c3-3ca2-b9d4-281227690e0f",
+        "itemId": "f5a63a6f-4b1d-3a75-8fba-668efffae4ad",
+        "title": "Spam nation : the inside story of organized cybercrime--from global epidemic to your front door / Brian Krebs.",
+        "author": "Krebs, Brian,"
+      },
+      "loanDate": "2017-06-01T17:03:37.000+0000",
+      "dueDate": "2021-10-08T23:00:00.000+0000",
+      "overdue": false
+    },
+    {
+      "id": "9b9b592a-1b4c-43b4-a91f-901d4ec9d3d6",
+      "item": {
+        "instanceId": "2422160d-23c4-356b-ad1c-44d90fc1320b",
+        "itemId": "40053ccb-fd0c-304b-9547-b2fc06f34d3e",
+        "title": "An ontology of consciousness / by Ralph Ellis.",
+        "author": "Ellis, Ralph D"
+      },
+      "loanDate": "Bad Date",
+      "dueDate": "2021-10-09T02:00:00.000+0000",
+      "overdue": false
+    }
+  ]
 }

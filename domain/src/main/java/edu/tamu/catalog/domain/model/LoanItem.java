@@ -10,7 +10,7 @@ import lombok.Data;
 public class LoanItem {
     private String loanId;
     private String itemId;
-    private String intanceId;
+    private String instanceId;
     private Date loanDate;
     private Date loanDueDate;
     private boolean overdue;
