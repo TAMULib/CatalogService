@@ -1,0 +1,15 @@
+== Patron API
+A collection of endpoints for accessing Patron data.
+
+=== Get Patron Fines
+
+A `GET` to the `/patron/{uin}/fines` endpoint which will return a list of fines associated with the given patron.
+
+==== Sample Request
+include::../../../target/generated-snippets/patron/fines/http-request.adoc[]
+
+==== Sample Response
+include::../../../target/generated-snippets/patron/fines/http-response.adoc[]
+
+==== Example Curl Request
+include::../../../target/generated-snippets/patron/fines/curl-request.adoc[]
