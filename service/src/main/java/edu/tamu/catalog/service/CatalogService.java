@@ -3,6 +3,7 @@ package edu.tamu.catalog.service;
 import java.util.List;
 import java.util.Map;
 
+import edu.tamu.catalog.domain.model.FeesFines;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
 
@@ -19,7 +20,9 @@ public interface CatalogService {
 
     HoldingsRecord getHolding(String id, String holdingId);
 
-    List<LoanItem> getLoanItems(String uin);
+    FeesFines getFeesFines(String uin) throws Exception;
+
+    List<LoanItem> getLoanItems(String uin) throws Exception;
 
     String getName();
 

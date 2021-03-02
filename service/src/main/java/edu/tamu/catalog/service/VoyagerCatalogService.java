@@ -39,6 +39,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import edu.tamu.catalog.domain.model.FeesFines;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
 import edu.tamu.catalog.utility.Marc21Xml;
@@ -279,11 +280,17 @@ public class VoyagerCatalogService extends AbstractCatalogService {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+
         return null;
     }
 
     @Override
-    public List<LoanItem> getLoanItems(String patronId) {
-        return null;
+    public FeesFines getFeesFines(String uin) throws Exception {
+        throw new UnsupportedOperationException("Not supported by the requested catalog.");
+    }
+
+    @Override
+    public List<LoanItem> getLoanItems(String uin) throws Exception {
+        throw new UnsupportedOperationException("Not supported by the requested catalog.");
     }
 }
