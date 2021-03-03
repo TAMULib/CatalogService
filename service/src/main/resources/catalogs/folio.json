@@ -6,6 +6,6 @@
   "tenant": "tamu",
   "username": "",
   "password": "",
-  "edgeApiKey": "eyJzIjoiUk9RN0VFS2Q0VGR1VTVweHh3NWYiLCJ0IjoidGFtdSIsInUiOiJlZGdldXNlciJ9",
+  "edgeApiKey": "",
   "repositoryBaseUrl": "folio-edge.library.tamu.edu"
 }
