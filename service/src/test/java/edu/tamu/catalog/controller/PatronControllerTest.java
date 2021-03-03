@@ -5,6 +5,9 @@ import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.docu
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 import static org.springframework.test.web.client.ExpectedCount.never;
 import static org.springframework.test.web.client.ExpectedCount.once;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
@@ -15,7 +18,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,9 +35,15 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.ResponseFieldsSnippet;
+import org.springframework.restdocs.request.PathParametersSnippet;
+import org.springframework.restdocs.request.RequestParametersSnippet;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.client.ExpectedCount;
 import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.test.web.client.ResponseCreator;
+import org.springframework.test.web.client.response.DefaultResponseCreator;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -50,9 +58,12 @@ import edu.tamu.catalog.service.VoyagerCatalogService;
 @RunWith(SpringRunner.class)
 public class PatronControllerTest {
 
+    private static final String UIN = "1234567890";
     private static final String API_KEY = "mocked_key";
     private static final String FOLIO_CATALOG = "folio";
     private static final String VOYAGER_CATALOG = "voyager";
+    private static final String LOANS_ENDPOINT = "loans";
+    private static final String FINES_ENDPOINT = "fines";
 
     @Value("classpath:mock/patron/account.json")
     private Resource patronAccountResource;
@@ -99,228 +110,212 @@ public class PatronControllerTest {
 
     @Test
     public void testFinesMockMVC() throws Exception {
-        String uin = "1234567890";
+        PathParametersSnippet pathParameters = pathParameters(
+            parameterWithName("uin").description("The patron UIN.")
+        );
+
+        RequestParametersSnippet requestParameters = requestParameters(
+            parameterWithName("catalogName").description("The name of the catalog to use.").optional()
+        );
+
         ResponseFieldsSnippet responseFields = responseFields(
-                fieldWithPath("id").description("The patron UIN."),
-                fieldWithPath("total").description("The sum total of the fines."),
-                fieldWithPath("fineCount").description("The total number of fines in the list."),
-                fieldWithPath("list[]").description("An array of all fines for the patron."),
-                fieldWithPath("list[].amount").description("The title of the item associated with the fine."),
-                fieldWithPath("list[].fineId").description("The UUID associated with the fine."),
-                fieldWithPath("list[].fineType").description("The type of the fine."),
-                fieldWithPath("list[].fineDate").description("A timestamp in milliseconds from UNIX epoch representing the date the fine was accrued."),
-                fieldWithPath("list[].itemTitle").description("The title of the item associated with the fine.")
-            );
-        testPatronEndpointMockMVC(uin, getFinesUrl(uin), "fines", responseFields);
+            fieldWithPath("id").description("The patron UIN."),
+            fieldWithPath("total").description("The sum total of the fines."),
+            fieldWithPath("fineCount").description("The total number of fines in the list."),
+            fieldWithPath("list[]").description("An array of all fines for the patron."),
+            fieldWithPath("list[].amount").description("The title of the item associated with the fine."),
+            fieldWithPath("list[].fineId").description("The UUID associated with the fine."),
+            fieldWithPath("list[].fineType").description("The type of the fine."),
+            fieldWithPath("list[].fineDate").description("A timestamp in milliseconds from UNIX epoch representing the date the fine was accrued."),
+            fieldWithPath("list[].itemTitle").description("The title of the item associated with the fine.")
+        );
+        getEndpointWithMockMVC(getFinesUrl(), FINES_ENDPOINT, pathParameters, requestParameters, responseFields);
     }
 
     @Test
     public void testLoansMockMVC() throws Exception {
-        String uin = "1234567890";
+        PathParametersSnippet pathParameters = pathParameters(
+            parameterWithName("uin").description("The patron UIN.")
+        );
+
+        RequestParametersSnippet requestParameters = requestParameters(
+            parameterWithName("catalogName").description("The name of the catalog to use.").optional()
+        );
 
         ResponseFieldsSnippet responseFields = responseFields(
-                fieldWithPath("[].loanId").description("The loan id."),
-                fieldWithPath("[].itemId").description("The item id."),
-                fieldWithPath("[].instanceId").description("The instance id."),
-                fieldWithPath("[].loanDate").description("The loan date."),
-                fieldWithPath("[].loanDueDate").description("The loan due date."),
-                fieldWithPath("[].overdue").description("Is the loan overdue."),
-                fieldWithPath("[].title").description("The title of the loan item."),
-                fieldWithPath("[].author").description("The author of the loan item.")
-            );
-        testPatronEndpointMockMVC(uin, getLoansUrl(uin), "loans", responseFields);
-    }
-
-    protected void testPatronEndpointMockMVC(String uin, String sourceUrl, String catalogEndpoint, ResponseFieldsSnippet responseFields) throws Exception {
-        restServer.expect(once(), requestTo(sourceUrl))
-            .andExpect(method(HttpMethod.GET))
-            .andRespond(withSuccess(getMockPatronAccount(), MediaType.APPLICATION_JSON));
-        String docEndpoint = "patron/"+catalogEndpoint;
-        // @formatter:off
-        mockMvc.perform(get("/patron/{uin}/{catalogEndpoint}", uin, catalogEndpoint)
-                .param("catalogName", "folio")
-                .contentType(MediaType.APPLICATION_JSON)
-            )
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
-            .andDo(
-                document(
-                    docEndpoint,
-                    responseFields
-                )
-            );
-        // @formatter:on
-
-        restServer.verify();
+            fieldWithPath("[].loanId").description("The loan id."),
+            fieldWithPath("[].itemId").description("The item id."),
+            fieldWithPath("[].instanceId").description("The instance id."),
+            fieldWithPath("[].loanDate").description("The loan date."),
+            fieldWithPath("[].loanDueDate").description("The loan due date."),
+            fieldWithPath("[].overdue").description("Is the loan overdue."),
+            fieldWithPath("[].title").description("The title of the loan item."),
+            fieldWithPath("[].author").description("The author of the loan item.")
+        );
+        getEndpointWithMockMVC(getLoansUrl(), LOANS_ENDPOINT, pathParameters, requestParameters, responseFields);
     }
 
     @Test
     public void testFinesMockMVCWithCatalogName() throws Exception {
-        String uin = "1234567890";
-        testPatronEndpointMockMVCWithCatalogName(uin, getFinesUrl(uin), "fines");
+        getEndpointWithCatalogName(getFinesUrl(), FINES_ENDPOINT);
     }
 
     @Test
     public void testLoansMockMVCWithCatalogName() throws Exception {
-        String uin = "1234567890";
-        testPatronEndpointMockMVCWithCatalogName(uin, getLoansUrl(uin), "loans");
-    }
-
-    protected void testPatronEndpointMockMVCWithCatalogName(String uin, String sourceUrl, String catalogEndpoint) throws Exception {
-        restServer.expect(once(), requestTo(sourceUrl))
-            .andExpect(method(HttpMethod.GET))
-            .andRespond(withSuccess(getMockPatronAccount(), MediaType.APPLICATION_JSON));
-
-        mockMvc.perform(get("/patron/{uin}/{catalogEndpoint}", uin, catalogEndpoint)
-            .contentType(MediaType.APPLICATION_JSON)
-        )
-        .andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8));
-
-        restServer.verify();
+        getEndpointWithCatalogName(getLoansUrl(), LOANS_ENDPOINT);
     }
 
     @Test
     public void testFinesUINNotFound() throws Exception {
-        String uin = "1234567890";
-        testPatronEndpointUINNotFound(uin, getFinesUrl(uin), "fines");
+        getEndpointNotFound(getFinesUrl(), FINES_ENDPOINT);
     }
 
     @Test
     public void testLoansUINNotFound() throws Exception {
-        String uin = "1234567890";
-        testPatronEndpointUINNotFound(uin, getLoansUrl(uin), "loans");
-    }
-
-    protected void testPatronEndpointUINNotFound(String uin, String sourceUrl, String catalogEndpoint) throws Exception {
-        restServer.expect(once(), requestTo(sourceUrl))
-            .andExpect(method(HttpMethod.GET))
-            .andRespond(withStatus(HttpStatus.NOT_FOUND));
-
-        mockMvc.perform(get("/patron/{uin}/{catalogEndpoint}", uin, catalogEndpoint)
-            .contentType(MediaType.APPLICATION_JSON)
-        )
-        .andExpect(status().isNotFound());
-
-        restServer.verify();
+        getEndpointNotFound(getLoansUrl(), LOANS_ENDPOINT);
     }
 
     @Test
     public void testFinesDateParseError() throws Exception  {
-        String uin = "1234567890";
-        testPatronEndpointDateParseError(uin, getFinesUrl(uin), "fines");
+        getEndpointDateParseError(getFinesUrl(), FINES_ENDPOINT);
     }
 
     @Test
     public void testLoansDateParseError() throws Exception  {
-        String uin = "1234567890";
-        testPatronEndpointDateParseError(uin, getLoansUrl(uin), "loans");
-    }
-
-    protected void testPatronEndpointDateParseError(String uin, String sourceUrl, String catalogEndpoint) throws Exception  {
-        restServer.expect(once(), requestTo(sourceUrl))
-            .andExpect(method(HttpMethod.GET))
-            .andRespond(withSuccess(getMockPatronAccountDateParseError(), MediaType.APPLICATION_JSON));
-
-        mockMvc.perform(get("/patron/{uin}/{catalogEndpoint}", uin, catalogEndpoint)
-            .contentType(MediaType.APPLICATION_JSON)
-        )
-        .andExpect(status().isInternalServerError());
-
-        restServer.verify();
+        getEndpointDateParseError(getLoansUrl(), LOANS_ENDPOINT);
     }
 
     @Test
     public void testFinesNotSupportedForCatalog() throws Exception  {
-        String uin = "1234567890";
-        testPatronEndpointNotSupportedForCatalog(uin, getFinesUrl(uin), "fines");
+        getEndpointNotSupportedForCatalog(getFinesUrl(), FINES_ENDPOINT);
     }
 
     @Test
     public void testLoansNotSupportedForCatalog() throws Exception  {
-        String uin = "1234567890";
-        testPatronEndpointNotSupportedForCatalog(uin, getLoansUrl(uin), "loans");
-    }
-
-    protected void testPatronEndpointNotSupportedForCatalog(String uin, String sourceUrl, String catalogEndpoint) throws Exception  {
-        restServer.expect(never(), requestTo(sourceUrl))
-            .andExpect(method(HttpMethod.GET))
-            .andRespond(withSuccess(getMockPatronAccount(), MediaType.APPLICATION_JSON));
-
-        mockMvc.perform(get("/patron/{uin}/{catalogEndpoint}", uin, catalogEndpoint)
-            .param("catalogName", VOYAGER_CATALOG)
-            .contentType(MediaType.APPLICATION_JSON)
-        )
-        .andExpect(status().isBadRequest());
-
-        restServer.verify();
+        getEndpointNotSupportedForCatalog(getLoansUrl(), LOANS_ENDPOINT);
     }
 
     @Test
     public void testFinesClientException() throws Exception {
-        String uin = "1234567890";
-        testPatronEndpointClientException(uin, getFinesUrl(uin), "fines");
+        getEndpointBadRequest(getFinesUrl(), FINES_ENDPOINT);
     }
 
     @Test
     public void testLoansClientException() throws Exception {
-        String uin = "1234567890";
-        testPatronEndpointClientException(uin, getLoansUrl(uin), "loans");
-    }
-
-    protected void testPatronEndpointClientException(String uin, String sourceUrl, String catalogEndpoint) throws Exception {
-        restServer.expect(once(), requestTo(sourceUrl))
-            .andExpect(method(HttpMethod.GET))
-            .andRespond(withStatus(HttpStatus.BAD_REQUEST));
-
-        mockMvc.perform(get("/patron/{uin}/{catalogEndpoint}", uin, catalogEndpoint)
-            .contentType(MediaType.APPLICATION_JSON)
-        )
-        .andExpect(status().isBadRequest());
-
-        restServer.verify();
+        getEndpointBadRequest(getLoansUrl(), LOANS_ENDPOINT);
     }
 
     @Test
     public void testFinesServerException() throws Exception {
-        String uin = "1234567890";
-        testPatronServerException(uin, getFinesUrl(uin), "fines");
+        getEndpointInternalServerError(getFinesUrl(), FINES_ENDPOINT);
     }
 
     @Test
     public void testLoansServerException() throws Exception {
-        String uin = "1234567890";
-        testPatronServerException(uin, getLoansUrl(uin), "loans");
+        getEndpointInternalServerError(getLoansUrl(), LOANS_ENDPOINT);
     }
 
-    protected void testPatronServerException(String uin, String sourceUrl, String catalogEndpoint) throws Exception {
-        restServer.expect(once(), requestTo(sourceUrl))
-            .andExpect(method(HttpMethod.GET))
-            .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
-
-        mockMvc.perform(get("/patron/{uin}/{catalogEndpoint}", uin, catalogEndpoint)
-            .contentType(MediaType.APPLICATION_JSON)
-        )
-        .andExpect(status().isInternalServerError());
+    private void getEndpointWithMockMVC(String sourceUrl, String catalogEndpoint, PathParametersSnippet pathParameters, RequestParametersSnippet requestParameters, ResponseFieldsSnippet responseFields) throws Exception {
+        performGetWithCatalogName(sourceUrl, catalogEndpoint, once(), successResponse(patronAccountResource), FOLIO_CATALOG)
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+            .andDo(
+                document(
+                    "patron/" + catalogEndpoint,
+                    pathParameters,
+                    requestParameters,
+                    responseFields
+                )
+            );
 
         restServer.verify();
     }
 
-    private String getMockPatronAccount() throws JsonParseException, JsonMappingException, IOException {
-        return IOUtils.toString(patronAccountResource.getInputStream(), "UTF-8");
+    private void getEndpointWithCatalogName(String sourceUrl, String catalogEndpoint) throws Exception {
+        performGetWithCatalogName(sourceUrl, catalogEndpoint, once(), successResponse(patronAccountResource), FOLIO_CATALOG)
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8));
+
+        restServer.verify();
     }
 
-    private String getMockPatronAccountDateParseError() throws JsonParseException, JsonMappingException, IOException {
-        return IOUtils.toString(patronAccountDateParseErrorResource.getInputStream(), "UTF-8");
+    private void getEndpointInternalServerError(String sourceUrl, String catalogEndpoint) throws Exception {
+        performGet(sourceUrl, catalogEndpoint, once(), withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+            .andExpect(status().isInternalServerError());
+
+        restServer.verify();
     }
 
-    private String getFinesUrl(String uin) {
-        String additional = "&includeLoans=false&includeCharges=true&includeHolds=false";
-        return String.format("%saccount/%s?apikey=%s%s", basePath, uin, API_KEY, additional);
+    private void getEndpointBadRequest(String sourceUrl, String catalogEndpoint) throws Exception  {
+        performGet(sourceUrl, catalogEndpoint, once(), withStatus(HttpStatus.BAD_REQUEST))
+            .andExpect(status().isBadRequest());
+
+        restServer.verify();
     }
 
-    private String getLoansUrl(String uin) {
-        String additional = "&includeLoans=true&includeCharges=false&includeHolds=false";
-        return String.format("%saccount/%s?apikey=%s%s", basePath, uin, API_KEY, additional);
+    private void getEndpointNotFound(String sourceUrl, String catalogEndpoint) throws Exception {
+        performGet(sourceUrl, catalogEndpoint, once(), withStatus(HttpStatus.NOT_FOUND))
+            .andExpect(status().isNotFound());
+
+        restServer.verify();
     }
+
+    private void getEndpointDateParseError(String sourceUrl, String catalogEndpoint) throws Exception  {
+        performGet(sourceUrl, catalogEndpoint, once(), successResponse(patronAccountDateParseErrorResource))
+            .andExpect(status().isInternalServerError());
+
+        restServer.verify();
+    }
+
+    private void getEndpointNotSupportedForCatalog(String sourceUrl, String catalogEndpoint) throws Exception  {
+        performGetWithCatalogName(sourceUrl, catalogEndpoint, never(), successResponse(patronAccountResource), VOYAGER_CATALOG)
+            .andExpect(status().isBadRequest());
+
+        restServer.verify();
+    }
+
+    private ResultActions performGet(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response) throws Exception  {
+        expectResponse(sourceUrl, count, response);
+
+        return mockMvc.perform(get("/patron/{uin}/" + catalogEndpoint, UIN)
+            .contentType(MediaType.APPLICATION_JSON)
+        );
+    }
+
+    private ResultActions performGetWithCatalogName(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response, String catalogName) throws Exception  {
+        expectResponse(sourceUrl, count, response);
+
+        return mockMvc.perform(get("/patron/{uin}/" + catalogEndpoint, UIN)
+            .param("catalogName", catalogName)
+            .contentType(MediaType.APPLICATION_JSON)
+        );
+    }
+
+    private void expectResponse(String sourceUrl, ExpectedCount count, ResponseCreator response) throws Exception  {
+        restServer.expect(count, requestTo(sourceUrl))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(response);
+    }
+
+    private String getFinesUrl() {
+        return getAccountUrl(false, true, false);
+    }
+
+    private String getLoansUrl() {
+        return getAccountUrl(true, false, false);
+    }
+
+    private String getAccountUrl(boolean loans, boolean charges, boolean holds) {
+        return String.format("%saccount/%s?apikey=%s&includeLoans=%s&includeCharges=%s&includeHolds=%s",
+            basePath, UIN, API_KEY, Boolean.toString(loans), Boolean.toString(charges), Boolean.toString(holds));
+    }
+
+    private String getMockJson(Resource resource) throws JsonParseException, JsonMappingException, IOException {
+        return IOUtils.toString(resource.getInputStream(), "UTF-8");
+    }
+
+    private DefaultResponseCreator successResponse(Resource resource) throws Exception {
+        return withSuccess(getMockJson(resource), MediaType.APPLICATION_JSON);
+    }
+
 }
