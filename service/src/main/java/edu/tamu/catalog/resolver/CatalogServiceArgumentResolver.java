@@ -18,6 +18,8 @@ import edu.tamu.catalog.service.CatalogService;
 
 public class CatalogServiceArgumentResolver implements HandlerMethodArgumentResolver {
 
+    private static final String CATALOG_NAME_QUERY_PARAM = "catalogName";
+
     private List<CatalogService> catalogServices;
 
     public CatalogServiceArgumentResolver(List<CatalogService> catalogServices) {
@@ -33,7 +35,7 @@ public class CatalogServiceArgumentResolver implements HandlerMethodArgumentReso
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
             NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
         final HttpServletRequest request = (HttpServletRequest) webRequest.getNativeRequest();
-        String catalogName = request.getParameter("catalogName");
+        String catalogName = request.getParameter(CATALOG_NAME_QUERY_PARAM);
         if (StringUtils.isEmpty(catalogName)) {
             DefaultCatalog defaultCatalog = parameter.getParameterAnnotation(DefaultCatalog.class);
             catalogName = defaultCatalog.value();
