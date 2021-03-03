@@ -1,6 +1,6 @@
 package edu.tamu.catalog.controller;
 
-import java.text.ParseException;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import edu.tamu.catalog.domain.model.FeesFines;
+import edu.tamu.catalog.domain.model.LoanItem;
 import edu.tamu.catalog.service.CatalogService;
 import edu.tamu.catalog.service.CatalogServiceFactory;
 
@@ -37,6 +38,20 @@ public class PatronController {
 
         return ResponseEntity.status(HttpStatus.OK)
             .body(feesFines);
+    }
+
+    /**
+     * Provides data for all loan items associated with a patron.
+     *
+     * @param String catalogName (optional)
+     * @param String user
+     * @return
+     */
+    @GetMapping("/{uin}/loans")
+    public @ResponseBody ResponseEntity<List<LoanItem>> getLoanItems(@RequestParam(value="catalogName", defaultValue="folio") String catalogName, @PathVariable String uin) throws Exception {
+        List<LoanItem> loanItems = getCatalogServiceByName(catalogName).getLoanItems(uin);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(loanItems);
     }
 
     private CatalogService getCatalogServiceByName(String catalogName) {

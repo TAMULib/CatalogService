@@ -5,6 +5,7 @@ import java.util.Map;
 
 import edu.tamu.catalog.domain.model.FeesFines;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
+import edu.tamu.catalog.domain.model.LoanItem;
 
 /**
  * An interface describing Catalog Service API connectors
@@ -20,6 +21,8 @@ public interface CatalogService {
     HoldingsRecord getHolding(String id, String holdingId);
 
     FeesFines getFeesFines(String uin) throws Exception;
+
+    List<LoanItem> getLoanItems(String uin) throws Exception;
 
     String getName();
 

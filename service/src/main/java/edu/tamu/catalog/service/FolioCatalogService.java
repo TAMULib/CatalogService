@@ -48,6 +48,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import edu.tamu.catalog.domain.model.FeeFine;
 import edu.tamu.catalog.domain.model.FeesFines;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
+import edu.tamu.catalog.domain.model.LoanItem;
 import edu.tamu.catalog.utility.Marc21Xml;
 
 public class FolioCatalogService extends AbstractCatalogService {
@@ -91,6 +92,10 @@ public class FolioCatalogService extends AbstractCatalogService {
         }
 
         return null;
+    }
+
+    private String getNodeValue(JsonNode node, String fieldName) {
+        return node.has(fieldName) ? node.get(fieldName).asText() : null;
     }
 
     private String httpRequest(String instanceId) throws IOException {
@@ -330,6 +335,48 @@ public class FolioCatalogService extends AbstractCatalogService {
         }
 
         return new FeesFines(uin, total, list.size(), list);
+    }
+
+    @Override
+    public List<LoanItem> getLoanItems(String uin) throws ParseException {
+        String path = "patron/account/";
+        String additional = "&includeLoans=true&includeCharges=false&includeHolds=false";
+        String url = String.format("%s%s%s?apikey={apikey}%s", getAPIBase(), path, uin, additional);
+        String apiKey = getAuthentication().get(CatalogServiceFactory.FIELD_APIKEY);
+
+        logger.debug(String.format("Asking for patron loans from: %s", url));
+
+        JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
+
+        List<LoanItem> list = new ArrayList<LoanItem>();
+
+        if (node.has("loans")) {
+            Iterator<JsonNode> iter = node.get("loans").elements();
+
+            while (iter.hasNext()) {
+                JsonNode loan = iter.next();
+                if (loan.has("item")) {
+                    JsonNode item = loan.get("item");
+
+                    Date loanDate = loan.has("loanDate") ? folioDateToDate(loan.get("loanDate").asText()) : null;
+                    Date loanDueDate = loan.has("dueDate") ? folioDateToDate(loan.get("dueDate").asText()) : null;
+                    String overDueString = getNodeValue(loan, "overdue");
+                    boolean overDue = false;
+                    if (overDueString != null) {
+                        overDue = Boolean.valueOf(overDueString);
+                    }
+
+                    String loanId = getNodeValue(loan, "id");
+                    String itemId = getNodeValue(item, "itemId");
+                    String instanceId = getNodeValue(item, "instanceId");
+                    String title = getNodeValue(item, "title");
+                    String author = getNodeValue(item, "author");
+
+                    list.add(new LoanItem(loanId, itemId, instanceId, loanDate, loanDueDate, overDue, title, author));
+                }
+            }
+        }
+        return list;
     }
 
     /**
