@@ -6,24 +6,20 @@ import static edu.tamu.weaver.response.ApiStatus.SUCCESS;
 import java.io.IOException;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
+import edu.tamu.catalog.annotation.DefaultCatalog;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.service.CatalogService;
-import edu.tamu.catalog.service.CatalogServiceFactory;
 import edu.tamu.weaver.response.ApiResponse;
 
 @RestController
 @RequestMapping("/catalog-access")
 public class CatalogAccessController {
-
-    @Autowired
-    private CatalogServiceFactory catalogServiceFactory;
 
     /**
      * Provides the raw CatalogHolding data
@@ -34,15 +30,15 @@ public class CatalogAccessController {
      * @throws JsonProcessingException
      * @throws IOException
      */
-	@RequestMapping("/get-holdings")
-	public ApiResponse getHoldings(@RequestParam(value="catalogName", defaultValue="evans") String catalogName, @RequestParam("bibId") String bibId) {
-	    List<HoldingsRecord> catalogHoldings = getCatalogServiceByName(catalogName).getHoldingsByBibId(bibId);
+    @RequestMapping("/get-holdings")
+    public ApiResponse getHoldings(@DefaultCatalog("evans") CatalogService catalogService, @RequestParam("bibId") String bibId) {
+        List<HoldingsRecord> catalogHoldings = catalogService.getHoldingsByBibId(bibId);
         if (catalogHoldings != null) {
             return new ApiResponse(SUCCESS, catalogHoldings);
         } else {
-            return new ApiResponse(ERROR,"Error retrieving holdings from " + catalogName + "catalog");
+            return new ApiResponse(ERROR, "Error retrieving holdings from " + catalogService.getName() + " catalog");
         }
-	}
+    }
 
     /**
      * Provides data for a single CatalogHolding
@@ -55,16 +51,13 @@ public class CatalogAccessController {
      * @throws IOException
      */
     @RequestMapping("/get-holding")
-    public ApiResponse getHolding(@RequestParam(value="catalogName", defaultValue="evans") String catalogName, @RequestParam("bibId") String bibId, @RequestParam("holdingId") String holdingId) {
-        HoldingsRecord catalogHolding = getCatalogServiceByName(catalogName).getHolding(bibId, holdingId);
+    public ApiResponse getHolding(@DefaultCatalog("evans") CatalogService catalogService, @RequestParam("bibId") String bibId, @RequestParam("holdingId") String holdingId) {
+        HoldingsRecord catalogHolding = catalogService.getHolding(bibId, holdingId);
         if (catalogHolding != null) {
             return new ApiResponse(SUCCESS, catalogHolding);
         } else {
-            return new ApiResponse(ERROR,"Error retrieving holding from " + catalogName + "catalog");
+            return new ApiResponse(ERROR, "Error retrieving holding from " + catalogService.getName() + " catalog");
         }
     }
 
-    private CatalogService getCatalogServiceByName(String catalogName) {
-      return catalogServiceFactory.getOrCreateCatalogService(catalogName);
-  }
 }

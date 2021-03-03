@@ -4,6 +4,7 @@ import static edu.tamu.weaver.response.ApiStatus.ERROR;
 import static edu.tamu.weaver.response.ApiStatus.SUCCESS;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -13,12 +14,10 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import edu.tamu.catalog.domain.model.HoldingsRecord;
-import edu.tamu.catalog.service.CatalogServiceFactory;
 import edu.tamu.catalog.service.FolioCatalogService;
 import edu.tamu.weaver.response.ApiResponse;
 
@@ -26,24 +25,21 @@ import edu.tamu.weaver.response.ApiResponse;
 public class CatalogAccessControllerTest {
 
     @Mock
-    private CatalogServiceFactory catalogServiceFactory;
-
-    @Mock
     private FolioCatalogService folioCatalogService;
 
-    @InjectMocks
     private CatalogAccessController catalogAccessController;
 
     @Before
     public void setup() {
-        when(catalogServiceFactory.getOrCreateCatalogService(any(String.class))).thenReturn(folioCatalogService);
+        folioCatalogService = mock(FolioCatalogService.class);
+        catalogAccessController = new CatalogAccessController();
     }
 
     @Test
     public void testGetHoldingsSuccess() {
         when(folioCatalogService.getHoldingsByBibId(any(String.class))).thenReturn(new ArrayList<HoldingsRecord>());
 
-        ApiResponse response = catalogAccessController.getHoldings("evans", "foo");
+        ApiResponse response = catalogAccessController.getHoldings(folioCatalogService, "foo");
         assertEquals("Did not receive expected successful response", SUCCESS, response.getMeta().getStatus());
     }
 
@@ -51,7 +47,7 @@ public class CatalogAccessControllerTest {
     public void testGetHoldingsFailure() {
         when(folioCatalogService.getHoldingsByBibId(any(String.class))).thenReturn(null);
 
-        ApiResponse response = catalogAccessController.getHoldings("evans", "foo");
+        ApiResponse response = catalogAccessController.getHoldings(folioCatalogService, "foo");
         assertEquals("Did not receive expected error response", ERROR, response.getMeta().getStatus());
     }
 
@@ -62,7 +58,7 @@ public class CatalogAccessControllerTest {
 
         when(folioCatalogService.getHolding(any(String.class), any(String.class))).thenReturn(holding);
 
-        ApiResponse response = catalogAccessController.getHolding("evans", "foo", "bar");
+        ApiResponse response = catalogAccessController.getHolding(folioCatalogService, "foo", "bar");
         assertEquals("Did not receive expected successful response", SUCCESS, response.getMeta().getStatus());
     }
 
@@ -70,7 +66,7 @@ public class CatalogAccessControllerTest {
     public void testGetHoldingFailure() {
         when(folioCatalogService.getHolding(any(String.class), any(String.class))).thenReturn(null);
 
-        ApiResponse response = catalogAccessController.getHolding("evans", "foo", "bar");
+        ApiResponse response = catalogAccessController.getHolding(folioCatalogService, "foo", "bar");
         assertEquals("Did not receive expected error response", ERROR, response.getMeta().getStatus());
     }
 

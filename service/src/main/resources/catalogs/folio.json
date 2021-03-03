@@ -1,0 +1,11 @@
+{
+  "name": "folio",
+  "type": "folio",
+  "baseOkapiUrl": "https://folio-okapi-q3.library.tamu.edu",
+  "baseEdgeUrl": "https://folio-edge.library.tamu.edu",
+  "tenant": "tamu",
+  "username": "",
+  "password": "",
+  "edgeApiKey": "eyJzIjoiUk9RN0VFS2Q0VGR1VTVweHh3NWYiLCJ0IjoidGFtdSIsInUiOiJlZGdldXNlciJ9",
+  "repositoryBaseUrl": "folio-edge.library.tamu.edu"
+}

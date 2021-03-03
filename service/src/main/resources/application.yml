@@ -1,0 +1,25 @@
+server:
+  port: 9000
+  contextPath:
+
+security.basic.enabled: false
+
+spring.profiles.active: production
+
+logging:
+  level:
+    edu.tamu: INFO
+    org.springframework: INFO
+    ro.isdc.wro: INFO
+
+  encoder.pattern: "%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n"
+  file: ./logs/application.log
+  rolling:
+    pattern: ./logs/application-%d{yyyy-MM-dd}.%i.log
+    file-size: 5MB
+    threshold-level: ALL
+
+app:
+  http.timeout: 10000
+  security.allow-access: http://localhost,http://localhost:8080
+  whitelist: 127.0.0.1

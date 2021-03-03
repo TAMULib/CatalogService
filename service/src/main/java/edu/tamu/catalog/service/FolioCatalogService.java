@@ -33,8 +33,11 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.client.RestTemplate;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -43,15 +46,18 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import edu.tamu.catalog.domain.model.FeeFine;
 import edu.tamu.catalog.domain.model.FeesFines;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
+import edu.tamu.catalog.properties.CatalogServiceProperties;
+import edu.tamu.catalog.properties.FolioProperties;
 import edu.tamu.catalog.utility.Marc21Xml;
 
-public class FolioCatalogService extends AbstractCatalogService {
+public class FolioCatalogService implements CatalogService {
+
+    private static final Logger logger = LoggerFactory.getLogger(FolioCatalogService.class);
+
     private static final String VERB_GET_RECORD = "GetRecord";
     private static final String METADATA_PREFIX = "marc21_withholdings";
     private static final String ERROR_ATTR_CODE = "code";
@@ -66,16 +72,18 @@ public class FolioCatalogService extends AbstractCatalogService {
     private static final String NODE_OAI = "oai";
     private static final String NODE_RECORD = "record";
 
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
+    @Autowired
     private RestTemplate restTemplate;
 
-    public FolioCatalogService() {
-        super();
+    private FolioProperties properties;
+
+    public FolioCatalogService(CatalogServiceProperties properties) {
+        this.properties = (FolioProperties) properties;
     }
 
-    public FolioCatalogService(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
+    @Override
+    public String getName() {
+        return properties.getName();
     }
 
     @Override
@@ -99,18 +107,16 @@ public class FolioCatalogService extends AbstractCatalogService {
     }
 
     private String httpRequest(String instanceId) throws IOException {
-        Map<String, String> authentication = getAuthentication();
-        String apiKey = authentication.get(CatalogServiceFactory.FIELD_APIKEY);
-        String repositoryBaseUrl = authentication.get(CatalogServiceFactory.FIELD_REPOSITORY_BASE_URL);
-        String tenant = authentication.get(CatalogServiceFactory.FIELD_TENANT);
+        String apiKey = properties.getEdgeApiKey();
+        String repositoryBaseUrl = properties.getRepositoryBaseUrl();
+        String tenant = properties.getTenant();
 
         String identifier = String.format("%s:%s:%s/%s", NODE_OAI, repositoryBaseUrl, tenant, instanceId);
-        String queryString = String.format("verb=%s&metadataPrefix=%s&apikey=%s&identifier=%s",
-          VERB_GET_RECORD, METADATA_PREFIX, apiKey, identifier);
+        String queryString = String.format("verb=%s&metadataPrefix=%s&apikey=%s&identifier=%s", VERB_GET_RECORD, METADATA_PREFIX, apiKey, identifier);
 
         String oaiPath = "oai/";
 
-        String url = String.format("%s%s?%s", getAPIBase(), oaiPath, queryString);
+        String url = String.format("%s/%s?%s", properties.getBaseEdgeUrl(), oaiPath, queryString);
 
         logger.debug("Asking for holdings from: " + url);
 
@@ -132,7 +138,8 @@ public class FolioCatalogService extends AbstractCatalogService {
 
             NodeList errorNodes = doc.getElementsByTagName(NODE_ERROR);
 
-            // TODO: this potentially has one or more errors, be sure to determine how to handle the "or more" part.
+            // TODO: this potentially has one or more errors, be sure to determine how to
+            // handle the "or more" part.
             if (errorNodes.getLength() > 0) {
                 Node node = errorNodes.item(0);
                 Node code = node.getAttributes().getNamedItem(ERROR_ATTR_CODE);
@@ -148,7 +155,8 @@ public class FolioCatalogService extends AbstractCatalogService {
 
             if (verbNodes.getLength() > 0) {
 
-                // there should only be a single getRecord element, only get the first one even if more than one exist.
+                // there should only be a single getRecord element, only get the first one even
+                // if more than one exist.
                 NodeList recordNodes = verbNodes.item(0).getChildNodes();
 
                 for (int i = 0; i < recordNodes.getLength(); i++) {
@@ -158,8 +166,7 @@ public class FolioCatalogService extends AbstractCatalogService {
                     if (recordHoldings.size() > 0) {
                         if (holdingId == null) {
                             holdings.addAll(recordHoldings);
-                        }
-                        else {
+                        } else {
                             for (int j = 0; j < recordHoldings.size(); j++) {
                                 if (recordHoldings.get(j).getMfhd().equalsIgnoreCase(holdingId)) {
                                     holdings.add(recordHoldings.get(j));
@@ -172,7 +179,8 @@ public class FolioCatalogService extends AbstractCatalogService {
             }
         } catch (DOMException | IOException | ParserConfigurationException | SAXException e) {
             // TODO Auto-generated catch block
-            // TODO consider throwing all of these so that caller can handle more appropriately.
+            // TODO consider throwing all of these so that caller can handle more
+            // appropriately.
             e.printStackTrace();
         }
 
@@ -223,14 +231,15 @@ public class FolioCatalogService extends AbstractCatalogService {
             Node node = marcList.item(i);
 
             if (nodeNameMatches(node.getNodeName(), NODE_DATA_FIELD)) {
-              Marc21Xml.addDataFieldRecord(node, recordValues, recordBackupValues);
+                Marc21Xml.addDataFieldRecord(node, recordValues, recordBackupValues);
             }
         }
 
-        //apply backup values if needed and available
+        // apply backup values if needed and available
         Marc21Xml.applyBackupRecordValues(recordValues, recordBackupValues);
 
-        // TODO: the current implementation of buildCoreHolding() expects a slightly different nesting structure in the XML.
+        // TODO: the current implementation of buildCoreHolding() expects a slightly
+        // different nesting structure in the XML.
         Map<String, String> holdingValues = Marc21Xml.buildCoreHolding(NODE_PREFIX, marcRecord);
 
         logger.debug("MarcRecordLeader: " + recordValues.get(RECORD_MARC_RECORD_LEADER));
@@ -241,13 +250,13 @@ public class FolioCatalogService extends AbstractCatalogService {
 
         Boolean validLargeVolume = Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME));
 
-        logger.debug("Valid Large Volume: "+ validLargeVolume);
+        logger.debug("Valid Large Volume: " + validLargeVolume);
 
         Map<String, Map<String, String>> catalogItems = new HashMap<String, Map<String, String>>();
 
         for (int i = 0; i < marcListCount; i++) {
-            if (nodeNameMatches(marcList.item(i).getNodeName().toString(), NODE_DATA_FIELD) &&
-                Marc21Xml.attributeTagMatches(marcList.item(i), "952")) {
+            if (nodeNameMatches(marcList.item(i).getNodeName().toString(), NODE_DATA_FIELD)
+                    && Marc21Xml.attributeTagMatches(marcList.item(i), "952")) {
 
                 NodeList childNodes = marcList.item(i).getChildNodes();
                 for (int j = 0; j < childNodes.getLength(); j++) {
@@ -260,24 +269,27 @@ public class FolioCatalogService extends AbstractCatalogService {
         }
 
         return new HoldingsRecord(recordValues.get(RECORD_MARC_RECORD_LEADER), holdingValues.get(RECORD_MFHD),
-            recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
-            recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
-            recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
-            holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC), recordValues.get(RECORD_RECORD_ID),
-            holdingValues.get(RECORD_CALL_NUMBER), validLargeVolume, new HashMap<String, Map<String, String>>(catalogItems));
+                recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
+                recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
+                recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
+                holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC),
+                recordValues.get(RECORD_RECORD_ID), holdingValues.get(RECORD_CALL_NUMBER), validLargeVolume,
+                new HashMap<String, Map<String, String>>(catalogItems));
     }
 
     /**
-     * Attempt to (case-insensitively) match the tag name (nodeName) against the desired match with the marc prefix.
+     * Attempt to (case-insensitively) match the tag name (nodeName) against the
+     * desired match with the marc prefix.
      */
     private boolean nodeNameMatches(String nodeName, String matchName) {
-      return nodeName.equalsIgnoreCase(NODE_PREFIX + matchName);
+        return nodeName.equalsIgnoreCase(NODE_PREFIX + matchName);
     }
 
     /**
      * Build the core item, based on the current information we can get from folio.
      */
-    private void buildCoreItem(String instanceId, String barcode, NodeList nodes, Map<String, Map<String, String>> catalogItems) {
+    private void buildCoreItem(String instanceId, String barcode, NodeList nodes,
+            Map<String, Map<String, String>> catalogItems) {
         Map<String, String> itemData = new HashMap<String, String>();
 
         itemData.put("bibId", instanceId);
@@ -294,10 +306,10 @@ public class FolioCatalogService extends AbstractCatalogService {
 
     @Override
     public FeesFines getFeesFines(String uin) throws ParseException {
-        String path = "patron/account/";
+        String path = "patron/account";
         String additional = "&includeLoans=false&includeCharges=true&includeHolds=false";
-        String url = String.format("%s%s%s?apikey={apikey}%s", getAPIBase(), path, uin, additional);
-        String apiKey = getAuthentication().get(CatalogServiceFactory.FIELD_APIKEY);
+        String url = String.format("%s/%s/%s?apikey={apikey}%s", properties.getBaseEdgeUrl(), path, uin, additional);
+        String apiKey = properties.getEdgeApiKey();
 
         logger.debug(String.format("Asking for fines from: %s", url));
 
@@ -339,10 +351,10 @@ public class FolioCatalogService extends AbstractCatalogService {
 
     @Override
     public List<LoanItem> getLoanItems(String uin) throws ParseException {
-        String path = "patron/account/";
+        String path = "patron/account";
         String additional = "&includeLoans=true&includeCharges=false&includeHolds=false";
-        String url = String.format("%s%s%s?apikey={apikey}%s", getAPIBase(), path, uin, additional);
-        String apiKey = getAuthentication().get(CatalogServiceFactory.FIELD_APIKEY);
+        String url = String.format("%s/%s/%s?apikey={apikey}%s", properties.getBaseEdgeUrl(), path, uin, additional);
+        String apiKey = properties.getEdgeApiKey();
 
         logger.debug(String.format("Asking for patron loans from: %s", url));
 

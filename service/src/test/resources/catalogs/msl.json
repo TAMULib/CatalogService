@@ -1,0 +1,6 @@
+{
+  "name": "msl",
+  "type": "voyager",
+  "baseUrl": "http://localhost:7414/vxws",
+  "sidPrefix": "chiron"
+}

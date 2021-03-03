@@ -42,6 +42,8 @@ import org.xml.sax.SAXException;
 import edu.tamu.catalog.domain.model.FeesFines;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
+import edu.tamu.catalog.properties.CatalogServiceProperties;
+import edu.tamu.catalog.properties.VoyagerProperties;
 import edu.tamu.catalog.utility.Marc21Xml;
 import edu.tamu.weaver.utility.HttpUtility;
 
@@ -53,20 +55,34 @@ import edu.tamu.weaver.utility.HttpUtility;
  * @author James Creel <jcreel@library.tamu.edu>
  *
  */
+public class VoyagerCatalogService implements CatalogService {
 
-public class VoyagerCatalogService extends AbstractCatalogService {
+    private static final Logger logger = LoggerFactory.getLogger(FolioCatalogService.class);
+
     private static final int REQUEST_TIMEOUT = 120000;
 
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    // TODO: use RestTemplate instead of HttpUtility
 
-    private void addMapValue(Map<String,String> map, String key, String newValue) {
-        map.put(key, (newValue != null ? newValue:""));
+    private VoyagerProperties properties;
+
+    public VoyagerCatalogService(CatalogServiceProperties properties) {
+        this.properties = (VoyagerProperties) properties;
     }
 
-    protected Map<String,String> buildCoreRecord(String bibId) {
-        logger.debug("Asking for Record from: " + getAPIBase() + "record/" + bibId + "/?view=full");
+    @Override
+    public String getName() {
+        return properties.getName();
+    }
+
+    private void addMapValue(Map<String, String> map, String key, String newValue) {
+        map.put(key, (newValue != null ? newValue : ""));
+    }
+
+    protected Map<String, String> buildCoreRecord(String bibId) {
+        logger.debug("Asking for Record from: " + properties.getBaseUrl() + "/record/" + bibId + "/?view=full");
         try {
-            String recordResult = HttpUtility.makeHttpRequest(getAPIBase() + "record/" + bibId + "/?view=full", "GET", Optional.empty(), Optional.empty(), REQUEST_TIMEOUT);
+            String recordResult = HttpUtility.makeHttpRequest(properties.getBaseUrl() + "/record/" + bibId + "/?view=full", "GET",
+                    Optional.empty(), Optional.empty(), REQUEST_TIMEOUT);
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 
@@ -77,10 +93,11 @@ public class VoyagerCatalogService extends AbstractCatalogService {
             NodeList dataFields = doc.getElementsByTagName("datafield");
             int dataFieldCount = dataFields.getLength();
 
-            Map<String,String> recordValues = new HashMap<String,String>();
-            Map<String,String> recordBackupValues = new HashMap<String,String>();
+            Map<String, String> recordValues = new HashMap<String, String>();
+            Map<String, String> recordBackupValues = new HashMap<String, String>();
 
-            addMapValue(recordValues, RECORD_MARC_RECORD_LEADER, doc.getElementsByTagName("leader").item(0).getTextContent());
+            addMapValue(recordValues, RECORD_MARC_RECORD_LEADER,
+                    doc.getElementsByTagName("leader").item(0).getTextContent());
             NodeList controlFields = doc.getElementsByTagName("controlfield");
             int controlFieldsCount = controlFields.getLength();
 
@@ -92,7 +109,7 @@ public class VoyagerCatalogService extends AbstractCatalogService {
                 Marc21Xml.addDataFieldRecord(dataFields.item(i), recordValues, recordBackupValues);
             }
 
-            //apply backup values if needed and available
+            // apply backup values if needed and available
             Marc21Xml.applyBackupRecordValues(recordValues, recordBackupValues);
 
             return recordValues;
@@ -121,12 +138,12 @@ public class VoyagerCatalogService extends AbstractCatalogService {
     @Override
     public List<HoldingsRecord> getHoldingsByBibId(String bibId) {
         try {
-            Map<String,String> recordValues = buildCoreRecord(bibId);
+            Map<String, String> recordValues = buildCoreRecord(bibId);
 
-            logger.debug("Asking for holdings from: " + getAPIBase() + "record/" + bibId + "/holdings?view=items");
-            String result = HttpUtility.makeHttpRequest(getAPIBase() + "record/" + bibId + "/holdings?view=items",
+            logger.debug("Asking for holdings from: " + properties.getBaseUrl() + "/record/" + bibId + "/holdings?view=items");
+            String result = HttpUtility.makeHttpRequest(properties.getBaseUrl() + "/record/" + bibId + "/holdings?view=items",
                     "GET", Optional.empty(), Optional.empty(), REQUEST_TIMEOUT);
-            logger.debug("Received holdings from: " + getAPIBase() + "record/" + bibId + "/holdings?view=items");
+            logger.debug("Received holdings from: " + properties.getBaseUrl() + "/record/" + bibId + "/holdings?view=items");
 
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -141,8 +158,9 @@ public class VoyagerCatalogService extends AbstractCatalogService {
             logger.debug("\n\nThe Holding Count: " + holdingCount);
 
             for (int i = 0; i < holdingCount; i++) {
-                logger.debug("Current Holding: " + holdings.item(i).getAttributes().getNamedItem("href").getTextContent());
-                Map<String,String> holdingValues = Marc21Xml.buildCoreHolding(holdings.item(i));
+                logger.debug(
+                        "Current Holding: " + holdings.item(i).getAttributes().getNamedItem("href").getTextContent());
+                Map<String, String> holdingValues = Marc21Xml.buildCoreHolding(holdings.item(i));
 
                 logger.debug("MarcRecordLeader: " + recordValues.get(RECORD_MARC_RECORD_LEADER));
                 logger.debug("MFHD: " + holdingValues.get(RECORD_MFHD));
@@ -152,7 +170,7 @@ public class VoyagerCatalogService extends AbstractCatalogService {
 
                 Boolean validLargeVolume = Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME));
 
-                logger.debug("Valid Large Volume: "+ validLargeVolume);
+                logger.debug("Valid Large Volume: " + validLargeVolume);
 
                 Map<String, Map<String, String>> catalogItems = new HashMap<String, Map<String, String>>();
 
@@ -160,21 +178,26 @@ public class VoyagerCatalogService extends AbstractCatalogService {
                 int childCount = childNodes.getLength();
 
                 if (validLargeVolume) {
-                    //when we have a lot of items and it's a large volume candidate, just use the item data that came with the holding response, even though it's incomplete data
+                    // when we have a lot of items and it's a large volume candidate, just use the
+                    // item data that came with the holding response, even though it's incomplete
+                    // data
                     for (int j = 0; j < childCount; j++) {
                         if (childNodes.item(j) != null && childNodes.item(j).getNodeName() == "item") {
-                            catalogItems.put(childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(), Marc21Xml.buildCoreItem(childNodes.item(j)));
+                            catalogItems.put(childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(),
+                                    Marc21Xml.buildCoreItem(childNodes.item(j)));
                         }
                     }
                 } else {
                     if (childNodes.item(1) != null) {
-                        logger.debug("Item URL: " + childNodes.item(1).getAttributes().getNamedItem("href").getTextContent());
+                        logger.debug("Item URL: "
+                                + childNodes.item(1).getAttributes().getNamedItem("href").getTextContent());
                     }
 
                     for (int j = 0; j < childCount; j++) {
                         if (childNodes.item(j) != null && childNodes.item(j).getNodeName() == "item") {
                             String itemResult = HttpUtility.makeHttpRequest(
-                                    childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(), "GET", Optional.empty(), Optional.empty(), REQUEST_TIMEOUT);
+                                    childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(), "GET",
+                                    Optional.empty(), Optional.empty(), REQUEST_TIMEOUT);
 
                             logger.debug("Got Item details from: "
                                     + childNodes.item(j).getAttributes().getNamedItem("href").getTextContent());
@@ -183,11 +206,13 @@ public class VoyagerCatalogService extends AbstractCatalogService {
                             NodeList itemNodes = doc.getElementsByTagName("item");
 
                             int itemNodesCount = itemNodes.getLength();
-                            for (int l=0;l<itemNodesCount;l++) {
-                                catalogItems.put(childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(),
-                                    Marc21Xml.buildCoreItem(itemNodes.item(l)));
+                            for (int l = 0; l < itemNodesCount; l++) {
+                                catalogItems.put(
+                                        childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(),
+                                        Marc21Xml.buildCoreItem(itemNodes.item(l)));
                             }
-                            //sleep for a moment between item requests to avoid triggering a 429 from the Voyager API
+                            // sleep for a moment between item requests to avoid triggering a 429 from the
+                            // Voyager API
                             try {
                                 TimeUnit.MILLISECONDS.sleep(50);
                             } catch (InterruptedException e) {
@@ -197,12 +222,14 @@ public class VoyagerCatalogService extends AbstractCatalogService {
                     }
                 }
 
-                catalogHoldings.add(new HoldingsRecord(recordValues.get(RECORD_MARC_RECORD_LEADER), holdingValues.get(RECORD_MFHD),
-                    recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
-                    recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
-                    recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
-                    holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC), recordValues.get(RECORD_RECORD_ID),
-                    holdingValues.get(RECORD_CALL_NUMBER), validLargeVolume, new HashMap<String, Map<String, String>>(catalogItems)));
+                catalogHoldings.add(new HoldingsRecord(recordValues.get(RECORD_MARC_RECORD_LEADER),
+                        holdingValues.get(RECORD_MFHD), recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN),
+                        recordValues.get(RECORD_TITLE), recordValues.get(RECORD_AUTHOR),
+                        recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
+                        recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
+                        holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC),
+                        recordValues.get(RECORD_RECORD_ID), holdingValues.get(RECORD_CALL_NUMBER), validLargeVolume,
+                        new HashMap<String, Map<String, String>>(catalogItems)));
                 catalogItems.clear();
             }
             return catalogHoldings;
@@ -221,10 +248,10 @@ public class VoyagerCatalogService extends AbstractCatalogService {
 
     @Override
     public HoldingsRecord getHolding(String bibId, String holdingId) {
-        logger.debug("Asking for holding from: " + getAPIBase() + "record/" + bibId + "/holdings?view=items");
+        logger.debug("Asking for holding from: " + properties.getBaseUrl() + "/record/" + bibId + "/holdings?view=items");
         try {
-            Map<String,String> recordValues = buildCoreRecord(bibId);
-            String result = HttpUtility.makeHttpRequest(getAPIBase() + "record/" + bibId + "/holdings?view=items",
+            Map<String, String> recordValues = buildCoreRecord(bibId);
+            String result = HttpUtility.makeHttpRequest(properties.getBaseUrl() + "/record/" + bibId + "/holdings?view=items",
                     "GET", Optional.empty(), Optional.empty(), REQUEST_TIMEOUT);
 
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
@@ -236,12 +263,14 @@ public class VoyagerCatalogService extends AbstractCatalogService {
 
             Node holdingNode = null;
             NodeList controlFieldNodes = doc.getElementsByTagName("controlfield");
-            for (int i=0; i<controlFieldNodes.getLength();i++) {
+            for (int i = 0; i < controlFieldNodes.getLength(); i++) {
                 Node controlFieldNode = controlFieldNodes.item(i);
                 if (controlFieldNode != null) {
                     NamedNodeMap controlFieldAttributes = controlFieldNode.getAttributes();
-                    for (int j=0; j<controlFieldAttributes.getLength();j++) {
-                        if (controlFieldAttributes.item(j) != null && controlFieldAttributes.item(j).getNodeName() == "tag" && controlFieldAttributes.item(j).getTextContent().equals("001")) {
+                    for (int j = 0; j < controlFieldAttributes.getLength(); j++) {
+                        if (controlFieldAttributes.item(j) != null
+                                && controlFieldAttributes.item(j).getNodeName() == "tag"
+                                && controlFieldAttributes.item(j).getTextContent().equals("001")) {
                             if (controlFieldNode.getTextContent().equals(holdingId)) {
                                 holdingNode = controlFieldNode.getParentNode().getParentNode();
                             }
@@ -250,7 +279,7 @@ public class VoyagerCatalogService extends AbstractCatalogService {
                 }
             }
 
-            Map<String,String> holdingValues = Marc21Xml.buildCoreHolding(holdingNode);
+            Map<String, String> holdingValues = Marc21Xml.buildCoreHolding(holdingNode);
 
             Map<String, Map<String, String>> catalogItems = new HashMap<String, Map<String, String>>();
 
@@ -259,16 +288,19 @@ public class VoyagerCatalogService extends AbstractCatalogService {
 
             for (int j = 0; j < childCount; j++) {
                 if (childNodes.item(j) != null && childNodes.item(j).getNodeName() == "item") {
-                    catalogItems.put(childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(), Marc21Xml.buildCoreItem(childNodes.item(j)));
+                    catalogItems.put(childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(),
+                            Marc21Xml.buildCoreItem(childNodes.item(j)));
                 }
             }
 
             return new HoldingsRecord(recordValues.get(RECORD_MARC_RECORD_LEADER), holdingValues.get(RECORD_MFHD),
-                recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
-                recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
-                recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
-                holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC), recordValues.get(RECORD_RECORD_ID),
-                holdingValues.get(RECORD_CALL_NUMBER), Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME)), new HashMap<String, Map<String, String>>(catalogItems));
+                    recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
+                    recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
+                    recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
+                    holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC),
+                    recordValues.get(RECORD_RECORD_ID), holdingValues.get(RECORD_CALL_NUMBER),
+                    Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME)),
+                    new HashMap<String, Map<String, String>>(catalogItems));
 
         } catch (IOException e) {
             // TODO Auto-generated catch block
@@ -293,4 +325,5 @@ public class VoyagerCatalogService extends AbstractCatalogService {
     public List<LoanItem> getLoanItems(String uin) throws Exception {
         throw new UnsupportedOperationException("Not supported by the requested catalog.");
     }
+
 }
