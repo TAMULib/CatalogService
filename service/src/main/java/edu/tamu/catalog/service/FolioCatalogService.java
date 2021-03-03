@@ -251,8 +251,8 @@ public class FolioCatalogService implements CatalogService {
         Map<String, Map<String, String>> catalogItems = new HashMap<String, Map<String, String>>();
 
         for (int i = 0; i < marcListCount; i++) {
-            if (nodeNameMatches(marcList.item(i).getNodeName().toString(), NODE_DATA_FIELD)
-                    && Marc21Xml.attributeTagMatches(marcList.item(i), "952")) {
+            if (nodeNameMatches(marcList.item(i).getNodeName().toString(), NODE_DATA_FIELD) &&
+                Marc21Xml.attributeTagMatches(marcList.item(i), "952")) {
 
                 NodeList childNodes = marcList.item(i).getChildNodes();
                 for (int j = 0; j < childNodes.getLength(); j++) {
@@ -284,8 +284,7 @@ public class FolioCatalogService implements CatalogService {
     /**
      * Build the core item, based on the current information we can get from folio.
      */
-    private void buildCoreItem(String instanceId, String barcode, NodeList nodes,
-            Map<String, Map<String, String>> catalogItems) {
+    private void buildCoreItem(String instanceId, String barcode, NodeList nodes, Map<String, Map<String, String>> catalogItems) {
         Map<String, String> itemData = new HashMap<String, String>();
 
         itemData.put("bibId", instanceId);
