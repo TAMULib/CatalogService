@@ -138,8 +138,7 @@ public class FolioCatalogService implements CatalogService {
 
             NodeList errorNodes = doc.getElementsByTagName(NODE_ERROR);
 
-            // TODO: this potentially has one or more errors, be sure to determine how to
-            // handle the "or more" part.
+            // TODO: this potentially has one or more errors, be sure to determine how to handle the "or more" part.
             if (errorNodes.getLength() > 0) {
                 Node node = errorNodes.item(0);
                 Node code = node.getAttributes().getNamedItem(ERROR_ATTR_CODE);
@@ -155,8 +154,7 @@ public class FolioCatalogService implements CatalogService {
 
             if (verbNodes.getLength() > 0) {
 
-                // there should only be a single getRecord element, only get the first one even
-                // if more than one exist.
+                // there should only be a single getRecord element, only get the first one even if more than one exist.
                 NodeList recordNodes = verbNodes.item(0).getChildNodes();
 
                 for (int i = 0; i < recordNodes.getLength(); i++) {
@@ -178,9 +176,7 @@ public class FolioCatalogService implements CatalogService {
                 }
             }
         } catch (DOMException | IOException | ParserConfigurationException | SAXException e) {
-            // TODO Auto-generated catch block
-            // TODO consider throwing all of these so that caller can handle more
-            // appropriately.
+            // TODO consider throwing all of these so that caller can handle more appropriately.
             e.printStackTrace();
         }
 

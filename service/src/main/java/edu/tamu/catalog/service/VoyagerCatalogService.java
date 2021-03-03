@@ -81,8 +81,8 @@ public class VoyagerCatalogService implements CatalogService {
     protected Map<String, String> buildCoreRecord(String bibId) {
         logger.debug("Asking for Record from: " + properties.getBaseUrl() + "/record/" + bibId + "/?view=full");
         try {
-            String recordResult = HttpUtility.makeHttpRequest(properties.getBaseUrl() + "/record/" + bibId + "/?view=full", "GET",
-                    Optional.empty(), Optional.empty(), REQUEST_TIMEOUT);
+            String recordResult = HttpUtility.makeHttpRequest(properties.getBaseUrl() + "/record/" + bibId + "/?view=full",
+                    "GET", Optional.empty(), Optional.empty(), REQUEST_TIMEOUT);
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 
@@ -96,8 +96,7 @@ public class VoyagerCatalogService implements CatalogService {
             Map<String, String> recordValues = new HashMap<String, String>();
             Map<String, String> recordBackupValues = new HashMap<String, String>();
 
-            addMapValue(recordValues, RECORD_MARC_RECORD_LEADER,
-                    doc.getElementsByTagName("leader").item(0).getTextContent());
+            addMapValue(recordValues, RECORD_MARC_RECORD_LEADER, doc.getElementsByTagName("leader").item(0).getTextContent());
             NodeList controlFields = doc.getElementsByTagName("controlfield");
             int controlFieldsCount = controlFields.getLength();
 
@@ -113,14 +112,7 @@ public class VoyagerCatalogService implements CatalogService {
             Marc21Xml.applyBackupRecordValues(recordValues, recordBackupValues);
 
             return recordValues;
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (ParserConfigurationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (SAXException e) {
-            // TODO Auto-generated catch block
+        } catch (IOException | ParserConfigurationException | SAXException e) {
             e.printStackTrace();
         }
         return null;
@@ -158,8 +150,7 @@ public class VoyagerCatalogService implements CatalogService {
             logger.debug("\n\nThe Holding Count: " + holdingCount);
 
             for (int i = 0; i < holdingCount; i++) {
-                logger.debug(
-                        "Current Holding: " + holdings.item(i).getAttributes().getNamedItem("href").getTextContent());
+                logger.debug("Current Holding: " + holdings.item(i).getAttributes().getNamedItem("href").getTextContent());
                 Map<String, String> holdingValues = Marc21Xml.buildCoreHolding(holdings.item(i));
 
                 logger.debug("MarcRecordLeader: " + recordValues.get(RECORD_MARC_RECORD_LEADER));
@@ -179,8 +170,7 @@ public class VoyagerCatalogService implements CatalogService {
 
                 if (validLargeVolume) {
                     // when we have a lot of items and it's a large volume candidate, just use the
-                    // item data that came with the holding response, even though it's incomplete
-                    // data
+                    // item data that came with the holding response, even though it's incomplete data
                     for (int j = 0; j < childCount; j++) {
                         if (childNodes.item(j) != null && childNodes.item(j).getNodeName() == "item") {
                             catalogItems.put(childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(),
@@ -189,15 +179,13 @@ public class VoyagerCatalogService implements CatalogService {
                     }
                 } else {
                     if (childNodes.item(1) != null) {
-                        logger.debug("Item URL: "
-                                + childNodes.item(1).getAttributes().getNamedItem("href").getTextContent());
+                        logger.debug("Item URL: " + childNodes.item(1).getAttributes().getNamedItem("href").getTextContent());
                     }
 
                     for (int j = 0; j < childCount; j++) {
                         if (childNodes.item(j) != null && childNodes.item(j).getNodeName() == "item") {
-                            String itemResult = HttpUtility.makeHttpRequest(
-                                    childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(), "GET",
-                                    Optional.empty(), Optional.empty(), REQUEST_TIMEOUT);
+                            String itemResult = HttpUtility.makeHttpRequest(childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(),
+                                    "GET", Optional.empty(), Optional.empty(), REQUEST_TIMEOUT);
 
                             logger.debug("Got Item details from: "
                                     + childNodes.item(j).getAttributes().getNamedItem("href").getTextContent());
@@ -207,12 +195,10 @@ public class VoyagerCatalogService implements CatalogService {
 
                             int itemNodesCount = itemNodes.getLength();
                             for (int l = 0; l < itemNodesCount; l++) {
-                                catalogItems.put(
-                                        childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(),
+                                catalogItems.put(childNodes.item(j).getAttributes().getNamedItem("href").getTextContent(),
                                         Marc21Xml.buildCoreItem(itemNodes.item(l)));
                             }
-                            // sleep for a moment between item requests to avoid triggering a 429 from the
-                            // Voyager API
+                            // sleep for a moment between item requests to avoid triggering a 429 from the Voyager API
                             try {
                                 TimeUnit.MILLISECONDS.sleep(50);
                             } catch (InterruptedException e) {
@@ -233,14 +219,7 @@ public class VoyagerCatalogService implements CatalogService {
                 catalogItems.clear();
             }
             return catalogHoldings;
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (ParserConfigurationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (SAXException e) {
-            // TODO Auto-generated catch block
+        } catch (IOException | ParserConfigurationException | SAXException e) {
             e.printStackTrace();
         }
         return null;
@@ -268,9 +247,9 @@ public class VoyagerCatalogService implements CatalogService {
                 if (controlFieldNode != null) {
                     NamedNodeMap controlFieldAttributes = controlFieldNode.getAttributes();
                     for (int j = 0; j < controlFieldAttributes.getLength(); j++) {
-                        if (controlFieldAttributes.item(j) != null
-                                && controlFieldAttributes.item(j).getNodeName() == "tag"
-                                && controlFieldAttributes.item(j).getTextContent().equals("001")) {
+                        if (controlFieldAttributes.item(j) != null &&
+                            controlFieldAttributes.item(j).getNodeName() == "tag" &&
+                            controlFieldAttributes.item(j).getTextContent().equals("001")) {
                             if (controlFieldNode.getTextContent().equals(holdingId)) {
                                 holdingNode = controlFieldNode.getParentNode().getParentNode();
                             }
@@ -302,14 +281,7 @@ public class VoyagerCatalogService implements CatalogService {
                     Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME)),
                     new HashMap<String, Map<String, String>>(catalogItems));
 
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (ParserConfigurationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (SAXException e) {
-            // TODO Auto-generated catch block
+        } catch (IOException | ParserConfigurationException | SAXException e) {
             e.printStackTrace();
         }
 
