@@ -51,7 +51,5 @@ public class FolioProperties extends AbstractCatalogServiceProperties {
         setEdgeApiKey(edgeApiKey);
         setRepositoryBaseUrl(repositoryBaseUrl);
     }
-    
-    
 
 }
