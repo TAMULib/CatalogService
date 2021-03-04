@@ -112,7 +112,7 @@ public class FolioCatalogService implements CatalogService {
         String url = String.format("%s/%s/%s?%s", properties.getBaseEdgeUrl(), path, uin, queryString);
         String apiKey = properties.getEdgeApiKey();
 
-        logger.debug(String.format("Asking for fines from: %s", url));
+        logger.debug("Asking for fines from: {}", url);
 
         JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
 
@@ -157,7 +157,7 @@ public class FolioCatalogService implements CatalogService {
         String url = String.format("%s/%s/%s?apikey={apikey}%s", properties.getBaseEdgeUrl(), path, uin, additional);
         String apiKey = properties.getEdgeApiKey();
 
-        logger.debug(String.format("Asking for patron loans from: %s", url));
+        logger.debug("Asking for patron loans from: {}", url);
 
         JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
 
@@ -207,7 +207,7 @@ public class FolioCatalogService implements CatalogService {
 
             String url = String.format("%s/%s?%s", properties.getBaseEdgeUrl(), oaiPath, queryString);
 
-            logger.debug("Asking for holdings from: " + url);
+            logger.debug("Asking for holdings from: {}", url);
 
             String result = restTemplate.getForObject(url, String.class);
 
@@ -320,15 +320,15 @@ public class FolioCatalogService implements CatalogService {
         // different nesting structure in the XML.
         Map<String, String> holdingValues = Marc21Xml.buildCoreHolding(NODE_PREFIX, marcRecord);
 
-        logger.debug("MarcRecordLeader: " + recordValues.get(RECORD_MARC_RECORD_LEADER));
-        logger.debug("MFHD: " + holdingValues.get(RECORD_MFHD));
-        logger.debug("ISBN: " + recordValues.get(RECORD_ISBN));
-        logger.debug("Fallback Location: " + holdingValues.get(RECORD_FALLBACK_LOCATION_CODE));
-        logger.debug("Call Number: " + holdingValues.get(RECORD_CALL_NUMBER));
+        logger.debug("Marc record leader: {}", recordValues.get(RECORD_MARC_RECORD_LEADER));
+        logger.debug("MFHD: {}", holdingValues.get(RECORD_MFHD));
+        logger.debug("ISBN: {}", recordValues.get(RECORD_ISBN));
+        logger.debug("Fallback location: {}", holdingValues.get(RECORD_FALLBACK_LOCATION_CODE));
+        logger.debug("Call number: {}", holdingValues.get(RECORD_CALL_NUMBER));
 
         Boolean validLargeVolume = Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME));
 
-        logger.debug("Valid Large Volume: " + validLargeVolume);
+        logger.debug("Valid large volume: {}", validLargeVolume);
 
         Map<String, Map<String, String>> catalogItems = new HashMap<String, Map<String, String>>();
 

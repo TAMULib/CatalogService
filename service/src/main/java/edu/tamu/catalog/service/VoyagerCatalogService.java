@@ -108,7 +108,7 @@ public class VoyagerCatalogService implements CatalogService {
             logger.debug("The holdings count: {}", holdingCount);
 
             for (int i = 0; i < holdingCount; i++) {
-                logger.debug("Current holdings: " + holdings.item(i).getAttributes().getNamedItem("href").getTextContent());
+                logger.debug("Current holdings: {}", holdings.item(i).getAttributes().getNamedItem("href").getTextContent());
                 Map<String, String> holdingValues = Marc21Xml.buildCoreHolding(holdings.item(i));
 
                 logger.debug("Marc record leader: {}", recordValues.get(RECORD_MARC_RECORD_LEADER));
@@ -137,7 +137,7 @@ public class VoyagerCatalogService implements CatalogService {
                     }
                 } else {
                     if (childNodes.item(1) != null) {
-                        logger.debug("Item URL: " + childNodes.item(1).getAttributes().getNamedItem("href").getTextContent());
+                        logger.debug("Item URL: {}", childNodes.item(1).getAttributes().getNamedItem("href").getTextContent());
                     }
 
                     for (int j = 0; j < childCount; j++) {
