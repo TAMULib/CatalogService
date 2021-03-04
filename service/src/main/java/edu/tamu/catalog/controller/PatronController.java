@@ -22,13 +22,16 @@ public class PatronController {
     /**
      * Provides data for all fees and fines associated with a patron.
      *
-     * @param CatalogService catalogService (injected)
+     * @param CatalogService catalogService (resolved by query parameter catalogName)
      * @param String uin
      * @return
      * @throws Exception
      */
     @GetMapping("/{uin}/fines")
-    public @ResponseBody ResponseEntity<FeesFines> fines(@DefaultCatalog("folio") CatalogService catalogService, @PathVariable(required = true) String uin) throws Exception {
+    public @ResponseBody ResponseEntity<FeesFines> fines(
+        @DefaultCatalog("folio") CatalogService catalogService,
+        @PathVariable(required = true) String uin
+    ) throws Exception {
         FeesFines feesFines = catalogService.getFeesFines(uin);
 
         return ResponseEntity.status(HttpStatus.OK)
@@ -38,12 +41,15 @@ public class PatronController {
     /**
      * Provides data for all loan items associated with a patron.
      *
-     * @param CatalogService catalogService (injected)
+     * @param CatalogService catalogService (resolved by query parameter catalogName)
      * @param String uin
      * @return
      */
     @GetMapping("/{uin}/loans")
-    public @ResponseBody ResponseEntity<List<LoanItem>> getLoanItems(@DefaultCatalog("folio") CatalogService catalogService, @PathVariable(required = true) String uin) throws Exception {
+    public @ResponseBody ResponseEntity<List<LoanItem>> getLoanItems(
+        @DefaultCatalog("folio") CatalogService catalogService,
+        @PathVariable(required = true) String uin
+    ) throws Exception {
         List<LoanItem> loanItems = catalogService.getLoanItems(uin);
 
         return ResponseEntity.status(HttpStatus.OK)

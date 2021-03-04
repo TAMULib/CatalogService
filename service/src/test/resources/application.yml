@@ -14,5 +14,5 @@ logging:
 
 app:
   http.timeout: 10000
-  security.allow-acces: http://localhost,http://localhost:8080
+  security.allow-access: http://localhost,http://localhost:8080
   whitelist: 127.0.0.1

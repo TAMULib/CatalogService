@@ -26,7 +26,7 @@ import edu.tamu.catalog.service.VoyagerCatalogService;
 @Configuration
 public class CatalogServiceConfig {
 
-    private final static String TYPE_FIELD = "type";
+    private static final String TYPE_FIELD = "type";
 
     @Autowired
     private ConfigurableListableBeanFactory beanFactory;
@@ -44,9 +44,9 @@ public class CatalogServiceConfig {
             JsonNode propertiesNode = objectMapper.readTree(resource.getInputStream());
             JsonNode typeNode = propertiesNode.get(TYPE_FIELD);
             if (typeNode.isValueNode()) {
-                CatalogServiceFactory factory = CatalogServiceFactory.valueOf(typeNode.asText().toUpperCase());
-                CatalogServiceProperties properties = (CatalogServiceProperties) objectMapper.treeToValue(propertiesNode, factory.getPropertiesType());
-                CatalogService catalogService = factory.build(properties);
+                CatalogServiceFactory configServiceFactory = CatalogServiceFactory.valueOf(typeNode.asText().toUpperCase());
+                CatalogServiceProperties properties = (CatalogServiceProperties) objectMapper.treeToValue(propertiesNode, configServiceFactory.getPropertiesType());
+                CatalogService catalogService = configServiceFactory.build(properties);
                 beanFactory.initializeBean(catalogService, catalogService.getName());
                 beanFactory.autowireBean(catalogService);
                 beanFactory.registerSingleton(catalogService.getName(), catalogService);

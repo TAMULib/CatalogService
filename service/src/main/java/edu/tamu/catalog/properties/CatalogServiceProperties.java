@@ -2,6 +2,8 @@ package edu.tamu.catalog.properties;
 
 public interface CatalogServiceProperties {
 
-  public String getName();
+    public String getType();
+
+    public String getName();
 
 }
