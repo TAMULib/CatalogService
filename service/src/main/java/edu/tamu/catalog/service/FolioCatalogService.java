@@ -35,6 +35,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,6 +80,8 @@ public class FolioCatalogService implements CatalogService {
 
     public FolioCatalogService(CatalogServiceProperties properties) {
         this.properties = (FolioProperties) properties;
+        this.properties.setBaseEdgeUrl(StringUtils.removeEnd(this.properties.getBaseEdgeUrl(), "/"));
+        this.properties.setBaseOkapiUrl(StringUtils.removeEnd(this.properties.getBaseOkapiUrl(), "/"));
     }
 
     @Override
@@ -102,32 +105,111 @@ public class FolioCatalogService implements CatalogService {
         return null;
     }
 
-    private String getNodeValue(JsonNode node, String fieldName) {
-        return node.has(fieldName) ? node.get(fieldName).asText() : null;
+    @Override
+    public FeesFines getFeesFines(String uin) throws ParseException {
+        String path = "patron/account";
+        String queryString = "apikey={apikey}&includeLoans=false&includeCharges=true&includeHolds=false";
+        String url = String.format("%s/%s/%s?%s", properties.getBaseEdgeUrl(), path, uin, queryString);
+        String apiKey = properties.getEdgeApiKey();
+
+        logger.debug(String.format("Asking for fines from: %s", url));
+
+        JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
+
+        Double total = null;
+        if (node.has("totalCharges") && node.get("totalCharges").has("amount")) {
+            total = node.get("totalCharges").get("amount").asDouble();
+        }
+
+        List<FeeFine> list = new ArrayList<>();
+
+        if (node.has("charges")) {
+            Iterator<JsonNode> iter = node.get("charges").elements();
+
+            while (iter.hasNext()) {
+                JsonNode charge = iter.next();
+
+                double amount = 0;
+                if (charge.has("chargeAmount") && charge.get("chargeAmount").has("amount")) {
+                    amount = charge.get("chargeAmount").get("amount").asDouble();
+                }
+
+                String fineId = charge.has("feeFineId") ? charge.get("feeFineId").asText() : null;
+                String type = charge.has("reason") ? charge.get("reason").asText() : null;
+                Date date = charge.has("accrualDate") ? folioDateToDate(charge.get("accrualDate").asText()) : null;
+
+                String title = null;
+                if (charge.has("item") && charge.get("item").has("title")) {
+                    title = charge.get("item").get("title").asText();
+                }
+
+                list.add(new FeeFine(amount, fineId, type, date, title));
+            }
+        }
+
+        return new FeesFines(uin, total, list.size(), list);
     }
 
-    private String httpRequest(String instanceId) throws IOException {
+    @Override
+    public List<LoanItem> getLoanItems(String uin) throws ParseException {
+        String path = "patron/account";
+        String additional = "&includeLoans=true&includeCharges=false&includeHolds=false";
+        String url = String.format("%s/%s/%s?apikey={apikey}%s", properties.getBaseEdgeUrl(), path, uin, additional);
         String apiKey = properties.getEdgeApiKey();
-        String repositoryBaseUrl = properties.getRepositoryBaseUrl();
-        String tenant = properties.getTenant();
 
-        String identifier = String.format("%s:%s:%s/%s", NODE_OAI, repositoryBaseUrl, tenant, instanceId);
-        String queryString = String.format("verb=%s&metadataPrefix=%s&apikey=%s&identifier=%s", VERB_GET_RECORD, METADATA_PREFIX, apiKey, identifier);
+        logger.debug(String.format("Asking for patron loans from: %s", url));
 
-        String oaiPath = "oai/";
+        JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
 
-        String url = String.format("%s/%s?%s", properties.getBaseEdgeUrl(), oaiPath, queryString);
+        List<LoanItem> list = new ArrayList<LoanItem>();
 
-        logger.debug("Asking for holdings from: " + url);
+        if (node.has("loans")) {
+            Iterator<JsonNode> iter = node.get("loans").elements();
 
-        return restTemplate.getForObject(url, String.class);
+            while (iter.hasNext()) {
+                JsonNode loan = iter.next();
+                if (loan.has("item")) {
+                    JsonNode item = loan.get("item");
+
+                    Date loanDate = loan.has("loanDate") ? folioDateToDate(loan.get("loanDate").asText()) : null;
+                    Date loanDueDate = loan.has("dueDate") ? folioDateToDate(loan.get("dueDate").asText()) : null;
+                    String overDueString = getNodeValue(loan, "overdue");
+                    boolean overDue = false;
+                    if (overDueString != null) {
+                        overDue = Boolean.valueOf(overDueString);
+                    }
+
+                    String loanId = getNodeValue(loan, "id");
+                    String itemId = getNodeValue(item, "itemId");
+                    String instanceId = getNodeValue(item, "instanceId");
+                    String title = getNodeValue(item, "title");
+                    String author = getNodeValue(item, "author");
+
+                    list.add(new LoanItem(loanId, itemId, instanceId, loanDate, loanDueDate, overDue, title, author));
+                }
+            }
+        }
+        return list;
     }
 
     private List<HoldingsRecord> requestHoldings(String instanceId, String holdingId) {
         List<HoldingsRecord> holdings = new ArrayList<>();
 
         try {
-            String result = httpRequest(instanceId);
+            String apiKey = properties.getEdgeApiKey();
+            String repositoryBaseUrl = properties.getRepositoryBaseUrl();
+            String tenant = properties.getTenant();
+
+            String identifier = String.format("%s:%s:%s/%s", NODE_OAI, repositoryBaseUrl, tenant, instanceId);
+            String queryString = String.format("verb=%s&metadataPrefix=%s&apikey=%s&identifier=%s", VERB_GET_RECORD, METADATA_PREFIX, apiKey, identifier);
+
+            String oaiPath = "oai";
+
+            String url = String.format("%s/%s?%s", properties.getBaseEdgeUrl(), oaiPath, queryString);
+
+            logger.debug("Asking for holdings from: " + url);
+
+            String result = restTemplate.getForObject(url, String.class);
 
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -299,91 +381,8 @@ public class FolioCatalogService implements CatalogService {
         catalogItems.put(barcode, itemData);
     }
 
-    @Override
-    public FeesFines getFeesFines(String uin) throws ParseException {
-        String path = "patron/account";
-        String additional = "&includeLoans=false&includeCharges=true&includeHolds=false";
-        String url = String.format("%s/%s/%s?apikey={apikey}%s", properties.getBaseEdgeUrl(), path, uin, additional);
-        String apiKey = properties.getEdgeApiKey();
-
-        logger.debug(String.format("Asking for fines from: %s", url));
-
-        JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
-
-        Double total = null;
-        if (node.has("totalCharges") && node.get("totalCharges").has("amount")) {
-            total = node.get("totalCharges").get("amount").asDouble();
-        }
-
-        List<FeeFine> list = new ArrayList<>();
-
-        if (node.has("charges")) {
-            Iterator<JsonNode> iter = node.get("charges").elements();
-
-            while (iter.hasNext()) {
-                JsonNode charge = iter.next();
-
-                double amount = 0;
-                if (charge.has("chargeAmount") && charge.get("chargeAmount").has("amount")) {
-                    amount = charge.get("chargeAmount").get("amount").asDouble();
-                }
-
-                String fineId = charge.has("feeFineId") ? charge.get("feeFineId").asText() : null;
-                String type = charge.has("reason") ? charge.get("reason").asText() : null;
-                Date date = charge.has("accrualDate") ? folioDateToDate(charge.get("accrualDate").asText()) : null;
-
-                String title = null;
-                if (charge.has("item") && charge.get("item").has("title")) {
-                    title = charge.get("item").get("title").asText();
-                }
-
-                list.add(new FeeFine(amount, fineId, type, date, title));
-            }
-        }
-
-        return new FeesFines(uin, total, list.size(), list);
-    }
-
-    @Override
-    public List<LoanItem> getLoanItems(String uin) throws ParseException {
-        String path = "patron/account";
-        String additional = "&includeLoans=true&includeCharges=false&includeHolds=false";
-        String url = String.format("%s/%s/%s?apikey={apikey}%s", properties.getBaseEdgeUrl(), path, uin, additional);
-        String apiKey = properties.getEdgeApiKey();
-
-        logger.debug(String.format("Asking for patron loans from: %s", url));
-
-        JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
-
-        List<LoanItem> list = new ArrayList<LoanItem>();
-
-        if (node.has("loans")) {
-            Iterator<JsonNode> iter = node.get("loans").elements();
-
-            while (iter.hasNext()) {
-                JsonNode loan = iter.next();
-                if (loan.has("item")) {
-                    JsonNode item = loan.get("item");
-
-                    Date loanDate = loan.has("loanDate") ? folioDateToDate(loan.get("loanDate").asText()) : null;
-                    Date loanDueDate = loan.has("dueDate") ? folioDateToDate(loan.get("dueDate").asText()) : null;
-                    String overDueString = getNodeValue(loan, "overdue");
-                    boolean overDue = false;
-                    if (overDueString != null) {
-                        overDue = Boolean.valueOf(overDueString);
-                    }
-
-                    String loanId = getNodeValue(loan, "id");
-                    String itemId = getNodeValue(item, "itemId");
-                    String instanceId = getNodeValue(item, "instanceId");
-                    String title = getNodeValue(item, "title");
-                    String author = getNodeValue(item, "author");
-
-                    list.add(new LoanItem(loanId, itemId, instanceId, loanDate, loanDueDate, overDue, title, author));
-                }
-            }
-        }
-        return list;
+    private String getNodeValue(JsonNode node, String fieldName) {
+        return node.has(fieldName) ? node.get(fieldName).asText() : null;
     }
 
     /**

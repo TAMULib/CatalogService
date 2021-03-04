@@ -1,6 +1,6 @@
 {
   "name": "msl",
   "type": "voyager",
-  "baseUrl": "http://surprise.tamu.edu:7414/vxws",
+  "baseUrl": "http://surprise.tamu.edu:7414/vxws/",
   "sidPrefix": "chiron"
 }

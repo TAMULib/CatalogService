@@ -1,8 +1,8 @@
 {
   "name": "folio",
   "type": "folio",
-  "baseOkapiUrl": "http://localhost:9130",
-  "baseEdgeUrl": "http://localhost:8080",
+  "baseOkapiUrl": "http://localhost:9130/",
+  "baseEdgeUrl": "http://localhost:8080/",
   "tenant": "tamu",
   "username": "",
   "password": "",
