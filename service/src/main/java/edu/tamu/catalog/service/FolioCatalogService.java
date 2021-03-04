@@ -204,6 +204,40 @@ public class FolioCatalogService implements CatalogService {
         return list;
     }
 
+    /**
+     * Okapi request method not requiring a request body. i.e. HEAD, GET, DELETE
+     * 
+     * @param <T> generic class for response body type
+     * @param url String
+     * @param method HttpMethod
+     * @param responseType Class<T>
+     * @param uriVariables Object... uri variables to be expanded into url
+     * @return response entity with response type as body
+     */
+    <T> ResponseEntity<T> okapiRequest(String url, HttpMethod method, Class<T> responseType, Object... uriVariables) {
+        HttpEntity<?> requestEntity = new HttpEntity<>(headers(properties.getTenant(), getToken()));
+
+        return okapiRequest(1, url, method, requestEntity, responseType, uriVariables);
+    }
+
+    /**
+     * Okapi request method requiring a request body. i.e. PUT, POST
+     *
+     * @param <B> generic class for request body type
+     * @param <T> generic class for response body type
+     * @param url String
+     * @param method HttpMethod
+     * @param body B request body
+     * @param responseType Class<T>
+     * @param uriVariables Object... uri variables to be expanded into url
+     * @return response entity with response type as body
+     */
+    <B,T> ResponseEntity<T> okapiRequest(String url, HttpMethod method, B body, Class<T> responseType, Object... uriVariables) {
+        HttpEntity<B> requestEntity = new HttpEntity<>(body, headers(properties.getTenant(), getToken()));
+
+        return okapiRequest(1, url, method, requestEntity, responseType, uriVariables);
+    }
+
     private List<HoldingsRecord> requestHoldings(String instanceId, String holdingId) {
         List<HoldingsRecord> holdings = new ArrayList<>();
 
@@ -409,40 +443,6 @@ public class FolioCatalogService implements CatalogService {
         formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         return Date.from(formatter.parse(folioDate).toInstant());
-    }
-
-    /**
-     * Okapi request method not requiring a request body. i.e. HEAD, GET, DELETE
-     * 
-     * @param <T> generic class for response body type
-     * @param url String
-     * @param method HttpMethod
-     * @param responseType Class<T>
-     * @param uriVariables Object... uri variables to be expanded into url
-     * @return response entity with response type as body
-     */
-    private <T> ResponseEntity<T> okapiRequest(String url, HttpMethod method, Class<T> responseType, Object... uriVariables) {
-        HttpEntity<?> requestEntity = new HttpEntity<>(headers(properties.getTenant(), getToken()));
-
-        return okapiRequest(1, url, method, requestEntity, responseType, uriVariables);
-    }
-
-    /**
-     * Okapi request method requiring a request body. i.e. PUT, POST
-     *
-     * @param <B> generic class for request body type
-     * @param <T> generic class for response body type
-     * @param url String
-     * @param method HttpMethod
-     * @param body B request body
-     * @param responseType Class<T>
-     * @param uriVariables Object... uri variables to be expanded into url
-     * @return response entity with response type as body
-     */
-    private <B,T> ResponseEntity<T> okapiRequest(String url, HttpMethod method, B body, Class<T> responseType, Object... uriVariables) {
-        HttpEntity<B> requestEntity = new HttpEntity<>(body, headers(properties.getTenant(), getToken()));
-
-        return okapiRequest(1, url, method, requestEntity, responseType, uriVariables);
     }
 
     /**
