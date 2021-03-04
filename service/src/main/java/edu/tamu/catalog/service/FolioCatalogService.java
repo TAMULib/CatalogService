@@ -462,7 +462,7 @@ public class FolioCatalogService implements CatalogService {
             return restTemplate.exchange(url, method, requestEntity, responseType, uriVariables);
         } catch(RestClientResponseException e) {
             if (e.getRawStatusCode() == 401 && attempt == 1) {
-                requestEntity = new HttpEntity<>(requestEntity.getBody(), headers(properties.getTenant(), login()));
+                requestEntity = new HttpEntity<>(requestEntity.getBody(), headers(properties.getTenant(), okapiLogin()));
                 return okapiRequest(++attempt, url, method, requestEntity, responseType, uriVariables);
             }
             throw e;
@@ -474,10 +474,10 @@ public class FolioCatalogService implements CatalogService {
         if (token.isPresent()) {
             return token.get();
         }
-        return login();
+        return okapiLogin();
     }
 
-    private String login() {
+    private String okapiLogin() {
         String url = properties.getBaseOkapiUrl() + "/authn/login";
         HttpEntity<Credentials> entity = new HttpEntity<>(properties.getCredentials(), headers(properties.getTenant()));
         ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
