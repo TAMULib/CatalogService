@@ -43,7 +43,6 @@ public class FolioProperties extends AbstractCatalogServiceProperties {
         setName(name);
         setType(type);
         setBaseOkapiUrl(baseOkapiUrl);
-        setBaseOkapiUrl(baseOkapiUrl);
         setBaseEdgeUrl(baseEdgeUrl);
         setTenant(tenant);
         setUsername(username);
