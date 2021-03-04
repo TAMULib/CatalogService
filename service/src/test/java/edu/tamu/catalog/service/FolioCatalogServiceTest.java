@@ -54,7 +54,7 @@ public class FolioCatalogServiceTest {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-Okapi-Token", "token");
-        when(restTemplate.exchange(eq("http://localhost:9130/authn/login"), eq(HttpMethod.POST), any(HttpEntity.class), eq(String.class)))
+        when(restTemplate.postForObject(eq("http://localhost:9130/authn/login"), any(HttpEntity.class), eq(ResponseEntity.class)))
             .thenReturn(new ResponseEntity<String>("{ \"username\": \"diku_admin\", \"password\": \"admin\" }", headers, HttpStatus.CREATED));
     }
 

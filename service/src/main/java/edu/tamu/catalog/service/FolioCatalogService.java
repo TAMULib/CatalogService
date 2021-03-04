@@ -36,6 +36,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -481,7 +482,7 @@ public class FolioCatalogService implements CatalogService {
     private String okapiLogin() {
         String url = properties.getBaseOkapiUrl() + "/authn/login";
         HttpEntity<Credentials> entity = new HttpEntity<>(properties.getCredentials(), headers(properties.getTenant()));
-        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+        ResponseEntity<?> response = restTemplate.postForObject(url, entity, ResponseEntity.class);
         if (response.getStatusCode().equals(HttpStatus.CREATED)) {
             String token = response.getHeaders().getFirst(OKAPI_TOKEN_HEADER);
             TokenUtility.setToken(getName(), token);
