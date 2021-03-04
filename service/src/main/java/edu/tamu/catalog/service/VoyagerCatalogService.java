@@ -165,13 +165,14 @@ public class VoyagerCatalogService implements CatalogService {
                 }
 
                 catalogHoldings.add(new HoldingsRecord(recordValues.get(RECORD_MARC_RECORD_LEADER),
-                        holdingValues.get(RECORD_MFHD), recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN),
-                        recordValues.get(RECORD_TITLE), recordValues.get(RECORD_AUTHOR),
-                        recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
-                        recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
-                        holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC),
-                        recordValues.get(RECORD_RECORD_ID), holdingValues.get(RECORD_CALL_NUMBER), validLargeVolume,
-                        new HashMap<String, Map<String, String>>(catalogItems)));
+                    holdingValues.get(RECORD_MFHD), recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN),
+                    recordValues.get(RECORD_TITLE), recordValues.get(RECORD_AUTHOR),
+                    recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
+                    recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
+                    holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC),
+                    recordValues.get(RECORD_RECORD_ID), holdingValues.get(RECORD_CALL_NUMBER), validLargeVolume,
+                    new HashMap<String, Map<String, String>>(catalogItems)));
+
                 catalogItems.clear();
             }
             return catalogHoldings;
@@ -229,13 +230,13 @@ public class VoyagerCatalogService implements CatalogService {
             }
 
             return new HoldingsRecord(recordValues.get(RECORD_MARC_RECORD_LEADER), holdingValues.get(RECORD_MFHD),
-                    recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
-                    recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
-                    recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
-                    holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC),
-                    recordValues.get(RECORD_RECORD_ID), holdingValues.get(RECORD_CALL_NUMBER),
-                    Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME)),
-                    new HashMap<String, Map<String, String>>(catalogItems));
+                recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
+                recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
+                recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
+                holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC),
+                recordValues.get(RECORD_RECORD_ID), holdingValues.get(RECORD_CALL_NUMBER),
+                Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME)),
+                new HashMap<String, Map<String, String>>(catalogItems));
 
         } catch (IOException | ParserConfigurationException | SAXException e) {
             e.printStackTrace();

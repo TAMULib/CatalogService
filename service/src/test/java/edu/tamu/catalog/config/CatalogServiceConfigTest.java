@@ -75,7 +75,7 @@ public class CatalogServiceConfigTest {
 
     @Test
     public void testAutowiredFolioVoyagerCatalogService() throws NoSuchFieldException, SecurityException,
-    IllegalArgumentException, IllegalAccessException {
+            IllegalArgumentException, IllegalAccessException {
         assertNotNull(folioCatalogService);
         assertEquals("folio", folioCatalogService.getName());
         Field field = FolioCatalogService.class.getDeclaredField("properties");
