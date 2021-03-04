@@ -430,10 +430,9 @@ public class FolioCatalogService implements CatalogService {
         Date loanDate = loanJson.has("loanDate") ? folioDateToDate(loanJson.get("loanDate").asText()) : null;
         Date loanDueDate = loanJson.has("dueDate") ? folioDateToDate(loanJson.get("dueDate").asText()) : null;
         String overDueString = getNodeValue(loanJson, "overdue");
-        boolean overDue = false;
-        if (overDueString != null) {
-            overDue = Boolean.valueOf(overDueString);
-        }
+        boolean overDue = StringUtils.isNotEmpty(overDueString)
+            ? Boolean.valueOf(overDueString)
+            : false;
 
         String loanId = getNodeValue(loanJson, "id");
 
