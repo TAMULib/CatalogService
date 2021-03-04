@@ -25,4 +25,6 @@ public interface CatalogService {
 
     List<LoanItem> getLoanItems(String uin) throws Exception;
 
+    void cancelHoldRequest(String uin, String requestId) throws Exception;
+
 }

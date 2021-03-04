@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -54,6 +55,25 @@ public class PatronController {
 
         return ResponseEntity.status(HttpStatus.OK)
             .body(loanItems);
+    }
+
+    /**
+     * Cancels a hold request, returning the updated hold request.
+     *
+     * @param String catalogName (optional)
+     * @param String uin
+     * @param String requestId
+     * @return
+     * @throws Exception
+     */
+    @PostMapping("/{uin}/holds/{requestId}/cancel")
+    public @ResponseBody ResponseEntity<?> cancelHoldRequest(
+        @DefaultCatalog("folio") CatalogService catalogService,
+        @PathVariable String uin, @PathVariable String requestId
+    ) throws Exception {
+        catalogService.cancelHoldRequest(uin, requestId);
+
+        return ResponseEntity.noContent().build();
     }
 
 }

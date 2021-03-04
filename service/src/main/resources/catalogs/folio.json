@@ -9,5 +9,6 @@
     "password": ""
   },
   "edgeApiKey": "",
-  "repositoryBaseUrl": "folio-edge.library.tamu.edu"
+  "repositoryBaseUrl": "folio-edge.library.tamu.edu",
+  "cancelHoldReasonId": ""
 }

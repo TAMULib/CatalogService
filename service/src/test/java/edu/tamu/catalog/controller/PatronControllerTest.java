@@ -2,6 +2,7 @@ package edu.tamu.catalog.controller;
 
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
@@ -17,9 +18,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.IOException;
-
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
@@ -46,6 +44,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+
 import edu.tamu.catalog.config.CatalogServiceConfig;
 import edu.tamu.catalog.config.RestConfig;
 
@@ -56,12 +57,14 @@ import edu.tamu.catalog.config.RestConfig;
 public class PatronControllerTest {
 
     private static final String UIN = "1234567890";
+    private static final String UUID = "18c64b85-e71e-4d55-b231-e010db3a5fa2";
     private static final String BASE_PATH = "http://localhost:8080/patron";
     private static final String API_KEY = "mock_api_key";
     private static final String FOLIO_CATALOG = "folio";
     private static final String VOYAGER_CATALOG = "msl";
     private static final String LOANS_ENDPOINT = "loans";
     private static final String FINES_ENDPOINT = "fines";
+    private static final String DOC_PREFIX = "patron/";
 
     @Value("classpath:mock/patron/account.json")
     private Resource patronAccountResource;
@@ -130,6 +133,36 @@ public class PatronControllerTest {
     }
 
     @Test
+    public void testCancelHoldRequestMockMVC() throws Exception {
+        PathParametersSnippet pathParameters = pathParameters(
+            parameterWithName("uin").description("The patron UIN."),
+            parameterWithName("requestId").description("The Hold Request UUID.")
+        );
+
+        RequestParametersSnippet requestParameters = requestParameters(
+            parameterWithName("catalogName").description("The name of the catalog to use.").optional()
+        );
+
+        expectPostResponse(getCancelHoldRequestUrl(), once(), withStatus(HttpStatus.CREATED));
+
+        mockMvc.perform(
+            post("/patron/{uin}/holds/{requestId}/cancel", UIN, UUID)
+                .param("catalogName", FOLIO_CATALOG)
+                .contentType(MediaType.APPLICATION_JSON)
+            )
+            .andExpect(status().isNoContent())
+            .andDo(
+                document(
+                    DOC_PREFIX + "holds/cancel",
+                    pathParameters,
+                    requestParameters
+                )
+            );
+
+        restServer.verify();
+    }
+
+    @Test
     public void testFinesMockMVCWithCatalogName() throws Exception {
         getEndpointWithCatalogName(getFinesUrl(), FINES_ENDPOINT);
     }
@@ -195,7 +228,23 @@ public class PatronControllerTest {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
             .andDo(
                 document(
-                    "patron/" + catalogEndpoint,
+                    DOC_PREFIX + catalogEndpoint,
+                    pathParameters,
+                    requestParameters,
+                    responseFields
+                )
+            );
+
+        restServer.verify();
+    }
+
+    private void postEndpointWithMockMVC(String sourceUrl, String catalogEndpoint, PathParametersSnippet pathParameters, RequestParametersSnippet requestParameters, ResponseFieldsSnippet responseFields) throws Exception {
+        performPostWithCatalogName(sourceUrl, catalogEndpoint, once(), successResponse(patronAccountResource), FOLIO_CATALOG)
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+            .andDo(
+                document(
+                    DOC_PREFIX + catalogEndpoint,
                     pathParameters,
                     requestParameters,
                     responseFields
@@ -234,7 +283,7 @@ public class PatronControllerTest {
         restServer.verify();
     }
 
-    private void getEndpointDateParseError(String sourceUrl, String catalogEndpoint) throws Exception  {
+    private void getEndpointDateParseError(String sourceUrl, String catalogEndpoint, Object... pathParameters) throws Exception  {
         performGet(sourceUrl, catalogEndpoint, once(), successResponse(patronAccountDateParseErrorResource))
             .andExpect(status().isInternalServerError());
 
@@ -249,25 +298,55 @@ public class PatronControllerTest {
     }
 
     private ResultActions performGet(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response) throws Exception  {
-        expectResponse(sourceUrl, count, response);
+        expectGetResponse(sourceUrl, count, response);
 
-        return mockMvc.perform(get("/patron/{uin}/" + catalogEndpoint, UIN)
-            .contentType(MediaType.APPLICATION_JSON)
+        return mockMvc.perform(
+            get("/patron/{uin}/" + catalogEndpoint, UIN, UUID)
+                .contentType(MediaType.APPLICATION_JSON)
         );
     }
 
     private ResultActions performGetWithCatalogName(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response, String catalogName) throws Exception  {
-        expectResponse(sourceUrl, count, response);
+        expectGetResponse(sourceUrl, count, response);
 
-        return mockMvc.perform(get("/patron/{uin}/" + catalogEndpoint, UIN)
-            .param("catalogName", catalogName)
-            .contentType(MediaType.APPLICATION_JSON)
+        return mockMvc.perform(
+            get("/patron/{uin}/" + catalogEndpoint, UIN, UUID)
+                .param("catalogName", catalogName)
+                .contentType(MediaType.APPLICATION_JSON)
         );
     }
 
-    private void expectResponse(String sourceUrl, ExpectedCount count, ResponseCreator response) throws Exception  {
+    private ResultActions performPost(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response) throws Exception  {
+        expectGetResponse(sourceUrl, count, response);
+
+        return mockMvc.perform(
+            post("/patron/{uin}/" + catalogEndpoint, UIN, UUID)
+                .contentType(MediaType.APPLICATION_JSON)
+        );
+    }
+
+
+    private ResultActions performPostWithCatalogName(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response, String catalogName) throws Exception  {
+        expectGetResponse(sourceUrl, count, response);
+
+        return mockMvc.perform(
+            post("/patron/{uin}/" + catalogEndpoint, UIN, UUID)
+                .param("catalogName", FOLIO_CATALOG)
+                .contentType(MediaType.APPLICATION_JSON)
+        );
+    }
+
+    private void expectGetResponse(String sourceUrl, ExpectedCount count, ResponseCreator response) throws Exception  {
+        expectResponse(HttpMethod.GET, sourceUrl, count, response);
+    }
+
+    private void expectPostResponse(String sourceUrl, ExpectedCount count, ResponseCreator response) throws Exception  {
+        expectResponse(HttpMethod.POST, sourceUrl, count, response);
+    }
+
+    private void expectResponse(HttpMethod httpMethod, String sourceUrl, ExpectedCount count, ResponseCreator response) throws Exception  {
         restServer.expect(count, requestTo(sourceUrl))
-            .andExpect(method(HttpMethod.GET))
+            .andExpect(method(httpMethod))
             .andRespond(response);
     }
 
@@ -277,6 +356,10 @@ public class PatronControllerTest {
 
     private String getLoansUrl() {
         return getAccountUrl(true, false, false);
+    }
+
+    private String getCancelHoldRequestUrl() {
+        return String.format("%s/account/%s/holds/%s/cancel?apikey=%s", BASE_PATH, UIN, UUID, API_KEY);
     }
 
     private String getAccountUrl(boolean loans, boolean charges, boolean holds) {
