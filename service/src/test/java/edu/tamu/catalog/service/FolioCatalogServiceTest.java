@@ -59,29 +59,29 @@ public class FolioCatalogServiceTest {
     }
 
     @Test
-    public void testOkapiRequestHEAD() {
+    public void testOkapiHeadRequest() {
         testOkapiRequest("http://localhost:9130/locations", HttpMethod.HEAD, HttpStatus.OK);
     }
 
     @Test
-    public void testOkapiRequestGET() {
+    public void testOkapiGetRequest() {
         testOkapiRequest("http://localhost:9130/locations", HttpMethod.GET, HttpStatus.OK);
     }
 
     @Test
-    public void testOkapiRequestPOST() {
+    public void testOkapiPostRequest() {
         JsonNode requestBody = objectMapper.createObjectNode();
         testOkapiRequest("http://localhost:9130/locations", HttpMethod.POST, requestBody, HttpStatus.CREATED);
     }
 
     @Test
-    public void testOkapiRequestPUT() {
+    public void testOkapiPutRequest() {
         JsonNode requestBody = objectMapper.createObjectNode();
         testOkapiRequest("http://localhost:9130/locations/uuid", HttpMethod.PUT, requestBody, HttpStatus.OK);
     }
 
     @Test
-    public void testOkapiRequestDELETE() {
+    public void testOkapiDeleteRequest() {
         testOkapiRequest("http://localhost:9130/locations/uuid", HttpMethod.DELETE, HttpStatus.OK);
     }
 
