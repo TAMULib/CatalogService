@@ -15,14 +15,14 @@ import edu.tamu.catalog.domain.model.LoanItem;
  */
 public interface CatalogService {
 
-  String getName();
+    String getName();
 
-  List<HoldingsRecord> getHoldingsByBibId(String bibId);
+    List<HoldingsRecord> getHoldingsByBibId(String bibId);
 
-  HoldingsRecord getHolding(String id, String holdingId);
+    HoldingsRecord getHolding(String id, String holdingId);
 
-  FeesFines getFeesFines(String uin) throws Exception;
+    FeesFines getFeesFines(String uin) throws Exception;
 
-  List<LoanItem> getLoanItems(String uin) throws Exception;
+    List<LoanItem> getLoanItems(String uin) throws Exception;
 
 }
