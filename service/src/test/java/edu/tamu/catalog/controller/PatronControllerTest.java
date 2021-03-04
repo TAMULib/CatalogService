@@ -57,7 +57,7 @@ import edu.tamu.catalog.config.RestConfig;
 public class PatronControllerTest {
 
     private static final String UIN = "1234567890";
-    private static final String UUID = "18c64b85-e71e-4d55-b231-e010db3a5fa2";
+    private static final String REQUEST_ID = "dd238b5b-01fc-4205-83b8-ce27a650d827";
     private static final String BASE_PATH = "http://localhost:8080/patron";
     private static final String API_KEY = "mock_api_key";
     private static final String FOLIO_CATALOG = "folio";
@@ -71,6 +71,9 @@ public class PatronControllerTest {
 
     @Value("classpath:mock/patron/accountDateParseError.json")
     private Resource patronAccountDateParseErrorResource;
+
+    @Value("classpath:mock/patron/accountCancelHoldRequest.json")
+    private Resource patronAccountCancelHoldRequestResource;
 
     @Autowired
     private MockMvc mockMvc;
@@ -143,10 +146,10 @@ public class PatronControllerTest {
             parameterWithName("catalogName").description("The name of the catalog to use.").optional()
         );
 
-        expectPostResponse(getCancelHoldRequestUrl(), once(), withStatus(HttpStatus.CREATED));
+        expectPostResponse(getCancelHoldRequestUrl(), once(), createdResponse(patronAccountCancelHoldRequestResource));
 
         mockMvc.perform(
-            post("/patron/{uin}/holds/{requestId}/cancel", UIN, UUID)
+            post("/patron/{uin}/holds/{requestId}/cancel", UIN, REQUEST_ID)
                 .param("catalogName", FOLIO_CATALOG)
                 .contentType(MediaType.APPLICATION_JSON)
             )
@@ -238,22 +241,6 @@ public class PatronControllerTest {
         restServer.verify();
     }
 
-    private void postEndpointWithMockMVC(String sourceUrl, String catalogEndpoint, PathParametersSnippet pathParameters, RequestParametersSnippet requestParameters, ResponseFieldsSnippet responseFields) throws Exception {
-        performPostWithCatalogName(sourceUrl, catalogEndpoint, once(), successResponse(patronAccountResource), FOLIO_CATALOG)
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
-            .andDo(
-                document(
-                    DOC_PREFIX + catalogEndpoint,
-                    pathParameters,
-                    requestParameters,
-                    responseFields
-                )
-            );
-
-        restServer.verify();
-    }
-
     private void getEndpointWithCatalogName(String sourceUrl, String catalogEndpoint) throws Exception {
         performGetWithCatalogName(sourceUrl, catalogEndpoint, once(), successResponse(patronAccountResource), FOLIO_CATALOG)
             .andExpect(status().isOk())
@@ -283,7 +270,7 @@ public class PatronControllerTest {
         restServer.verify();
     }
 
-    private void getEndpointDateParseError(String sourceUrl, String catalogEndpoint, Object... pathParameters) throws Exception  {
+    private void getEndpointDateParseError(String sourceUrl, String catalogEndpoint) throws Exception  {
         performGet(sourceUrl, catalogEndpoint, once(), successResponse(patronAccountDateParseErrorResource))
             .andExpect(status().isInternalServerError());
 
@@ -300,39 +287,17 @@ public class PatronControllerTest {
     private ResultActions performGet(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response) throws Exception  {
         expectGetResponse(sourceUrl, count, response);
 
-        return mockMvc.perform(
-            get("/patron/{uin}/" + catalogEndpoint, UIN, UUID)
-                .contentType(MediaType.APPLICATION_JSON)
+        return mockMvc.perform(get("/patron/{uin}/" + catalogEndpoint, UIN)
+            .contentType(MediaType.APPLICATION_JSON)
         );
     }
 
     private ResultActions performGetWithCatalogName(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response, String catalogName) throws Exception  {
         expectGetResponse(sourceUrl, count, response);
 
-        return mockMvc.perform(
-            get("/patron/{uin}/" + catalogEndpoint, UIN, UUID)
-                .param("catalogName", catalogName)
-                .contentType(MediaType.APPLICATION_JSON)
-        );
-    }
-
-    private ResultActions performPost(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response) throws Exception  {
-        expectGetResponse(sourceUrl, count, response);
-
-        return mockMvc.perform(
-            post("/patron/{uin}/" + catalogEndpoint, UIN, UUID)
-                .contentType(MediaType.APPLICATION_JSON)
-        );
-    }
-
-
-    private ResultActions performPostWithCatalogName(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response, String catalogName) throws Exception  {
-        expectGetResponse(sourceUrl, count, response);
-
-        return mockMvc.perform(
-            post("/patron/{uin}/" + catalogEndpoint, UIN, UUID)
-                .param("catalogName", FOLIO_CATALOG)
-                .contentType(MediaType.APPLICATION_JSON)
+        return mockMvc.perform(get("/patron/{uin}/" + catalogEndpoint, UIN)
+            .param("catalogName", catalogName)
+            .contentType(MediaType.APPLICATION_JSON)
         );
     }
 
@@ -359,12 +324,16 @@ public class PatronControllerTest {
     }
 
     private String getCancelHoldRequestUrl() {
-        return String.format("%s/account/%s/holds/%s/cancel?apikey=%s", BASE_PATH, UIN, UUID, API_KEY);
+        return String.format("%s/account/%s/holds/%s/cancel?apikey=%s", BASE_PATH, UIN, REQUEST_ID, API_KEY);
     }
 
     private String getAccountUrl(boolean loans, boolean charges, boolean holds) {
         return String.format("%s/account/%s?apikey=%s&includeLoans=%s&includeCharges=%s&includeHolds=%s",
             BASE_PATH, UIN, API_KEY, Boolean.toString(loans), Boolean.toString(charges), Boolean.toString(holds));
+    }
+
+    private DefaultResponseCreator createdResponse(Resource resource) throws Exception {
+        return withStatus(HttpStatus.CREATED).body(getMockJson(resource)).contentType(MediaType.APPLICATION_JSON);
     }
 
     private DefaultResponseCreator successResponse(Resource resource) throws Exception {

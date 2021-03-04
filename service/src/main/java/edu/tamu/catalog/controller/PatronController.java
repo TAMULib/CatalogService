@@ -69,7 +69,8 @@ public class PatronController {
     @PostMapping("/{uin}/holds/{requestId}/cancel")
     public @ResponseBody ResponseEntity<?> cancelHoldRequest(
         @DefaultCatalog("folio") CatalogService catalogService,
-        @PathVariable String uin, @PathVariable String requestId
+        @PathVariable(required = true) String uin,
+        @PathVariable(required = true) String requestId
     ) throws Exception {
         catalogService.cancelHoldRequest(uin, requestId);
 
