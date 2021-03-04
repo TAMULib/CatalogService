@@ -3,6 +3,7 @@ package edu.tamu.catalog.controller;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
@@ -60,13 +61,18 @@ public class PatronControllerTest {
 
     private static final String UIN = "1234567890";
     private static final String API_KEY = "mocked_key";
+    private static final String ITEM_ID = "40053ccb-fd0c-304b-9547-b2fc06f34d3e";
     private static final String FOLIO_CATALOG = "folio";
     private static final String VOYAGER_CATALOG = "voyager";
     private static final String LOANS_ENDPOINT = "loans";
     private static final String FINES_ENDPOINT = "fines";
+    private static final String RENEWAL_ENDPOINT = "renew";
 
     @Value("classpath:mock/patron/account.json")
     private Resource patronAccountResource;
+
+    @Value("classpath:mock/patron/accountRenewableLoanItem.json")
+    private Resource patronAccountRenewalResource;
 
     @Value("classpath:mock/patron/accountDateParseError.json")
     private Resource patronAccountDateParseErrorResource;
@@ -156,6 +162,31 @@ public class PatronControllerTest {
     }
 
     @Test
+    public void testLoanItemRenewalMockMVC() throws Exception {
+        PathParametersSnippet pathParameters = pathParameters(
+            parameterWithName("uin").description("The patron UIN."),
+            parameterWithName("itemId").description("The UUID of the loan item.")
+        );
+
+        RequestParametersSnippet requestParameters = requestParameters(
+            parameterWithName("catalogName").description("The name of the catalog to use.").optional()
+        );
+
+        ResponseFieldsSnippet responseFields = responseFields(
+            fieldWithPath("loanId").description("The loan id."),
+            fieldWithPath("itemId").description("The item id."),
+            fieldWithPath("instanceId").description("The instance id."),
+            fieldWithPath("loanDate").description("The loan date."),
+            fieldWithPath("loanDueDate").description("The loan due date."),
+            fieldWithPath("overdue").description("Is the loan overdue."),
+            fieldWithPath("title").description("The title of the loan item."),
+            fieldWithPath("author").description("The author of the loan item.")
+        );
+        String renewalEndpoint = RENEWAL_ENDPOINT+"/{itemId}";
+        postEndpointWithMockMVC(getRenewalUrl(), RENEWAL_ENDPOINT, renewalEndpoint, pathParameters, requestParameters, responseFields, patronAccountRenewalResource);
+    }
+
+    @Test
     public void testFinesMockMVCWithCatalogName() throws Exception {
         getEndpointWithCatalogName(getFinesUrl(), FINES_ENDPOINT);
     }
@@ -231,6 +262,22 @@ public class PatronControllerTest {
         restServer.verify();
     }
 
+    private void postEndpointWithMockMVC(String sourceUrl, String docsEndpoint, String catalogEndpoint, PathParametersSnippet pathParameters, RequestParametersSnippet requestParameters, ResponseFieldsSnippet responseFields, Resource successResource) throws Exception {
+        performPostWithCatalogName(sourceUrl, catalogEndpoint, once(), successResponse(successResource), FOLIO_CATALOG)
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+            .andDo(
+                document(
+                    "patron/" + docsEndpoint,
+                    pathParameters,
+                    requestParameters,
+                    responseFields
+                )
+            );
+
+        restServer.verify();
+    }
+
     private void getEndpointWithCatalogName(String sourceUrl, String catalogEndpoint) throws Exception {
         performGetWithCatalogName(sourceUrl, catalogEndpoint, once(), successResponse(patronAccountResource), FOLIO_CATALOG)
             .andExpect(status().isOk())
@@ -275,7 +322,7 @@ public class PatronControllerTest {
     }
 
     private ResultActions performGet(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response) throws Exception  {
-        expectResponse(sourceUrl, count, response);
+        expectResponse(HttpMethod.GET, sourceUrl, count, response);
 
         return mockMvc.perform(get("/patron/{uin}/" + catalogEndpoint, UIN)
             .contentType(MediaType.APPLICATION_JSON)
@@ -283,7 +330,7 @@ public class PatronControllerTest {
     }
 
     private ResultActions performGetWithCatalogName(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response, String catalogName) throws Exception  {
-        expectResponse(sourceUrl, count, response);
+        expectResponse(HttpMethod.GET, sourceUrl, count, response);
 
         return mockMvc.perform(get("/patron/{uin}/" + catalogEndpoint, UIN)
             .param("catalogName", catalogName)
@@ -291,9 +338,17 @@ public class PatronControllerTest {
         );
     }
 
-    private void expectResponse(String sourceUrl, ExpectedCount count, ResponseCreator response) throws Exception  {
+    private ResultActions performPostWithCatalogName(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response, String catalogName) throws Exception  {
+        expectResponse(HttpMethod.POST, sourceUrl, count, response);
+        return mockMvc.perform(post("/patron/{uin}/" + catalogEndpoint, UIN, ITEM_ID)
+            .param("catalogName", catalogName)
+            .contentType(MediaType.APPLICATION_JSON)
+        );
+    }
+
+    private void expectResponse(HttpMethod httpMethod, String sourceUrl, ExpectedCount count, ResponseCreator response) throws Exception  {
         restServer.expect(count, requestTo(sourceUrl))
-            .andExpect(method(HttpMethod.GET))
+            .andExpect(method(httpMethod))
             .andRespond(response);
     }
 
@@ -308,6 +363,10 @@ public class PatronControllerTest {
     private String getAccountUrl(boolean loans, boolean charges, boolean holds) {
         return String.format("%saccount/%s?apikey=%s&includeLoans=%s&includeCharges=%s&includeHolds=%s",
             basePath, UIN, API_KEY, Boolean.toString(loans), Boolean.toString(charges), Boolean.toString(holds));
+    }
+
+    private String getRenewalUrl() {
+        return String.format("%saccount/%s/item/%s/renew?apikey=%s", basePath, UIN, ITEM_ID, API_KEY);
     }
 
     private String getMockJson(Resource resource) throws JsonParseException, JsonMappingException, IOException {

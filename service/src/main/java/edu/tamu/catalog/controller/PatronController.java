@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -61,7 +62,7 @@ public class PatronController {
      * @param String user
      * @return
      */
-    @GetMapping("/{uin}/renew/{itemId}")
+    @PostMapping("/{uin}/renew/{itemId}")
     public @ResponseBody ResponseEntity<LoanItem> renewItem(@RequestParam(value="catalogName", defaultValue="folio") String catalogName, @PathVariable String uin, @PathVariable String itemId) throws Exception {
         LoanItem loanItem = getCatalogServiceByName(catalogName).renewItem(uin, itemId);
         return ResponseEntity.status(HttpStatus.OK)
