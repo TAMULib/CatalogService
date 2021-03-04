@@ -24,7 +24,7 @@ public class CatalogAccessController {
     /**
      * Provides the raw CatalogHolding data
      *
-     * @param String catalogName (optional)
+     * @param CatalogService catalogService (injected)
      * @param String bibId
      * @return
      * @throws JsonProcessingException
@@ -43,7 +43,7 @@ public class CatalogAccessController {
     /**
      * Provides data for a single CatalogHolding
      *
-     * @param String catalogName (optional)
+     * @param CatalogService catalogService (injected)
      * @param String bibId
      * @param String holdingId
      * @return

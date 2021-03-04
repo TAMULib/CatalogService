@@ -22,8 +22,8 @@ public class PatronController {
     /**
      * Provides data for all fees and fines associated with a patron.
      *
-     * @param String catalogName (optional)
-     * @param String user
+     * @param CatalogService catalogService (injected)
+     * @param String uin
      * @return
      * @throws Exception
      */
@@ -38,8 +38,8 @@ public class PatronController {
     /**
      * Provides data for all loan items associated with a patron.
      *
-     * @param String catalogName (optional)
-     * @param String user
+     * @param CatalogService catalogService (injected)
+     * @param String uin
      * @return
      */
     @GetMapping("/{uin}/loans")
