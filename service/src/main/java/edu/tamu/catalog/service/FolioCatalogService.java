@@ -43,6 +43,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientResponseException;
@@ -461,7 +462,7 @@ public class FolioCatalogService implements CatalogService {
         try {
             return restTemplate.exchange(url, method, requestEntity, responseType, uriVariables);
         } catch(RestClientResponseException e) {
-            if (e.getRawStatusCode() == 401 && attempt == 1) {
+            if (e.getRawStatusCode() == HttpStatus.UNAUTHORIZED.value() && attempt == 1) {
                 requestEntity = new HttpEntity<>(requestEntity.getBody(), headers(properties.getTenant(), okapiLogin()));
                 return okapiRequest(++attempt, url, method, requestEntity, responseType, uriVariables);
             }
@@ -481,7 +482,7 @@ public class FolioCatalogService implements CatalogService {
         String url = properties.getBaseOkapiUrl() + "/authn/login";
         HttpEntity<Credentials> entity = new HttpEntity<>(properties.getCredentials(), headers(properties.getTenant()));
         ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
-        if (response.getStatusCodeValue() == 201) {
+        if (response.getStatusCode().equals(HttpStatus.CREATED)) {
             String token = response.getHeaders().getFirst(OKAPI_TOKEN_HEADER);
             TokenUtility.setToken(getName(), token);
             return token;
