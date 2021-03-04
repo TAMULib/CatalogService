@@ -1,0 +1,6 @@
+{
+  "name": "evans",
+  "type": "voyager",
+  "baseUrl": "http://localhost:7014/vxws/",
+  "sidPrefix": "libcat"
+}

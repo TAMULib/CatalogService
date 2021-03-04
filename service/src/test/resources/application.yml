@@ -1,0 +1,18 @@
+server:
+  port: 9000
+  contextPath:
+
+security.basic.enabled: false
+
+spring.profiles.active: test
+
+logging:
+  level:
+    edu.tamu: INFO
+    org.springframework: INFO
+    ro.isdc.wro: INFO
+
+app:
+  http.timeout: 10000
+  security.allow-access: http://localhost,http://localhost:8080
+  whitelist: 127.0.0.1
