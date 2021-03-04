@@ -355,28 +355,24 @@ public class FolioCatalogService extends AbstractCatalogService {
 
             while (iter.hasNext()) {
                 JsonNode loan = iter.next();
-                if (loan.has("item")) {
-                    JsonNode item = loan.get("item");
-
-                    Date loanDate = loan.has("loanDate") ? folioDateToDate(loan.get("loanDate").asText()) : null;
-                    Date loanDueDate = loan.has("dueDate") ? folioDateToDate(loan.get("dueDate").asText()) : null;
-                    String overDueString = getNodeValue(loan, "overdue");
-                    boolean overDue = false;
-                    if (overDueString != null) {
-                        overDue = Boolean.valueOf(overDueString);
-                    }
-
-                    String loanId = getNodeValue(loan, "id");
-                    String itemId = getNodeValue(item, "itemId");
-                    String instanceId = getNodeValue(item, "instanceId");
-                    String title = getNodeValue(item, "title");
-                    String author = getNodeValue(item, "author");
-
-                    list.add(new LoanItem(loanId, itemId, instanceId, loanDate, loanDueDate, overDue, title, author));
+                LoanItem loanItem = buildLoanItem(loan);
+                if (loanItem.getItemId() != null) {
+                    list.add(loanItem);
                 }
             }
         }
         return list;
+    }
+
+    @Override
+    public LoanItem renewItem(String uin, String itemId) throws ParseException {
+        String path = "patron/account/";
+        String itemPath = "/item/";
+        String renewPath = "/renew";
+        String url = String.format("%s%s%s%s%s%s?apikey={apikey}", getAPIBase(), path, uin, itemPath, itemId, renewPath);
+        String apiKey = getAuthentication().get(CatalogServiceFactory.FIELD_APIKEY);
+
+        return buildLoanItem(restTemplate.postForObject(url, null, JsonNode.class, apiKey));
     }
 
     /**
@@ -391,6 +387,33 @@ public class FolioCatalogService extends AbstractCatalogService {
         formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         return Date.from(formatter.parse(folioDate).toInstant());
+    }
+
+    private LoanItem buildLoanItem(JsonNode loanJson) throws ParseException {
+        Date loanDate = loanJson.has("loanDate") ? folioDateToDate(loanJson.get("loanDate").asText()) : null;
+        Date loanDueDate = loanJson.has("dueDate") ? folioDateToDate(loanJson.get("dueDate").asText()) : null;
+        String overDueString = getNodeValue(loanJson, "overdue");
+        boolean overDue = false;
+        if (overDueString != null) {
+            overDue = Boolean.valueOf(overDueString);
+        }
+
+        String loanId = getNodeValue(loanJson, "id");
+
+        String itemId = null;
+        String instanceId = null;
+        String title = null;
+        String author = null;
+
+        if (loanJson.has("item")) {
+            JsonNode item = loanJson.get("item");
+
+            itemId = getNodeValue(item, "itemId");
+            instanceId = getNodeValue(item, "instanceId");
+            title = getNodeValue(item, "title");
+            author = getNodeValue(item, "author");
+        }
+        return new LoanItem(loanId, itemId, instanceId, loanDate, loanDueDate, overDue, title, author);
     }
 
 }

@@ -293,4 +293,9 @@ public class VoyagerCatalogService extends AbstractCatalogService {
     public List<LoanItem> getLoanItems(String uin) throws Exception {
         throw new UnsupportedOperationException("Not supported by the requested catalog.");
     }
+
+    @Override
+    public LoanItem renewItem(String uin, String itemId) {
+        throw new UnsupportedOperationException("Not supported by the requested catalog.");
+    }
 }

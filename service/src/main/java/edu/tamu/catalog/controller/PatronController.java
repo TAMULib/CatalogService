@@ -54,6 +54,20 @@ public class PatronController {
                 .body(loanItems);
     }
 
+    /**
+     * Renews a single loan item associated with a patron.
+     *
+     * @param String catalogName (optional)
+     * @param String user
+     * @return
+     */
+    @GetMapping("/{uin}/renew/{itemId}")
+    public @ResponseBody ResponseEntity<LoanItem> renewItem(@RequestParam(value="catalogName", defaultValue="folio") String catalogName, @PathVariable String uin, @PathVariable String itemId) throws Exception {
+        LoanItem loanItem = getCatalogServiceByName(catalogName).renewItem(uin, itemId);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(loanItem);
+    }
+
     private CatalogService getCatalogServiceByName(String catalogName) {
         return catalogServiceFactory.getOrCreateCatalogService(catalogName);
     }
