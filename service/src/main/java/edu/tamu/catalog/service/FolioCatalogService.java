@@ -415,10 +415,10 @@ public class FolioCatalogService implements CatalogService {
      * Okapi request method not requiring a request body. i.e. HEAD, GET, DELETE
      * 
      * @param <T> generic class for response body type
-     * @param url url
-     * @param method method
-     * @param responseType responseType
-     * @param uriVariables uri variables to be expanded into url
+     * @param url String
+     * @param method HttpMethod
+     * @param responseType Class<T>
+     * @param uriVariables Object... uri variables to be expanded into url
      * @return response entity with response type as body
      */
     private <T> ResponseEntity<T> okapiRequest(String url, HttpMethod method, Class<T> responseType, Object... uriVariables) {
@@ -432,11 +432,11 @@ public class FolioCatalogService implements CatalogService {
      *
      * @param <B> generic class for request body type
      * @param <T> generic class for response body type
-     * @param url url
-     * @param method method
-     * @param body request body
-     * @param responseType responseType
-     * @param uriVariables uri variables to be expanded into url
+     * @param url String
+     * @param method HttpMethod
+     * @param body B request body
+     * @param responseType Class<T>
+     * @param uriVariables Object... uri variables to be expanded into url
      * @return response entity with response type as body
      */
     private <B,T> ResponseEntity<T> okapiRequest(String url, HttpMethod method, B body, Class<T> responseType, Object... uriVariables) {
@@ -448,13 +448,13 @@ public class FolioCatalogService implements CatalogService {
     /**
      * Okapi request method to attempt one token refresh and retry if request unauthorized.
      * 
-     * @param <T>
-     * @param attempt
-     * @param url
-     * @param method
-     * @param requestEntity
-     * @param responseType
-     * @param uriVariables
+     * @param <T> generic class for response body type
+     * @param attempt int
+     * @param url String
+     * @param method HttpMethod
+     * @param requestEntity HttpEntity<T>
+     * @param responseType Class<T>
+     * @param uriVariables Object... uri variables to be expanded into url
      * @return response entity with response type as body
      */
     private <T> ResponseEntity<T> okapiRequest(int attempt, String url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType, Object... uriVariables) {
