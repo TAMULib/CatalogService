@@ -47,6 +47,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import org.w3c.dom.DOMException;
@@ -489,7 +490,7 @@ public class FolioCatalogService implements CatalogService {
             return token;
         } else {
             logger.error("Failed to login {}: {}", response.getStatusCodeValue(), response.getBody());
-            throw new RuntimeException("Okapi login failed!");
+            throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Catalog service failed to login into Okapi!");
         }
     }
 
