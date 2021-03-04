@@ -31,7 +31,7 @@ public class CatalogAccessController {
      * @throws IOException
      */
     @RequestMapping("/get-holdings")
-    public ApiResponse getHoldings(@DefaultCatalog("evans") CatalogService catalogService, @RequestParam("bibId") String bibId) {
+    public ApiResponse getHoldings(@DefaultCatalog("evans") CatalogService catalogService, @RequestParam(required = true) String bibId) {
         List<HoldingsRecord> catalogHoldings = catalogService.getHoldingsByBibId(bibId);
         if (catalogHoldings != null) {
             return new ApiResponse(SUCCESS, catalogHoldings);
@@ -51,7 +51,7 @@ public class CatalogAccessController {
      * @throws IOException
      */
     @RequestMapping("/get-holding")
-    public ApiResponse getHolding(@DefaultCatalog("evans") CatalogService catalogService, @RequestParam("bibId") String bibId, @RequestParam("holdingId") String holdingId) {
+    public ApiResponse getHolding(@DefaultCatalog("evans") CatalogService catalogService, @RequestParam(required = true) String bibId, @RequestParam(required = true) String holdingId) {
         HoldingsRecord catalogHolding = catalogService.getHolding(bibId, holdingId);
         if (catalogHolding != null) {
             return new ApiResponse(SUCCESS, catalogHolding);
