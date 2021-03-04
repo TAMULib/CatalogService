@@ -1,6 +1,5 @@
 package edu.tamu.catalog.controller;
 
-import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
@@ -19,8 +18,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
@@ -30,7 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -47,23 +47,23 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.web.client.RestTemplate;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
+import edu.tamu.catalog.config.CatalogServiceConfig;
+import edu.tamu.catalog.config.RestConfig;
 
-import edu.tamu.catalog.service.CatalogServiceFactory;
-import edu.tamu.catalog.service.FolioCatalogService;
-import edu.tamu.catalog.service.VoyagerCatalogService;
-
+@RunWith(SpringRunner.class)
 @WebMvcTest(value = PatronController.class, secure = false)
 @AutoConfigureRestDocs(outputDir = "target/generated-snippets")
-@RunWith(SpringRunner.class)
+@Import({ RestConfig.class, CatalogServiceConfig.class })
 public class PatronControllerTest {
 
     private static final String UIN = "1234567890";
-    private static final String API_KEY = "mocked_key";
+
     private static final String ITEM_ID = "40053ccb-fd0c-304b-9547-b2fc06f34d3e";
+
+    private static final String BASE_PATH = "http://localhost:8080/patron";
+    private static final String API_KEY = "mock_api_key";
     private static final String FOLIO_CATALOG = "folio";
-    private static final String VOYAGER_CATALOG = "voyager";
+    private static final String VOYAGER_CATALOG = "msl";
     private static final String LOANS_ENDPOINT = "loans";
     private static final String FINES_ENDPOINT = "fines";
     private static final String RENEWAL_ENDPOINT = "renew";
@@ -80,38 +80,14 @@ public class PatronControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
     private RestTemplate restTemplate;
-
-    @MockBean
-    private CatalogServiceFactory catalogServiceFactory;
-
-    private FolioCatalogService folioCatalogService;
-
-    private VoyagerCatalogService voyagerCatalogService;
 
     private MockRestServiceServer restServer;
 
-    private String basePath;
-
     @Before
     public void setup() throws JsonParseException, JsonMappingException, IOException {
-        restTemplate = new RestTemplate();
-        folioCatalogService = new FolioCatalogService(restTemplate);
-        voyagerCatalogService = new VoyagerCatalogService();
         restServer = MockRestServiceServer.createServer(restTemplate);
-
-        Map<String, String> authentication = new HashMap<>();
-        authentication.put("apiKey", API_KEY);
-
-        folioCatalogService.setAuthentication(authentication);
-        folioCatalogService.setHost("localhost");
-        folioCatalogService.setProtocol("http");
-        folioCatalogService.setType("folio");
-
-        basePath = String.format("%s://%s/patron/", folioCatalogService.getProtocol(), folioCatalogService.getHost());
-
-        when(catalogServiceFactory.getOrCreateCatalogService(FOLIO_CATALOG)).thenReturn(folioCatalogService);
-        when(catalogServiceFactory.getOrCreateCatalogService(VOYAGER_CATALOG)).thenReturn(voyagerCatalogService);
     }
 
     @Test
@@ -361,20 +337,20 @@ public class PatronControllerTest {
     }
 
     private String getAccountUrl(boolean loans, boolean charges, boolean holds) {
-        return String.format("%saccount/%s?apikey=%s&includeLoans=%s&includeCharges=%s&includeHolds=%s",
-            basePath, UIN, API_KEY, Boolean.toString(loans), Boolean.toString(charges), Boolean.toString(holds));
+        return String.format("%s/account/%s?apikey=%s&includeLoans=%s&includeCharges=%s&includeHolds=%s",
+            BASE_PATH, UIN, API_KEY, Boolean.toString(loans), Boolean.toString(charges), Boolean.toString(holds));
     }
 
     private String getRenewalUrl() {
-        return String.format("%saccount/%s/item/%s/renew?apikey=%s", basePath, UIN, ITEM_ID, API_KEY);
-    }
-
-    private String getMockJson(Resource resource) throws JsonParseException, JsonMappingException, IOException {
-        return IOUtils.toString(resource.getInputStream(), "UTF-8");
+        return String.format("%s/account/%s/item/%s/renew?apikey=%s", BASE_PATH, UIN, ITEM_ID, API_KEY);
     }
 
     private DefaultResponseCreator successResponse(Resource resource) throws Exception {
         return withSuccess(getMockJson(resource), MediaType.APPLICATION_JSON);
+    }
+
+    private String getMockJson(Resource resource) throws JsonParseException, JsonMappingException, IOException {
+        return IOUtils.toString(resource.getInputStream(), "UTF-8");
     }
 
 }

@@ -22,19 +22,33 @@ import java.io.StringReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -43,15 +57,20 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import edu.tamu.catalog.domain.model.FeeFine;
 import edu.tamu.catalog.domain.model.FeesFines;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
+import edu.tamu.catalog.properties.CatalogServiceProperties;
+import edu.tamu.catalog.properties.Credentials;
+import edu.tamu.catalog.properties.FolioProperties;
 import edu.tamu.catalog.utility.Marc21Xml;
+import edu.tamu.catalog.utility.TokenUtility;
 
-public class FolioCatalogService extends AbstractCatalogService {
+public class FolioCatalogService implements CatalogService {
+
+    private static final Logger logger = LoggerFactory.getLogger(FolioCatalogService.class);
+
     private static final String VERB_GET_RECORD = "GetRecord";
     private static final String METADATA_PREFIX = "marc21_withholdings";
     private static final String ERROR_ATTR_CODE = "code";
@@ -66,16 +85,23 @@ public class FolioCatalogService extends AbstractCatalogService {
     private static final String NODE_OAI = "oai";
     private static final String NODE_RECORD = "record";
 
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    private static final String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
+    private static final String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
 
+    @Autowired
     private RestTemplate restTemplate;
 
-    public FolioCatalogService() {
-        super();
+    private FolioProperties properties;
+
+    public FolioCatalogService(CatalogServiceProperties properties) {
+        this.properties = (FolioProperties) properties;
+        this.properties.setBaseEdgeUrl(StringUtils.removeEnd(this.properties.getBaseEdgeUrl(), "/"));
+        this.properties.setBaseOkapiUrl(StringUtils.removeEnd(this.properties.getBaseOkapiUrl(), "/"));
     }
 
-    public FolioCatalogService(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
+    @Override
+    public String getName() {
+        return properties.getName();
     }
 
     @Override
@@ -94,34 +120,141 @@ public class FolioCatalogService extends AbstractCatalogService {
         return null;
     }
 
-    private String getNodeValue(JsonNode node, String fieldName) {
-        return node.has(fieldName) ? node.get(fieldName).asText() : null;
+    @Override
+    public FeesFines getFeesFines(String uin) throws ParseException {
+        String path = "patron/account";
+        String queryString = "apikey={apikey}&includeLoans=false&includeCharges=true&includeHolds=false";
+        String url = String.format("%s/%s/%s?%s", properties.getBaseEdgeUrl(), path, uin, queryString);
+        String apiKey = properties.getEdgeApiKey();
+
+        logger.debug("Asking for fines from: {}", url);
+
+        JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
+
+        Double total = null;
+        if (node.has("totalCharges") && node.get("totalCharges").has("amount")) {
+            total = node.get("totalCharges").get("amount").asDouble();
+        }
+
+        List<FeeFine> list = new ArrayList<>();
+
+        if (node.has("charges")) {
+            Iterator<JsonNode> iter = node.get("charges").elements();
+
+            while (iter.hasNext()) {
+                JsonNode charge = iter.next();
+
+                double amount = 0;
+                if (charge.has("chargeAmount") && charge.get("chargeAmount").has("amount")) {
+                    amount = charge.get("chargeAmount").get("amount").asDouble();
+                }
+
+                String fineId = charge.has("feeFineId") ? charge.get("feeFineId").asText() : null;
+                String type = charge.has("reason") ? charge.get("reason").asText() : null;
+                Date date = charge.has("accrualDate") ? folioDateToDate(charge.get("accrualDate").asText()) : null;
+
+                String title = null;
+                if (charge.has("item") && charge.get("item").has("title")) {
+                    title = charge.get("item").get("title").asText();
+                }
+
+                list.add(new FeeFine(amount, fineId, type, date, title));
+            }
+        }
+
+        return new FeesFines(uin, total, list.size(), list);
     }
 
-    private String httpRequest(String instanceId) throws IOException {
-        Map<String, String> authentication = getAuthentication();
-        String apiKey = authentication.get(CatalogServiceFactory.FIELD_APIKEY);
-        String repositoryBaseUrl = authentication.get(CatalogServiceFactory.FIELD_REPOSITORY_BASE_URL);
-        String tenant = authentication.get(CatalogServiceFactory.FIELD_TENANT);
+    @Override
+    public List<LoanItem> getLoanItems(String uin) throws ParseException {
+        String path = "patron/account";
+        String additional = "&includeLoans=true&includeCharges=false&includeHolds=false";
+        String url = String.format("%s/%s/%s?apikey={apikey}%s", properties.getBaseEdgeUrl(), path, uin, additional);
+        String apiKey = properties.getEdgeApiKey();
 
-        String identifier = String.format("%s:%s:%s/%s", NODE_OAI, repositoryBaseUrl, tenant, instanceId);
-        String queryString = String.format("verb=%s&metadataPrefix=%s&apikey=%s&identifier=%s",
-          VERB_GET_RECORD, METADATA_PREFIX, apiKey, identifier);
+        logger.debug("Asking for patron loans from: {}", url);
 
-        String oaiPath = "oai/";
+        JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
 
-        String url = String.format("%s%s?%s", getAPIBase(), oaiPath, queryString);
+        List<LoanItem> list = new ArrayList<LoanItem>();
 
-        logger.debug("Asking for holdings from: " + url);
+        if (node.has("loans")) {
+            Iterator<JsonNode> iter = node.get("loans").elements();
 
-        return restTemplate.getForObject(url, String.class);
+            while (iter.hasNext()) {
+                JsonNode loan = iter.next();
+                LoanItem loanItem = buildLoanItem(loan);
+                if (loanItem.getItemId() != null) {
+                    list.add(loanItem);
+                }
+            }
+        }
+        return list;
+    }
+
+    @Override
+    public LoanItem renewItem(String uin, String itemId) throws ParseException {
+        String path = "/patron/account/";
+        String itemPath = "/item/";
+        String renewPath = "/renew";
+        String url = String.format("%s%s%s%s%s%s?apikey={apikey}", properties.getBaseEdgeUrl(), path, uin, itemPath, itemId, renewPath);
+        String apiKey = properties.getEdgeApiKey();
+
+        return buildLoanItem(restTemplate.postForObject(url, null, JsonNode.class, apiKey));
+    }
+
+    /**
+     * Okapi request method not requiring a request body. i.e. HEAD, GET, DELETE
+     * 
+     * @param <T> generic class for response body type
+     * @param url String
+     * @param method HttpMethod
+     * @param responseType Class<T>
+     * @param uriVariables Object... uri variables to be expanded into url
+     * @return response entity with response type as body
+     */
+    <T> ResponseEntity<T> okapiRequest(String url, HttpMethod method, Class<T> responseType, Object... uriVariables) {
+        HttpEntity<?> requestEntity = new HttpEntity<>(headers(properties.getTenant(), getToken()));
+
+        return okapiRequest(1, url, method, requestEntity, responseType, uriVariables);
+    }
+
+    /**
+     * Okapi request method requiring a request body. i.e. PUT, POST
+     *
+     * @param <B> generic class for request body type
+     * @param <T> generic class for response body type
+     * @param url String
+     * @param method HttpMethod
+     * @param body B request body
+     * @param responseType Class<T>
+     * @param uriVariables Object... uri variables to be expanded into url
+     * @return response entity with response type as body
+     */
+    <B,T> ResponseEntity<T> okapiRequest(String url, HttpMethod method, B body, Class<T> responseType, Object... uriVariables) {
+        HttpEntity<B> requestEntity = new HttpEntity<>(body, headers(properties.getTenant(), getToken()));
+
+        return okapiRequest(1, url, method, requestEntity, responseType, uriVariables);
     }
 
     private List<HoldingsRecord> requestHoldings(String instanceId, String holdingId) {
         List<HoldingsRecord> holdings = new ArrayList<>();
 
         try {
-            String result = httpRequest(instanceId);
+            String apiKey = properties.getEdgeApiKey();
+            String repositoryBaseUrl = properties.getRepositoryBaseUrl();
+            String tenant = properties.getTenant();
+
+            String identifier = String.format("%s:%s:%s/%s", NODE_OAI, repositoryBaseUrl, tenant, instanceId);
+            String queryString = String.format("verb=%s&metadataPrefix=%s&apikey=%s&identifier=%s", VERB_GET_RECORD, METADATA_PREFIX, apiKey, identifier);
+
+            String oaiPath = "oai";
+
+            String url = String.format("%s/%s?%s", properties.getBaseEdgeUrl(), oaiPath, queryString);
+
+            logger.debug("Asking for holdings from: {}", url);
+
+            String result = restTemplate.getForObject(url, String.class);
 
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -158,8 +291,7 @@ public class FolioCatalogService extends AbstractCatalogService {
                     if (recordHoldings.size() > 0) {
                         if (holdingId == null) {
                             holdings.addAll(recordHoldings);
-                        }
-                        else {
+                        } else {
                             for (int j = 0; j < recordHoldings.size(); j++) {
                                 if (recordHoldings.get(j).getMfhd().equalsIgnoreCase(holdingId)) {
                                     holdings.add(recordHoldings.get(j));
@@ -171,7 +303,6 @@ public class FolioCatalogService extends AbstractCatalogService {
                 }
             }
         } catch (DOMException | IOException | ParserConfigurationException | SAXException e) {
-            // TODO Auto-generated catch block
             // TODO consider throwing all of these so that caller can handle more appropriately.
             e.printStackTrace();
         }
@@ -223,25 +354,26 @@ public class FolioCatalogService extends AbstractCatalogService {
             Node node = marcList.item(i);
 
             if (nodeNameMatches(node.getNodeName(), NODE_DATA_FIELD)) {
-              Marc21Xml.addDataFieldRecord(node, recordValues, recordBackupValues);
+                Marc21Xml.addDataFieldRecord(node, recordValues, recordBackupValues);
             }
         }
 
-        //apply backup values if needed and available
+        // apply backup values if needed and available
         Marc21Xml.applyBackupRecordValues(recordValues, recordBackupValues);
 
-        // TODO: the current implementation of buildCoreHolding() expects a slightly different nesting structure in the XML.
+        // TODO: the current implementation of buildCoreHolding() expects a slightly
+        // different nesting structure in the XML.
         Map<String, String> holdingValues = Marc21Xml.buildCoreHolding(NODE_PREFIX, marcRecord);
 
-        logger.debug("MarcRecordLeader: " + recordValues.get(RECORD_MARC_RECORD_LEADER));
-        logger.debug("MFHD: " + holdingValues.get(RECORD_MFHD));
-        logger.debug("ISBN: " + recordValues.get(RECORD_ISBN));
-        logger.debug("Fallback Location: " + holdingValues.get(RECORD_FALLBACK_LOCATION_CODE));
-        logger.debug("Call Number: " + holdingValues.get(RECORD_CALL_NUMBER));
+        logger.debug("Marc record leader: {}", recordValues.get(RECORD_MARC_RECORD_LEADER));
+        logger.debug("MFHD: {}", holdingValues.get(RECORD_MFHD));
+        logger.debug("ISBN: {}", recordValues.get(RECORD_ISBN));
+        logger.debug("Fallback location: {}", holdingValues.get(RECORD_FALLBACK_LOCATION_CODE));
+        logger.debug("Call number: {}", holdingValues.get(RECORD_CALL_NUMBER));
 
         Boolean validLargeVolume = Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME));
 
-        logger.debug("Valid Large Volume: "+ validLargeVolume);
+        logger.debug("Valid large volume: {}", validLargeVolume);
 
         Map<String, Map<String, String>> catalogItems = new HashMap<String, Map<String, String>>();
 
@@ -263,15 +395,17 @@ public class FolioCatalogService extends AbstractCatalogService {
             recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
             recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
             recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
-            holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC), recordValues.get(RECORD_RECORD_ID),
-            holdingValues.get(RECORD_CALL_NUMBER), validLargeVolume, new HashMap<String, Map<String, String>>(catalogItems));
+            holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC),
+            recordValues.get(RECORD_RECORD_ID), holdingValues.get(RECORD_CALL_NUMBER), validLargeVolume,
+            new HashMap<String, Map<String, String>>(catalogItems));
     }
 
     /**
-     * Attempt to (case-insensitively) match the tag name (nodeName) against the desired match with the marc prefix.
+     * Attempt to (case-insensitively) match the tag name (nodeName) against the
+     * desired match with the marc prefix.
      */
     private boolean nodeNameMatches(String nodeName, String matchName) {
-      return nodeName.equalsIgnoreCase(NODE_PREFIX + matchName);
+        return nodeName.equalsIgnoreCase(NODE_PREFIX + matchName);
     }
 
     /**
@@ -290,103 +424,6 @@ public class FolioCatalogService extends AbstractCatalogService {
         }
 
         catalogItems.put(barcode, itemData);
-    }
-
-    @Override
-    public FeesFines getFeesFines(String uin) throws ParseException {
-        String path = "patron/account/";
-        String additional = "&includeLoans=false&includeCharges=true&includeHolds=false";
-        String url = String.format("%s%s%s?apikey={apikey}%s", getAPIBase(), path, uin, additional);
-        String apiKey = getAuthentication().get(CatalogServiceFactory.FIELD_APIKEY);
-
-        logger.debug(String.format("Asking for fines from: %s", url));
-
-        JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
-
-        Double total = null;
-        if (node.has("totalCharges") && node.get("totalCharges").has("amount")) {
-            total = node.get("totalCharges").get("amount").asDouble();
-        }
-
-        List<FeeFine> list = new ArrayList<>();
-
-        if (node.has("charges")) {
-            Iterator<JsonNode> iter = node.get("charges").elements();
-
-            while (iter.hasNext()) {
-                JsonNode charge = iter.next();
-
-                double amount = 0;
-                if (charge.has("chargeAmount") && charge.get("chargeAmount").has("amount")) {
-                    amount = charge.get("chargeAmount").get("amount").asDouble();
-                }
-
-                String fineId = charge.has("feeFineId") ? charge.get("feeFineId").asText() : null;
-                String type = charge.has("reason") ? charge.get("reason").asText() : null;
-                Date date = charge.has("accrualDate") ? folioDateToDate(charge.get("accrualDate").asText()) : null;
-
-                String title = null;
-                if (charge.has("item") && charge.get("item").has("title")) {
-                    title = charge.get("item").get("title").asText();
-                }
-
-                list.add(new FeeFine(amount, fineId, type, date, title));
-            }
-        }
-
-        return new FeesFines(uin, total, list.size(), list);
-    }
-
-    @Override
-    public List<LoanItem> getLoanItems(String uin) throws ParseException {
-        String path = "patron/account/";
-        String additional = "&includeLoans=true&includeCharges=false&includeHolds=false";
-        String url = String.format("%s%s%s?apikey={apikey}%s", getAPIBase(), path, uin, additional);
-        String apiKey = getAuthentication().get(CatalogServiceFactory.FIELD_APIKEY);
-
-        logger.debug(String.format("Asking for patron loans from: %s", url));
-
-        JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
-
-        List<LoanItem> list = new ArrayList<LoanItem>();
-
-        if (node.has("loans")) {
-            Iterator<JsonNode> iter = node.get("loans").elements();
-
-            while (iter.hasNext()) {
-                JsonNode loan = iter.next();
-                LoanItem loanItem = buildLoanItem(loan);
-                if (loanItem.getItemId() != null) {
-                    list.add(loanItem);
-                }
-            }
-        }
-        return list;
-    }
-
-    @Override
-    public LoanItem renewItem(String uin, String itemId) throws ParseException {
-        String path = "patron/account/";
-        String itemPath = "/item/";
-        String renewPath = "/renew";
-        String url = String.format("%s%s%s%s%s%s?apikey={apikey}", getAPIBase(), path, uin, itemPath, itemId, renewPath);
-        String apiKey = getAuthentication().get(CatalogServiceFactory.FIELD_APIKEY);
-
-        return buildLoanItem(restTemplate.postForObject(url, null, JsonNode.class, apiKey));
-    }
-
-    /**
-     * Convert from Folio dates, "yyyy-MM-dd'T'HH:mm:ss.SSSZ", to the Java Date.
-     *
-     * @param folioDate
-     * @return
-     * @throws ParseException
-     */
-    private Date folioDateToDate(String folioDate) throws ParseException {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-        return Date.from(formatter.parse(folioDate).toInstant());
     }
 
     private LoanItem buildLoanItem(JsonNode loanJson) throws ParseException {
@@ -414,6 +451,85 @@ public class FolioCatalogService extends AbstractCatalogService {
             author = getNodeValue(item, "author");
         }
         return new LoanItem(loanId, itemId, instanceId, loanDate, loanDueDate, overDue, title, author);
+    }
+
+    private String getNodeValue(JsonNode node, String fieldName) {
+        return node.has(fieldName) ? node.get(fieldName).asText() : null;
+    }
+
+    /**
+     * Convert from Folio dates, "yyyy-MM-dd'T'HH:mm:ss.SSSZ", to the Java Date.
+     *
+     * @param folioDate
+     * @return
+     * @throws ParseException
+     */
+    private Date folioDateToDate(String folioDate) throws ParseException {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+        return Date.from(formatter.parse(folioDate).toInstant());
+    }
+
+    /**
+     * Okapi request method to attempt one token refresh and retry if request unauthorized.
+     * 
+     * @param <T> generic class for response body type
+     * @param attempt int
+     * @param url String
+     * @param method HttpMethod
+     * @param requestEntity HttpEntity<T>
+     * @param responseType Class<T>
+     * @param uriVariables Object... uri variables to be expanded into url
+     * @return response entity with response type as body
+     */
+    private <T> ResponseEntity<T> okapiRequest(int attempt, String url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType, Object... uriVariables) {
+        try {
+            return restTemplate.exchange(url, method, requestEntity, responseType, uriVariables);
+        } catch(RestClientResponseException e) {
+            if (e.getRawStatusCode() == HttpStatus.UNAUTHORIZED.value() && attempt == 1) {
+                requestEntity = new HttpEntity<>(requestEntity.getBody(), headers(properties.getTenant(), okapiLogin()));
+                return okapiRequest(++attempt, url, method, requestEntity, responseType, uriVariables);
+            }
+            throw e;
+        }
+    }
+
+    private String getToken() {
+        Optional<String> token = TokenUtility.getToken(getName());
+        if (token.isPresent()) {
+            return token.get();
+        }
+        return okapiLogin();
+    }
+
+    private String okapiLogin() {
+        String url = properties.getBaseOkapiUrl() + "/authn/login";
+        HttpEntity<Credentials> entity = new HttpEntity<>(properties.getCredentials(), headers(properties.getTenant()));
+        ResponseEntity<?> response = restTemplate.postForObject(url, entity, ResponseEntity.class);
+        if (response.getStatusCode().equals(HttpStatus.CREATED)) {
+            String token = response.getHeaders().getFirst(OKAPI_TOKEN_HEADER);
+            TokenUtility.setToken(getName(), token);
+            return token;
+        } else {
+            logger.error("Failed to login {}: {}", response.getStatusCodeValue(), response.getBody());
+            throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Catalog service failed to login into Okapi!");
+        }
+    }
+
+    private HttpHeaders headers(String tenant, String token) {
+        HttpHeaders headers = headers(tenant);
+        headers.set(OKAPI_TOKEN_HEADER, token);
+        return headers;
+    }
+
+    // NOTE: assuming all accept and content type will be application/json
+    private HttpHeaders headers(String tenant) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN));
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set(OKAPI_TENANT_HEADER, tenant);
+        return headers;
     }
 
 }
