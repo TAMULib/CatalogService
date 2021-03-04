@@ -18,9 +18,7 @@ public class FolioProperties extends AbstractCatalogServiceProperties {
 
     private String tenant;
 
-    private String username;
-
-    private String password;
+    private Credentials credentials;
 
     private String edgeApiKey;
 
@@ -35,8 +33,7 @@ public class FolioProperties extends AbstractCatalogServiceProperties {
         @JsonProperty(value = "baseOkapiUrl", required = true) String baseOkapiUrl,
         @JsonProperty(value = "baseEdgeUrl", required = true) String baseEdgeUrl,
         @JsonProperty(value = "tenant", required = true) String tenant,
-        @JsonProperty(value = "username", required = true) String username,
-        @JsonProperty(value = "password", required = true) String password,
+        @JsonProperty(value = "credentials", required = true) Credentials credentials,
         @JsonProperty(value = "edgeApiKey", required = true) String edgeApiKey,
         @JsonProperty(value = "repositoryBaseUrl", required = true) String repositoryBaseUrl
     ) {
@@ -45,8 +42,7 @@ public class FolioProperties extends AbstractCatalogServiceProperties {
         setBaseOkapiUrl(baseOkapiUrl);
         setBaseEdgeUrl(baseEdgeUrl);
         setTenant(tenant);
-        setUsername(username);
-        setPassword(password);
+        setCredentials(credentials);
         setEdgeApiKey(edgeApiKey);
         setRepositoryBaseUrl(repositoryBaseUrl);
     }
