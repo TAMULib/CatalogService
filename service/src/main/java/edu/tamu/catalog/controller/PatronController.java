@@ -60,7 +60,6 @@ public class PatronController {
     /**
      * Renews a single loan item associated with a patron.
      *
-     * @param String catalogName (optional)
      * @param CatalogService catalogService (resolved by query parameter catalogName)
      * @param String uin
      * @param String itemId
