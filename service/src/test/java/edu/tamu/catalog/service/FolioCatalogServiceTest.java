@@ -59,21 +59,52 @@ public class FolioCatalogServiceTest {
     }
 
     @Test
-    public void testOkapiRequestGET() {
-        String url = "http://localhost:9130/locations";
-        HttpMethod method = HttpMethod.GET;
-        JsonNode requestBody = objectMapper.createObjectNode();
-        JsonNode responseBody = objectMapper.createObjectNode();
+    public void testOkapiRequestHEAD() {
+        testOkapiRequest("http://localhost:9130/locations", HttpMethod.HEAD, HttpStatus.OK);
+    }
 
+    @Test
+    public void testOkapiRequestGET() {
+        testOkapiRequest("http://localhost:9130/locations", HttpMethod.GET, HttpStatus.OK);
+    }
+
+    @Test
+    public void testOkapiRequestPOST() {
+        JsonNode requestBody = objectMapper.createObjectNode();
+        testOkapiRequest("http://localhost:9130/locations", HttpMethod.POST, requestBody, HttpStatus.CREATED);
+    }
+
+    @Test
+    public void testOkapiRequestPUT() {
+        JsonNode requestBody = objectMapper.createObjectNode();
+        testOkapiRequest("http://localhost:9130/locations/uuid", HttpMethod.PUT, requestBody, HttpStatus.OK);
+    }
+
+    @Test
+    public void testOkapiRequestDELETE() {
+        testOkapiRequest("http://localhost:9130/locations/uuid", HttpMethod.DELETE, HttpStatus.OK);
+    }
+
+    private void testOkapiRequest(String url, HttpMethod method, HttpStatus status) {
+        JsonNode responseBody = objectMapper.createObjectNode();
+        mockExchange(url, method, responseBody, status);
+        ResponseEntity<JsonNode> response = folioCatalogService.okapiRequest(url, method, JsonNode.class);
+        assertEquals(status, response.getStatusCode());
+    }
+
+    private void testOkapiRequest(String url, HttpMethod method, JsonNode requestBody, HttpStatus status) {
+        JsonNode responseBody = objectMapper.createObjectNode();
+        mockExchange(url, method, responseBody, status);
+        ResponseEntity<JsonNode> response = folioCatalogService.okapiRequest(url, method, requestBody, JsonNode.class);
+        assertEquals(status, response.getStatusCode());
+    }
+
+    private void mockExchange(String url, HttpMethod method, JsonNode responseBody, HttpStatus status) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-Okapi-Tenant", "diku");
         when(restTemplate.exchange(eq(url), eq(method), any(HttpEntity.class), eq(JsonNode.class)))
-            .thenReturn(new ResponseEntity<JsonNode>(responseBody, headers, HttpStatus.OK));
-
-        ResponseEntity<JsonNode> response = folioCatalogService.okapiRequest(url, method, requestBody, JsonNode.class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+            .thenReturn(new ResponseEntity<JsonNode>(responseBody, headers, status));
     }
 
 }
