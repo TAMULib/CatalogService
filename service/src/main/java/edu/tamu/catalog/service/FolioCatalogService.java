@@ -22,11 +22,13 @@ import java.io.StringReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -39,6 +41,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -52,8 +62,10 @@ import edu.tamu.catalog.domain.model.FeesFines;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
 import edu.tamu.catalog.properties.CatalogServiceProperties;
+import edu.tamu.catalog.properties.Credentials;
 import edu.tamu.catalog.properties.FolioProperties;
 import edu.tamu.catalog.utility.Marc21Xml;
+import edu.tamu.catalog.utility.TokenUtility;
 
 public class FolioCatalogService implements CatalogService {
 
@@ -72,6 +84,9 @@ public class FolioCatalogService implements CatalogService {
     private static final String NODE_METADATA = "metadata";
     private static final String NODE_OAI = "oai";
     private static final String NODE_RECORD = "record";
+
+    private static final String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
+    private static final String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
 
     @Autowired
     private RestTemplate restTemplate;
@@ -190,6 +205,40 @@ public class FolioCatalogService implements CatalogService {
             }
         }
         return list;
+    }
+
+    /**
+     * Okapi request method not requiring a request body. i.e. HEAD, GET, DELETE
+     * 
+     * @param <T> generic class for response body type
+     * @param url String
+     * @param method HttpMethod
+     * @param responseType Class<T>
+     * @param uriVariables Object... uri variables to be expanded into url
+     * @return response entity with response type as body
+     */
+    <T> ResponseEntity<T> okapiRequest(String url, HttpMethod method, Class<T> responseType, Object... uriVariables) {
+        HttpEntity<?> requestEntity = new HttpEntity<>(headers(properties.getTenant(), getToken()));
+
+        return okapiRequest(1, url, method, requestEntity, responseType, uriVariables);
+    }
+
+    /**
+     * Okapi request method requiring a request body. i.e. PUT, POST
+     *
+     * @param <B> generic class for request body type
+     * @param <T> generic class for response body type
+     * @param url String
+     * @param method HttpMethod
+     * @param body B request body
+     * @param responseType Class<T>
+     * @param uriVariables Object... uri variables to be expanded into url
+     * @return response entity with response type as body
+     */
+    <B,T> ResponseEntity<T> okapiRequest(String url, HttpMethod method, B body, Class<T> responseType, Object... uriVariables) {
+        HttpEntity<B> requestEntity = new HttpEntity<>(body, headers(properties.getTenant(), getToken()));
+
+        return okapiRequest(1, url, method, requestEntity, responseType, uriVariables);
     }
 
     private List<HoldingsRecord> requestHoldings(String instanceId, String holdingId) {
@@ -397,6 +446,67 @@ public class FolioCatalogService implements CatalogService {
         formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         return Date.from(formatter.parse(folioDate).toInstant());
+    }
+
+    /**
+     * Okapi request method to attempt one token refresh and retry if request unauthorized.
+     * 
+     * @param <T> generic class for response body type
+     * @param attempt int
+     * @param url String
+     * @param method HttpMethod
+     * @param requestEntity HttpEntity<T>
+     * @param responseType Class<T>
+     * @param uriVariables Object... uri variables to be expanded into url
+     * @return response entity with response type as body
+     */
+    private <T> ResponseEntity<T> okapiRequest(int attempt, String url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType, Object... uriVariables) {
+        try {
+            return restTemplate.exchange(url, method, requestEntity, responseType, uriVariables);
+        } catch(RestClientResponseException e) {
+            if (e.getRawStatusCode() == HttpStatus.UNAUTHORIZED.value() && attempt == 1) {
+                requestEntity = new HttpEntity<>(requestEntity.getBody(), headers(properties.getTenant(), okapiLogin()));
+                return okapiRequest(++attempt, url, method, requestEntity, responseType, uriVariables);
+            }
+            throw e;
+        }
+    }
+
+    private String getToken() {
+        Optional<String> token = TokenUtility.getToken(getName());
+        if (token.isPresent()) {
+            return token.get();
+        }
+        return okapiLogin();
+    }
+
+    private String okapiLogin() {
+        String url = properties.getBaseOkapiUrl() + "/authn/login";
+        HttpEntity<Credentials> entity = new HttpEntity<>(properties.getCredentials(), headers(properties.getTenant()));
+        ResponseEntity<?> response = restTemplate.postForObject(url, entity, ResponseEntity.class);
+        if (response.getStatusCode().equals(HttpStatus.CREATED)) {
+            String token = response.getHeaders().getFirst(OKAPI_TOKEN_HEADER);
+            TokenUtility.setToken(getName(), token);
+            return token;
+        } else {
+            logger.error("Failed to login {}: {}", response.getStatusCodeValue(), response.getBody());
+            throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Catalog service failed to login into Okapi!");
+        }
+    }
+
+    private HttpHeaders headers(String tenant, String token) {
+        HttpHeaders headers = headers(tenant);
+        headers.set(OKAPI_TOKEN_HEADER, token);
+        return headers;
+    }
+
+    // NOTE: assuming all accept and content type will be application/json
+    private HttpHeaders headers(String tenant) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN));
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set(OKAPI_TENANT_HEADER, tenant);
+        return headers;
     }
 
 }

@@ -48,7 +48,7 @@ public class CatalogServiceConfigTest {
     @Test
     public void testAutowiredEvansVoyagerCatalogService() throws NoSuchFieldException, SecurityException,
             IllegalArgumentException, IllegalAccessException {
-        assertNotNull(mslCatalogService);
+        assertNotNull(evansCatalogService);
         assertEquals("evans", evansCatalogService.getName());
         Field field = VoyagerCatalogService.class.getDeclaredField("properties");
         field.setAccessible(true);
@@ -86,8 +86,9 @@ public class CatalogServiceConfigTest {
         assertEquals("http://localhost:9130", properties.getBaseOkapiUrl());
         assertEquals("http://localhost:8080", properties.getBaseEdgeUrl());
         assertEquals("diku", properties.getTenant());
-        assertEquals("diku_admin", properties.getUsername());
-        assertEquals("admin", properties.getPassword());
+        assertNotNull(properties.getCredentials());
+        assertEquals("diku_admin", properties.getCredentials().getUsername());
+        assertEquals("admin", properties.getCredentials().getPassword());
         assertEquals("mock_api_key", properties.getEdgeApiKey());
         assertEquals("localhost", properties.getRepositoryBaseUrl());
     }
