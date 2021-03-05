@@ -67,6 +67,8 @@ public class PatronControllerTest {
     private static final String LOANS_ENDPOINT = "loans";
     private static final String FINES_ENDPOINT = "fines";
     private static final String RENEWAL_ENDPOINT = "renew";
+    private static final String DOC_PREFIX = "patron/";
+
 
     @Value("classpath:mock/patron/account.json")
     private Resource patronAccountResource;
@@ -252,7 +254,7 @@ public class PatronControllerTest {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
             .andDo(
                 document(
-                    "patron/" + catalogEndpoint,
+                    DOC_PREFIX + catalogEndpoint,
                     pathParameters,
                     requestParameters,
                     responseFields
@@ -268,7 +270,7 @@ public class PatronControllerTest {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
             .andDo(
                 document(
-                    "patron/" + docsEndpoint,
+                    DOC_PREFIX + docsEndpoint,
                     pathParameters,
                     requestParameters,
                     responseFields
@@ -322,7 +324,7 @@ public class PatronControllerTest {
     }
 
     private ResultActions performGet(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response) throws Exception  {
-        expectResponse(HttpMethod.GET, sourceUrl, count, response);
+        expectGetResponse(sourceUrl, count, response);
 
         return mockMvc.perform(get("/patron/{uin}/" + catalogEndpoint, UIN)
             .contentType(MediaType.APPLICATION_JSON)
@@ -330,7 +332,7 @@ public class PatronControllerTest {
     }
 
     private ResultActions performGetWithCatalogName(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response, String catalogName) throws Exception  {
-        expectResponse(HttpMethod.GET, sourceUrl, count, response);
+        expectGetResponse(sourceUrl, count, response);
 
         return mockMvc.perform(get("/patron/{uin}/" + catalogEndpoint, UIN)
             .param("catalogName", catalogName)
@@ -339,11 +341,19 @@ public class PatronControllerTest {
     }
 
     private ResultActions performPostWithCatalogName(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response, String catalogName) throws Exception  {
-        expectResponse(HttpMethod.POST, sourceUrl, count, response);
+        expectPostResponse(sourceUrl, count, response);
         return mockMvc.perform(post("/patron/{uin}/" + catalogEndpoint, UIN, ITEM_ID)
             .param("catalogName", catalogName)
             .contentType(MediaType.APPLICATION_JSON)
         );
+    }
+
+    private void expectGetResponse(String sourceUrl, ExpectedCount count, ResponseCreator response) throws Exception  {
+        expectResponse(HttpMethod.GET, sourceUrl, count, response);
+    }
+
+    private void expectPostResponse(String sourceUrl, ExpectedCount count, ResponseCreator response) throws Exception  {
+        expectResponse(HttpMethod.POST, sourceUrl, count, response);
     }
 
     private void expectResponse(HttpMethod httpMethod, String sourceUrl, ExpectedCount count, ResponseCreator response) throws Exception  {
