@@ -25,4 +25,6 @@ public interface CatalogService {
 
     List<LoanItem> getLoanItems(String uin) throws Exception;
 
+    Boolean getBlockStatus(String uin) throws Exception;
+
 }
