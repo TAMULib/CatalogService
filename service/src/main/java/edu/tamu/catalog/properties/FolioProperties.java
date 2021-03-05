@@ -26,6 +26,8 @@ public class FolioProperties extends AbstractCatalogServiceProperties {
     // `oai:<repositoryBaseUrl>:<tenantId>/<uuid of record>`
     private String repositoryBaseUrl;
 
+    private String cancelHoldReasonId;
+
     @JsonCreator
     public FolioProperties(
         @JsonProperty(value = "name", required = true) String name,
@@ -35,7 +37,8 @@ public class FolioProperties extends AbstractCatalogServiceProperties {
         @JsonProperty(value = "tenant", required = true) String tenant,
         @JsonProperty(value = "credentials", required = true) Credentials credentials,
         @JsonProperty(value = "edgeApiKey", required = true) String edgeApiKey,
-        @JsonProperty(value = "repositoryBaseUrl", required = true) String repositoryBaseUrl
+        @JsonProperty(value = "repositoryBaseUrl", required = true) String repositoryBaseUrl,
+        @JsonProperty(value = "cancelHoldReasonId", required = true) String cancelHoldReasonId
     ) {
         setName(name);
         setType(type);
@@ -45,6 +48,7 @@ public class FolioProperties extends AbstractCatalogServiceProperties {
         setCredentials(credentials);
         setEdgeApiKey(edgeApiKey);
         setRepositoryBaseUrl(repositoryBaseUrl);
+        setCancelHoldReasonId(cancelHoldReasonId);
     }
 
 }

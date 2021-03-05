@@ -58,6 +58,26 @@ public class PatronController {
     }
 
     /**
+     * Cancels a hold request, returning the updated hold request.
+     *
+     * @param String catalogName (optional)
+     * @param String uin
+     * @param String requestId
+     * @return
+     * @throws Exception
+     */
+    @PostMapping("/{uin}/holds/{requestId}/cancel")
+    public @ResponseBody ResponseEntity<?> cancelHoldRequest(
+        @DefaultCatalog("folio") CatalogService catalogService,
+        @PathVariable(required = true) String uin,
+        @PathVariable(required = true) String requestId
+    ) throws Exception {
+        catalogService.cancelHoldRequest(uin, requestId);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
      * Renews a single loan item associated with a patron.
      *
      * @param CatalogService catalogService (resolved by query parameter catalogName)

@@ -9,5 +9,6 @@
     "password": "admin"
   },
   "edgeApiKey": "mock_api_key",
-  "repositoryBaseUrl": "localhost"
+  "repositoryBaseUrl": "localhost",
+  "cancelHoldReasonId": "75187e8d-e25a-47a7-89ad-23ba612338de"
 }

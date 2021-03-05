@@ -91,6 +91,7 @@ public class CatalogServiceConfigTest {
         assertEquals("admin", properties.getCredentials().getPassword());
         assertEquals("mock_api_key", properties.getEdgeApiKey());
         assertEquals("localhost", properties.getRepositoryBaseUrl());
+        assertEquals("75187e8d-e25a-47a7-89ad-23ba612338de", properties.getCancelHoldReasonId());
     }
 
 }

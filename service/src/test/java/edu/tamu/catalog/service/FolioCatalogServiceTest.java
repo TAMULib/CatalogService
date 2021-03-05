@@ -40,7 +40,8 @@ public class FolioCatalogServiceTest {
         "diku",
         credentials,
         "mock_api_key",
-        "localhost"
+        "localhost",
+        "75187e8d-e25a-47a7-89ad-23ba612338de"
     );
 
     @InjectMocks

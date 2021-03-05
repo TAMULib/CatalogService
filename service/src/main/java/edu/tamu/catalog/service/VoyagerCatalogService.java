@@ -256,6 +256,11 @@ public class VoyagerCatalogService implements CatalogService {
     }
 
     @Override
+    public void cancelHoldRequest(String uin, String requestId) throws Exception {
+        throw new UnsupportedOperationException("Not supported by the requested catalog.");
+    }
+
+    @Override
     public LoanItem renewItem(String uin, String itemId) {
         throw new UnsupportedOperationException("Not supported by the requested catalog.");
     }

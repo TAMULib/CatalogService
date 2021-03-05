@@ -35,8 +35,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,10 +55,13 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import edu.tamu.catalog.domain.model.FeeFine;
 import edu.tamu.catalog.domain.model.FeesFines;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
+import edu.tamu.catalog.model.FolioHoldCancellation;
 import edu.tamu.catalog.properties.CatalogServiceProperties;
 import edu.tamu.catalog.properties.Credentials;
 import edu.tamu.catalog.properties.FolioProperties;
@@ -87,6 +88,9 @@ public class FolioCatalogService implements CatalogService {
 
     private static final String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
     private static final String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
+
+    private static final String FOLIO_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+    private static final TimeZone FOLIO_DATE_TIMEZONE = TimeZone.getTimeZone("UTC");
 
     @Autowired
     private RestTemplate restTemplate;
@@ -190,6 +194,22 @@ public class FolioCatalogService implements CatalogService {
             }
         }
         return list;
+    }
+
+    @Override
+    public void cancelHoldRequest(String uin, String requestId) throws Exception {
+        String path = "%s/patron/account/%s/holds/%s/cancel?apikey={apikey}";
+        String url = String.format(path, properties.getBaseEdgeUrl(), uin, requestId);
+        String apiKey = properties.getEdgeApiKey();
+
+        logger.debug("Cancelling hold request via: {}", url);
+
+        FolioHoldCancellation folioCancellation = new FolioHoldCancellation();
+        folioCancellation.setHoldId(requestId);
+        folioCancellation.setCancellationReasonId(properties.getCancelHoldReasonId());
+        folioCancellation.setCanceledDate(dateToFolioDate(new Date()));
+
+        restTemplate.postForObject(url, folioCancellation, Object.class, apiKey);
     }
 
     @Override
@@ -401,6 +421,34 @@ public class FolioCatalogService implements CatalogService {
     }
 
     /**
+     * Convert from Folio dates, "yyyy-MM-dd'T'HH:mm:ss.SSSZ", to the Java Date.
+     *
+     * @param folioDate
+     * @return
+     * @throws ParseException
+     */
+    private Date folioDateToDate(String folioDate) throws ParseException {
+        SimpleDateFormat formatter = new SimpleDateFormat(FOLIO_DATE_FORMAT);
+        formatter.setTimeZone(FOLIO_DATE_TIMEZONE);
+
+        return Date.from(formatter.parse(folioDate).toInstant());
+    }
+
+    /**
+     * Convert from Java Dates to the Folio Date, "yyyy-MM-dd'T'HH:mm:ss.SSSZ".
+     *
+     * @param folioDate
+     * @return
+     * @throws ParseException
+     */
+    private String dateToFolioDate(Date date) throws ParseException {
+        SimpleDateFormat formatter = new SimpleDateFormat(FOLIO_DATE_FORMAT);
+        formatter.setTimeZone(FOLIO_DATE_TIMEZONE);
+
+        return formatter.format(date);
+    }
+
+    /**
      * Attempt to (case-insensitively) match the tag name (nodeName) against the
      * desired match with the marc prefix.
      */
@@ -454,20 +502,6 @@ public class FolioCatalogService implements CatalogService {
 
     private String getNodeValue(JsonNode node, String fieldName) {
         return node.has(fieldName) ? node.get(fieldName).asText() : null;
-    }
-
-    /**
-     * Convert from Folio dates, "yyyy-MM-dd'T'HH:mm:ss.SSSZ", to the Java Date.
-     *
-     * @param folioDate
-     * @return
-     * @throws ParseException
-     */
-    private Date folioDateToDate(String folioDate) throws ParseException {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-        return Date.from(formatter.parse(folioDate).toInstant());
     }
 
     /**
