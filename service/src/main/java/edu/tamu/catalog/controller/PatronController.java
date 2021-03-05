@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import edu.tamu.catalog.annotation.DefaultCatalog;
-import edu.tamu.catalog.domain.model.FeesFines;
+import edu.tamu.catalog.domain.model.FeeFine;
 import edu.tamu.catalog.domain.model.LoanItem;
 import edu.tamu.catalog.service.CatalogService;
 
@@ -29,11 +29,11 @@ public class PatronController {
      * @throws Exception
      */
     @GetMapping("/{uin}/fines")
-    public @ResponseBody ResponseEntity<FeesFines> fines(
+    public @ResponseBody ResponseEntity<List<FeeFine>> fines(
         @DefaultCatalog("folio") CatalogService catalogService,
         @PathVariable(required = true) String uin
     ) throws Exception {
-        FeesFines feesFines = catalogService.getFeesFines(uin);
+        List<FeeFine> feesFines = catalogService.getFeesFines(uin);
 
         return ResponseEntity.status(HttpStatus.OK)
             .body(feesFines);

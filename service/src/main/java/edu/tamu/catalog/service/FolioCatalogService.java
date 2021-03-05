@@ -58,7 +58,6 @@ import org.xml.sax.SAXException;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import edu.tamu.catalog.domain.model.FeeFine;
-import edu.tamu.catalog.domain.model.FeesFines;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
 import edu.tamu.catalog.model.FolioHoldCancellation;
@@ -125,7 +124,7 @@ public class FolioCatalogService implements CatalogService {
     }
 
     @Override
-    public FeesFines getFeesFines(String uin) throws ParseException {
+    public List<FeeFine> getFeesFines(String uin) throws ParseException {
         String path = "patron/account";
         String queryString = "apikey={apikey}&includeLoans=false&includeCharges=true&includeHolds=false";
         String url = String.format("%s/%s/%s?%s", properties.getBaseEdgeUrl(), path, uin, queryString);
@@ -134,11 +133,6 @@ public class FolioCatalogService implements CatalogService {
         logger.debug("Asking for fines from: {}", url);
 
         JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
-
-        Double total = null;
-        if (node.has("totalCharges") && node.get("totalCharges").has("amount")) {
-            total = node.get("totalCharges").get("amount").asDouble();
-        }
 
         List<FeeFine> list = new ArrayList<>();
 
@@ -166,7 +160,7 @@ public class FolioCatalogService implements CatalogService {
             }
         }
 
-        return new FeesFines(uin, total, list.size(), list);
+        return list;
     }
 
     @Override
@@ -180,7 +174,7 @@ public class FolioCatalogService implements CatalogService {
 
         JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
 
-        List<LoanItem> list = new ArrayList<LoanItem>();
+        List<LoanItem> list = new ArrayList<>();
 
         if (node.has("loans")) {
             Iterator<JsonNode> iter = node.get("loans").elements();

@@ -111,15 +111,11 @@ public class PatronControllerTest {
         );
 
         ResponseFieldsSnippet responseFields = responseFields(
-            fieldWithPath("id").description("The patron UIN."),
-            fieldWithPath("total").description("The sum total of the fines."),
-            fieldWithPath("fineCount").description("The total number of fines in the list."),
-            fieldWithPath("list[]").description("An array of all fines for the patron."),
-            fieldWithPath("list[].amount").description("The title of the item associated with the fine."),
-            fieldWithPath("list[].fineId").description("The UUID associated with the fine."),
-            fieldWithPath("list[].fineType").description("The type of the fine."),
-            fieldWithPath("list[].fineDate").description("A timestamp in milliseconds from UNIX epoch representing the date the fine was accrued."),
-            fieldWithPath("list[].itemTitle").description("The title of the item associated with the fine.")
+            fieldWithPath("[].amount").description("The title of the item associated with the fine."),
+            fieldWithPath("[].fineId").description("The UUID associated with the fine."),
+            fieldWithPath("[].fineType").description("The type of the fine."),
+            fieldWithPath("[].fineDate").description("A timestamp in milliseconds from UNIX epoch representing the date the fine was accrued."),
+            fieldWithPath("[].itemTitle").description("The title of the item associated with the fine.")
         );
 
         getAccountEndpointWithMockMVC(getFinesUrl(), FINES_ENDPOINT, pathParameters, requestParameters, responseFields);
