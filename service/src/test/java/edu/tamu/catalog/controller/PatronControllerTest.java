@@ -65,12 +65,16 @@ public class PatronControllerTest {
     private static final String LOANS_ENDPOINT = "loans";
     private static final String FINES_ENDPOINT = "fines";
     private static final String DOC_PREFIX = "patron/";
+    private static final String HOLDS_CANCEL_MVC_PATH = "/patron/{uin}/holds/{requestId}/cancel";
 
     @Value("classpath:mock/patron/account.json")
     private Resource patronAccountResource;
 
     @Value("classpath:mock/patron/accountDateParseError.json")
     private Resource patronAccountDateParseErrorResource;
+
+    @Value("classpath:mock/patron/accountCancelHoldResponse.json")
+    private Resource patronAccountCancelHoldResponseResource;
 
     @Value("classpath:mock/patron/accountCancelHoldRequest.json")
     private Resource patronAccountCancelHoldRequestResource;
@@ -146,12 +150,13 @@ public class PatronControllerTest {
             parameterWithName("catalogName").description("The name of the catalog to use.").optional()
         );
 
-        expectPostResponse(getCancelHoldRequestUrl(), once(), createdResponse(patronAccountCancelHoldRequestResource));
+        expectPostResponse(getCancelHoldRequestUrl(), once(), createdResponse(patronAccountCancelHoldResponseResource));
 
         mockMvc.perform(
-            post("/patron/{uin}/holds/{requestId}/cancel", UIN, REQUEST_ID)
+            post(HOLDS_CANCEL_MVC_PATH, UIN, REQUEST_ID)
                 .param("catalogName", FOLIO_CATALOG)
                 .contentType(MediaType.APPLICATION_JSON)
+                .content(getMockJson(patronAccountCancelHoldRequestResource))
             )
             .andExpect(status().isNoContent())
             .andDo(
@@ -166,63 +171,121 @@ public class PatronControllerTest {
     }
 
     @Test
-    public void testFinesMockMVCWithCatalogName() throws Exception {
-        getEndpointWithCatalogName(getFinesUrl(), FINES_ENDPOINT);
-    }
-
-    @Test
-    public void testLoansMockMVCWithCatalogName() throws Exception {
-        getEndpointWithCatalogName(getLoansUrl(), LOANS_ENDPOINT);
-    }
-
-    @Test
     public void testFinesUINNotFound() throws Exception {
-        getEndpointNotFound(getFinesUrl(), FINES_ENDPOINT);
+        performGet(getFinesUrl(), FINES_ENDPOINT, once(), withStatus(HttpStatus.NOT_FOUND))
+            .andExpect(status().isNotFound());
+
+        restServer.verify();
     }
 
     @Test
     public void testLoansUINNotFound() throws Exception {
-        getEndpointNotFound(getLoansUrl(), LOANS_ENDPOINT);
+        performGet(getLoansUrl(), LOANS_ENDPOINT, once(), withStatus(HttpStatus.NOT_FOUND))
+            .andExpect(status().isNotFound());
+
+        restServer.verify();
     }
 
     @Test
-    public void testFinesDateParseError() throws Exception  {
-        getEndpointDateParseError(getFinesUrl(), FINES_ENDPOINT);
+    public void testCancelHoldIdNotFound() throws Exception {
+        performHoldsCancelPost(once(), withStatus(HttpStatus.NOT_FOUND))
+            .andExpect(status().isNotFound());
+
+        restServer.verify();
     }
 
     @Test
-    public void testLoansDateParseError() throws Exception  {
-        getEndpointDateParseError(getLoansUrl(), LOANS_ENDPOINT);
+    public void testFinesDateParseError() throws Exception {
+        performGet(getFinesUrl(), FINES_ENDPOINT, once(), successResponse(patronAccountDateParseErrorResource))
+            .andExpect(status().isInternalServerError());
+
+        restServer.verify();
     }
 
     @Test
-    public void testFinesNotSupportedForCatalog() throws Exception  {
-        getEndpointNotSupportedForCatalog(getFinesUrl(), FINES_ENDPOINT);
+    public void testLoansDateParseError() throws Exception {
+        performGet(getLoansUrl(), LOANS_ENDPOINT, once(), successResponse(patronAccountDateParseErrorResource))
+            .andExpect(status().isInternalServerError());
+
+        restServer.verify();
     }
 
     @Test
-    public void testLoansNotSupportedForCatalog() throws Exception  {
-        getEndpointNotSupportedForCatalog(getLoansUrl(), LOANS_ENDPOINT);
+    public void testFinesNotSupportedForCatalog() throws Exception {
+        performGetWithCatalogName(getFinesUrl(), FINES_ENDPOINT, never(), withStatus(HttpStatus.OK), VOYAGER_CATALOG)
+            .andExpect(status().isBadRequest());
+
+        restServer.verify();
+    }
+
+    @Test
+    public void testLoansNotSupportedForCatalog() throws Exception {
+        performGetWithCatalogName(getLoansUrl(), LOANS_ENDPOINT, never(), withStatus(HttpStatus.OK), VOYAGER_CATALOG)
+            .andExpect(status().isBadRequest());
+
+        restServer.verify();
+    }
+
+    @Test
+    public void testCancelHoldNotSupportedForCatalog() throws Exception {
+        expectPostResponse(getCancelHoldRequestUrl(), never(), withStatus(HttpStatus.OK));
+
+        mockMvc.perform(post(HOLDS_CANCEL_MVC_PATH, UIN, REQUEST_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(getMockJson(patronAccountCancelHoldRequestResource))
+            .param("catalogName", VOYAGER_CATALOG)
+        )
+        .andExpect(status().isBadRequest());
+
+        restServer.verify();
     }
 
     @Test
     public void testFinesClientException() throws Exception {
-        getEndpointBadRequest(getFinesUrl(), FINES_ENDPOINT);
+        performGet(getFinesUrl(), FINES_ENDPOINT, once(), withStatus(HttpStatus.BAD_REQUEST))
+            .andExpect(status().isBadRequest());
+
+        restServer.verify();
     }
 
     @Test
     public void testLoansClientException() throws Exception {
-        getEndpointBadRequest(getLoansUrl(), LOANS_ENDPOINT);
+        performGet(getLoansUrl(), LOANS_ENDPOINT, once(), withStatus(HttpStatus.BAD_REQUEST))
+            .andExpect(status().isBadRequest());
+
+        restServer.verify();
+    }
+
+    @Test
+    public void testCancelHoldClientException() throws Exception {
+        performHoldsCancelPost(once(), withStatus(HttpStatus.BAD_REQUEST))
+            .andExpect(status().isBadRequest());
+
+        restServer.verify();
     }
 
     @Test
     public void testFinesServerException() throws Exception {
-        getEndpointInternalServerError(getFinesUrl(), FINES_ENDPOINT);
+        performGet(getFinesUrl(), FINES_ENDPOINT, once(), withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+            .andExpect(status().isInternalServerError());
+
+        restServer.verify();
     }
 
     @Test
     public void testLoansServerException() throws Exception {
-        getEndpointInternalServerError(getLoansUrl(), LOANS_ENDPOINT);
+        performGet(getLoansUrl(), LOANS_ENDPOINT, once(), withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+            .andExpect(status().isInternalServerError());
+
+        restServer.verify();
+    }
+
+    @Test
+    public void testCancelHoldServerException() throws Exception {
+        performHoldsCancelPost(once(), withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+            .andExpect(status().isInternalServerError());
+
+        restServer.verify();
     }
 
     private void getEndpointWithMockMVC(String sourceUrl, String catalogEndpoint, PathParametersSnippet pathParameters, RequestParametersSnippet requestParameters, ResponseFieldsSnippet responseFields) throws Exception {
@@ -241,50 +304,7 @@ public class PatronControllerTest {
         restServer.verify();
     }
 
-    private void getEndpointWithCatalogName(String sourceUrl, String catalogEndpoint) throws Exception {
-        performGetWithCatalogName(sourceUrl, catalogEndpoint, once(), successResponse(patronAccountResource), FOLIO_CATALOG)
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8));
-
-        restServer.verify();
-    }
-
-    private void getEndpointInternalServerError(String sourceUrl, String catalogEndpoint) throws Exception {
-        performGet(sourceUrl, catalogEndpoint, once(), withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
-            .andExpect(status().isInternalServerError());
-
-        restServer.verify();
-    }
-
-    private void getEndpointBadRequest(String sourceUrl, String catalogEndpoint) throws Exception  {
-        performGet(sourceUrl, catalogEndpoint, once(), withStatus(HttpStatus.BAD_REQUEST))
-            .andExpect(status().isBadRequest());
-
-        restServer.verify();
-    }
-
-    private void getEndpointNotFound(String sourceUrl, String catalogEndpoint) throws Exception {
-        performGet(sourceUrl, catalogEndpoint, once(), withStatus(HttpStatus.NOT_FOUND))
-            .andExpect(status().isNotFound());
-
-        restServer.verify();
-    }
-
-    private void getEndpointDateParseError(String sourceUrl, String catalogEndpoint) throws Exception  {
-        performGet(sourceUrl, catalogEndpoint, once(), successResponse(patronAccountDateParseErrorResource))
-            .andExpect(status().isInternalServerError());
-
-        restServer.verify();
-    }
-
-    private void getEndpointNotSupportedForCatalog(String sourceUrl, String catalogEndpoint) throws Exception  {
-        performGetWithCatalogName(sourceUrl, catalogEndpoint, never(), successResponse(patronAccountResource), VOYAGER_CATALOG)
-            .andExpect(status().isBadRequest());
-
-        restServer.verify();
-    }
-
-    private ResultActions performGet(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response) throws Exception  {
+    private ResultActions performGet(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response) throws Exception {
         expectGetResponse(sourceUrl, count, response);
 
         return mockMvc.perform(get("/patron/{uin}/" + catalogEndpoint, UIN)
@@ -292,7 +312,7 @@ public class PatronControllerTest {
         );
     }
 
-    private ResultActions performGetWithCatalogName(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response, String catalogName) throws Exception  {
+    private ResultActions performGetWithCatalogName(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response, String catalogName) throws Exception {
         expectGetResponse(sourceUrl, count, response);
 
         return mockMvc.perform(get("/patron/{uin}/" + catalogEndpoint, UIN)
@@ -301,15 +321,24 @@ public class PatronControllerTest {
         );
     }
 
-    private void expectGetResponse(String sourceUrl, ExpectedCount count, ResponseCreator response) throws Exception  {
+    private ResultActions performHoldsCancelPost(ExpectedCount count, ResponseCreator response) throws Exception {
+        expectPostResponse(getCancelHoldRequestUrl(), count, response);
+
+        return mockMvc.perform(post(HOLDS_CANCEL_MVC_PATH, UIN, REQUEST_ID)
+            .content(getMockJson(patronAccountCancelHoldRequestResource))
+            .contentType(MediaType.APPLICATION_JSON)
+        );
+    }
+
+    private void expectGetResponse(String sourceUrl, ExpectedCount count, ResponseCreator response) throws Exception {
         expectResponse(HttpMethod.GET, sourceUrl, count, response);
     }
 
-    private void expectPostResponse(String sourceUrl, ExpectedCount count, ResponseCreator response) throws Exception  {
+    private void expectPostResponse(String sourceUrl, ExpectedCount count, ResponseCreator response) throws Exception {
         expectResponse(HttpMethod.POST, sourceUrl, count, response);
     }
 
-    private void expectResponse(HttpMethod httpMethod, String sourceUrl, ExpectedCount count, ResponseCreator response) throws Exception  {
+    private void expectResponse(HttpMethod httpMethod, String sourceUrl, ExpectedCount count, ResponseCreator response) throws Exception {
         restServer.expect(count, requestTo(sourceUrl))
             .andExpect(method(httpMethod))
             .andRespond(response);
