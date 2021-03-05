@@ -29,4 +29,6 @@ public interface CatalogService {
 
     LoanItem renewItem(String uin, String itemId) throws Exception;
 
+    Boolean getBlockStatus(String uin) throws Exception;
+
 }

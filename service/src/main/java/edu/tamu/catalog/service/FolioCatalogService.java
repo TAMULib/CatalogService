@@ -223,9 +223,17 @@ public class FolioCatalogService implements CatalogService {
         return buildLoanItem(restTemplate.postForObject(url, null, JsonNode.class, apiKey));
     }
 
+    @Override
+    public Boolean getBlockStatus(String uin) throws Exception {
+        //for now, no FOLIO user will be blocked
+        //leave the exception throw so the interface is future stable
+        return false;
+    }
+
+
     /**
      * Okapi request method not requiring a request body. i.e. HEAD, GET, DELETE
-     * 
+     *
      * @param <T> generic class for response body type
      * @param url String
      * @param method HttpMethod
@@ -506,7 +514,7 @@ public class FolioCatalogService implements CatalogService {
 
     /**
      * Okapi request method to attempt one token refresh and retry if request unauthorized.
-     * 
+     *
      * @param <T> generic class for response body type
      * @param attempt int
      * @param url String

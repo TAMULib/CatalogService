@@ -97,4 +97,19 @@ public class PatronController {
                 .body(loanItem);
     }
 
+    /**
+     * Checks block status for a patron.
+     *
+     * @param CatalogService catalogService (resolved by query parameter catalogName)
+     * @param String uin
+     * @return
+     */
+    @GetMapping("/{uin}/block")
+    public @ResponseBody ResponseEntity<Boolean> getBlockStatus(
+        @DefaultCatalog("folio") CatalogService catalogService,
+        @PathVariable(required = true) String uin
+    ) throws Exception {
+        return ResponseEntity.status(HttpStatus.OK)
+            .body(catalogService.getBlockStatus(uin));
+    }
 }

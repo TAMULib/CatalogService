@@ -69,6 +69,7 @@ public class PatronControllerTest {
     private static final String LOANS_ENDPOINT = "loans";
     private static final String FINES_ENDPOINT = "fines";
     private static final String RENEWAL_ENDPOINT = "renew";
+    private static final String BLOCK_ENDPOINT = "block";
 
     private static final String DOC_PREFIX = "patron/";
 
@@ -177,7 +178,32 @@ public class PatronControllerTest {
 
         restServer.verify();
     }
-    
+
+    @Test
+    public void testBlockMockMVC() throws Exception {
+        PathParametersSnippet pathParameters = pathParameters(
+                parameterWithName("uin").description("The patron UIN.")
+            );
+
+        RequestParametersSnippet requestParameters = requestParameters(
+            parameterWithName("catalogName").description("The name of the catalog to use.").optional()
+        );
+
+        mockMvc.perform(get("/patron/{uin}/" + BLOCK_ENDPOINT, UIN)
+                .contentType(MediaType.APPLICATION_JSON)
+            )
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+        .andDo(
+            document(
+                "patron/" + BLOCK_ENDPOINT,
+                pathParameters,
+                requestParameters
+            )
+        );
+        restServer.verify();
+    }
+
     @Test
     public void testLoanItemRenewalMockMVC() throws Exception {
         PathParametersSnippet pathParameters = pathParameters(
