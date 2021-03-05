@@ -40,7 +40,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import edu.tamu.catalog.domain.model.FeesFines;
+import edu.tamu.catalog.domain.model.FeeFine;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
 import edu.tamu.catalog.properties.CatalogServiceProperties;
@@ -246,7 +246,7 @@ public class VoyagerCatalogService implements CatalogService {
     }
 
     @Override
-    public FeesFines getFeesFines(String uin) throws Exception {
+    public List<FeeFine> getFeesFines(String uin) throws Exception {
         throw new UnsupportedOperationException("Not supported by the requested catalog.");
     }
 
