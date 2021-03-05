@@ -77,4 +77,24 @@ public class PatronController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Renews a single loan item associated with a patron.
+     *
+     * @param CatalogService catalogService (resolved by query parameter catalogName)
+     * @param String uin
+     * @param String itemId
+     * @return
+     */
+    @PostMapping("/{uin}/renew/{itemId}")
+    public @ResponseBody ResponseEntity<LoanItem> renewItem(
+        @DefaultCatalog("folio") CatalogService catalogService,
+        @PathVariable(required = true) String uin,
+        @PathVariable(required = true) String itemId
+    ) throws Exception {
+        LoanItem loanItem = catalogService.renewItem(uin, itemId);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(loanItem);
+    }
+
 }

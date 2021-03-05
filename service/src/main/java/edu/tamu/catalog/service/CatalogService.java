@@ -27,4 +27,6 @@ public interface CatalogService {
 
     void cancelHoldRequest(String uin, String requestId) throws Exception;
 
+    LoanItem renewItem(String uin, String itemId) throws Exception;
+
 }

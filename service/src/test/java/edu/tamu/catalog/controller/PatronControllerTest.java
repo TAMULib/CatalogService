@@ -57,18 +57,29 @@ import edu.tamu.catalog.config.RestConfig;
 public class PatronControllerTest {
 
     private static final String UIN = "1234567890";
+
     private static final String REQUEST_ID = "dd238b5b-01fc-4205-83b8-ce27a650d827";
+    private static final String ITEM_ID = "40053ccb-fd0c-304b-9547-b2fc06f34d3e";
+
     private static final String BASE_PATH = "http://localhost:8080/patron";
     private static final String API_KEY = "mock_api_key";
     private static final String FOLIO_CATALOG = "folio";
     private static final String VOYAGER_CATALOG = "msl";
+
     private static final String LOANS_ENDPOINT = "loans";
     private static final String FINES_ENDPOINT = "fines";
+    private static final String RENEWAL_ENDPOINT = "renew";
+
     private static final String DOC_PREFIX = "patron/";
+
     private static final String HOLDS_CANCEL_MVC_PATH = "/patron/{uin}/holds/{requestId}/cancel";
+    private static final String RENEW_MVC_PATH = RENEWAL_ENDPOINT + "/{itemId}";
 
     @Value("classpath:mock/patron/account.json")
     private Resource patronAccountResource;
+
+    @Value("classpath:mock/patron/accountRenewableLoanItem.json")
+    private Resource patronAccountRenewalResource;
 
     @Value("classpath:mock/patron/accountDateParseError.json")
     private Resource patronAccountDateParseErrorResource;
@@ -110,7 +121,8 @@ public class PatronControllerTest {
             fieldWithPath("list[].fineDate").description("A timestamp in milliseconds from UNIX epoch representing the date the fine was accrued."),
             fieldWithPath("list[].itemTitle").description("The title of the item associated with the fine.")
         );
-        getEndpointWithMockMVC(getFinesUrl(), FINES_ENDPOINT, pathParameters, requestParameters, responseFields);
+
+        getAccountEndpointWithMockMVC(getFinesUrl(), FINES_ENDPOINT, pathParameters, requestParameters, responseFields);
     }
 
     @Test
@@ -133,7 +145,8 @@ public class PatronControllerTest {
             fieldWithPath("[].title").description("The title of the loan item."),
             fieldWithPath("[].author").description("The author of the loan item.")
         );
-        getEndpointWithMockMVC(getLoansUrl(), LOANS_ENDPOINT, pathParameters, requestParameters, responseFields);
+
+        getAccountEndpointWithMockMVC(getLoansUrl(), LOANS_ENDPOINT, pathParameters, requestParameters, responseFields);
     }
 
     @Test
@@ -149,19 +162,60 @@ public class PatronControllerTest {
 
         expectPostResponse(getCancelHoldRequestUrl(), once(), createdResponse(patronAccountCancelHoldResponseResource));
 
-        mockMvc.perform(
-            post(HOLDS_CANCEL_MVC_PATH, UIN, REQUEST_ID)
-                .param("catalogName", FOLIO_CATALOG)
-                .contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post(HOLDS_CANCEL_MVC_PATH, UIN, REQUEST_ID)
+            .param("catalogName", FOLIO_CATALOG)
+            .contentType(MediaType.APPLICATION_JSON)
+        )
+        .andExpect(status().isNoContent())
+        .andDo(
+            document(
+                DOC_PREFIX + "holds/cancel",
+                pathParameters,
+                requestParameters
             )
-            .andExpect(status().isNoContent())
-            .andDo(
-                document(
-                    DOC_PREFIX + "holds/cancel",
-                    pathParameters,
-                    requestParameters
-                )
-            );
+        );
+
+        restServer.verify();
+    }
+    
+    @Test
+    public void testLoanItemRenewalMockMVC() throws Exception {
+        PathParametersSnippet pathParameters = pathParameters(
+            parameterWithName("uin").description("The patron UIN."),
+            parameterWithName("itemId").description("The UUID of the loan item.")
+        );
+
+        RequestParametersSnippet requestParameters = requestParameters(
+            parameterWithName("catalogName").description("The name of the catalog to use.").optional()
+        );
+
+        ResponseFieldsSnippet responseFields = responseFields(
+            fieldWithPath("loanId").description("The loan id."),
+            fieldWithPath("itemId").description("The item id."),
+            fieldWithPath("instanceId").description("The instance id."),
+            fieldWithPath("loanDate").description("The loan date."),
+            fieldWithPath("loanDueDate").description("The loan due date."),
+            fieldWithPath("overdue").description("Is the loan overdue."),
+            fieldWithPath("title").description("The title of the loan item."),
+            fieldWithPath("author").description("The author of the loan item.")
+        );
+
+        expectPostResponse(getLoanItemRenewalUrl(), once(), okResponse(patronAccountRenewalResource));
+
+        mockMvc.perform(post("/patron/{uin}/" + RENEW_MVC_PATH, UIN, ITEM_ID)
+            .param("catalogName", FOLIO_CATALOG)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(getMockJson(patronAccountRenewalResource))
+        )
+        .andExpect(status().isOk())
+        .andDo(
+            document(
+                DOC_PREFIX + RENEWAL_ENDPOINT,
+                pathParameters,
+                requestParameters,
+                responseFields
+            )
+        );
 
         restServer.verify();
     }
@@ -185,6 +239,14 @@ public class PatronControllerTest {
     @Test
     public void testCancelHoldIdNotFound() throws Exception {
         performHoldsCancelPost(once(), withStatus(HttpStatus.NOT_FOUND))
+            .andExpect(status().isNotFound());
+
+        restServer.verify();
+    }
+
+    @Test
+    public void testLoanItemRenewalNotFound() throws Exception {
+        performLoanItemRenewalPost(once(), withStatus(HttpStatus.NOT_FOUND))
             .andExpect(status().isNotFound());
 
         restServer.verify();
@@ -236,6 +298,19 @@ public class PatronControllerTest {
     }
 
     @Test
+    public void testLoanItemRenewalNotSupportedForCatalog() throws Exception {
+        expectPostResponse(getLoanItemRenewalUrl(), never(), withStatus(HttpStatus.OK));
+
+        mockMvc.perform(post("/patron/{uin}/" + RENEW_MVC_PATH, UIN, ITEM_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+            .param("catalogName", VOYAGER_CATALOG)
+        )
+        .andExpect(status().isBadRequest());
+
+        restServer.verify();
+    }
+
+    @Test
     public void testFinesClientException() throws Exception {
         performGet(getFinesUrl(), FINES_ENDPOINT, once(), withStatus(HttpStatus.BAD_REQUEST))
             .andExpect(status().isBadRequest());
@@ -260,6 +335,14 @@ public class PatronControllerTest {
     }
 
     @Test
+    public void testLoanItemRenewalClientException() throws Exception {
+        performLoanItemRenewalPost(once(), withStatus(HttpStatus.BAD_REQUEST))
+            .andExpect(status().isBadRequest());
+
+        restServer.verify();
+    }
+
+    @Test
     public void testFinesServerException() throws Exception {
         performGet(getFinesUrl(), FINES_ENDPOINT, once(), withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
             .andExpect(status().isInternalServerError());
@@ -276,6 +359,14 @@ public class PatronControllerTest {
     }
 
     @Test
+    public void testLoanItemRenewalServerException() throws Exception {
+        performLoanItemRenewalPost(once(), withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
+            .andExpect(status().isInternalServerError());
+
+        restServer.verify();
+    }
+
+    @Test
     public void testCancelHoldServerException() throws Exception {
         performHoldsCancelPost(once(), withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
             .andExpect(status().isInternalServerError());
@@ -283,7 +374,7 @@ public class PatronControllerTest {
         restServer.verify();
     }
 
-    private void getEndpointWithMockMVC(String sourceUrl, String catalogEndpoint, PathParametersSnippet pathParameters, RequestParametersSnippet requestParameters, ResponseFieldsSnippet responseFields) throws Exception {
+    private void getAccountEndpointWithMockMVC(String sourceUrl, String catalogEndpoint, PathParametersSnippet pathParameters, RequestParametersSnippet requestParameters, ResponseFieldsSnippet responseFields) throws Exception {
         performGetWithCatalogName(sourceUrl, catalogEndpoint, once(), successResponse(patronAccountResource), FOLIO_CATALOG)
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
@@ -324,6 +415,14 @@ public class PatronControllerTest {
         );
     }
 
+    private ResultActions performLoanItemRenewalPost(ExpectedCount count, ResponseCreator response) throws Exception {
+        expectPostResponse(getLoanItemRenewalUrl(), count, response);
+
+        return mockMvc.perform(post("/patron/{uin}/" + RENEW_MVC_PATH, UIN, ITEM_ID)
+            .contentType(MediaType.APPLICATION_JSON)
+        );
+    }
+
     private void expectGetResponse(String sourceUrl, ExpectedCount count, ResponseCreator response) throws Exception {
         expectResponse(HttpMethod.GET, sourceUrl, count, response);
     }
@@ -346,13 +445,21 @@ public class PatronControllerTest {
         return getAccountUrl(true, false, false);
     }
 
+    private String getAccountUrl(boolean loans, boolean charges, boolean holds) {
+        return String.format("%s/account/%s?apikey=%s&includeLoans=%s&includeCharges=%s&includeHolds=%s",
+            BASE_PATH, UIN, API_KEY, Boolean.toString(loans), Boolean.toString(charges), Boolean.toString(holds));
+    }
+
     private String getCancelHoldRequestUrl() {
         return String.format("%s/account/%s/holds/%s/cancel?apikey=%s", BASE_PATH, UIN, REQUEST_ID, API_KEY);
     }
 
-    private String getAccountUrl(boolean loans, boolean charges, boolean holds) {
-        return String.format("%s/account/%s?apikey=%s&includeLoans=%s&includeCharges=%s&includeHolds=%s",
-            BASE_PATH, UIN, API_KEY, Boolean.toString(loans), Boolean.toString(charges), Boolean.toString(holds));
+    private String getLoanItemRenewalUrl() {
+        return String.format("%s/account/%s/item/%s/renew?apikey=%s", BASE_PATH, UIN, ITEM_ID, API_KEY);
+    }
+
+    private DefaultResponseCreator okResponse(Resource resource) throws Exception {
+        return withStatus(HttpStatus.OK).body(getMockJson(resource)).contentType(MediaType.APPLICATION_JSON);
     }
 
     private DefaultResponseCreator createdResponse(Resource resource) throws Exception {
