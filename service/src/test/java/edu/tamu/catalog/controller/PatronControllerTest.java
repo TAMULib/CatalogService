@@ -76,9 +76,6 @@ public class PatronControllerTest {
     @Value("classpath:mock/patron/accountCancelHoldResponse.json")
     private Resource patronAccountCancelHoldResponseResource;
 
-    @Value("classpath:mock/patron/accountCancelHoldRequest.json")
-    private Resource patronAccountCancelHoldRequestResource;
-
     @Autowired
     private MockMvc mockMvc;
 
@@ -156,7 +153,6 @@ public class PatronControllerTest {
             post(HOLDS_CANCEL_MVC_PATH, UIN, REQUEST_ID)
                 .param("catalogName", FOLIO_CATALOG)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(getMockJson(patronAccountCancelHoldRequestResource))
             )
             .andExpect(status().isNoContent())
             .andDo(
@@ -232,7 +228,6 @@ public class PatronControllerTest {
 
         mockMvc.perform(post(HOLDS_CANCEL_MVC_PATH, UIN, REQUEST_ID)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(getMockJson(patronAccountCancelHoldRequestResource))
             .param("catalogName", VOYAGER_CATALOG)
         )
         .andExpect(status().isBadRequest());
@@ -325,7 +320,6 @@ public class PatronControllerTest {
         expectPostResponse(getCancelHoldRequestUrl(), count, response);
 
         return mockMvc.perform(post(HOLDS_CANCEL_MVC_PATH, UIN, REQUEST_ID)
-            .content(getMockJson(patronAccountCancelHoldRequestResource))
             .contentType(MediaType.APPLICATION_JSON)
         );
     }
