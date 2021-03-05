@@ -255,6 +255,11 @@ public class VoyagerCatalogService implements CatalogService {
         throw new UnsupportedOperationException("Not supported by the requested catalog.");
     }
 
+    @Override
+    public LoanItem renewItem(String uin, String itemId) {
+        throw new UnsupportedOperationException("Not supported by the requested catalog.");
+    }
+
     private Map<String, String> buildCoreRecord(String bibId) {
         String url = properties.getBaseUrl() + "/record/" + bibId + "/?view=full";
         logger.debug("Asking for Record from: {}", url);

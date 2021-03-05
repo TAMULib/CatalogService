@@ -25,4 +25,6 @@ public interface CatalogService {
 
     List<LoanItem> getLoanItems(String uin) throws Exception;
 
+    LoanItem renewItem(String uin, String itemId) throws Exception;
+
 }
