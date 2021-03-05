@@ -62,6 +62,7 @@ public class PatronControllerTest {
     private static final String VOYAGER_CATALOG = "msl";
     private static final String LOANS_ENDPOINT = "loans";
     private static final String FINES_ENDPOINT = "fines";
+    private static final String BLOCK_ENDPOINT = "block";
 
     @Value("classpath:mock/patron/account.json")
     private Resource patronAccountResource;
@@ -127,6 +128,31 @@ public class PatronControllerTest {
             fieldWithPath("[].author").description("The author of the loan item.")
         );
         getEndpointWithMockMVC(getLoansUrl(), LOANS_ENDPOINT, pathParameters, requestParameters, responseFields);
+    }
+
+    @Test
+    public void testBlockMockMVC() throws Exception {
+        PathParametersSnippet pathParameters = pathParameters(
+                parameterWithName("uin").description("The patron UIN.")
+            );
+
+        RequestParametersSnippet requestParameters = requestParameters(
+            parameterWithName("catalogName").description("The name of the catalog to use.").optional()
+        );
+
+        mockMvc.perform(get("/patron/{uin}/" + BLOCK_ENDPOINT, UIN)
+                .contentType(MediaType.APPLICATION_JSON)
+            )
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+        .andDo(
+            document(
+                "patron/" + BLOCK_ENDPOINT,
+                pathParameters,
+                requestParameters
+            )
+        );
+        restServer.verify();
     }
 
     @Test
