@@ -43,6 +43,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
@@ -208,13 +209,14 @@ public class FolioCatalogService implements CatalogService {
     }
 
     public List<HoldRequest> getHoldRequests(String uin) throws Exception {
-        String path = properties.getBaseOkapiUrl() + "/patron/account";
+        String path = "patron/account";
         String additional = "&includeLoans=false&includeCharges=false&includeHolds=true";
-        String url = String.format("%s/%s?%s", path, uin, additional);
+        String url = String.format("%s/%s/%s?apikey={apikey}%s", properties.getBaseEdgeUrl(), path, uin, additional);
+        String apiKey = properties.getEdgeApiKey();
 
         logger.debug("Asking for patron hold requests from: {}", url);
 
-        JsonNode node = okapiRequest(url, HttpMethod.GET, JsonNode.class).getBody();
+        JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
 
         List<HoldRequest> list = new ArrayList<>();
 
@@ -226,23 +228,63 @@ public class FolioCatalogService implements CatalogService {
 
                 String requestId = getNodeValue(hold, "requestId");
                 String itemId = getNodeNestedValue(hold, "item", "itemId");
-                String type = getNodeValue(hold, "requestType");
                 String title = getNodeNestedValue(hold, "item", "title");
                 String status = getNodeValue(hold, "status");
                 String pickupLocationId = getNodeValue(hold, "pickupLocationId");
                 Integer queuePosition = hold.has("queuePosition") ? hold.get("queuePosition").asInt() : null;
                 Date date = getNodeDateValue(hold, "expirationDate");
 
-                String locationUrl = pickupLocationId == null ? null : String.format("%s/locations/%s", properties.getBaseOkapiUrl(), pickupLocationId);
-                JsonNode locationNode = okapiRequest(locationUrl, HttpMethod.GET, JsonNode.class).getBody();
+                String requestUrl = requestId == null ? null : String.format("%s/circulation/requests/%s", properties.getBaseOkapiUrl(), requestId);
+                String type = null;
 
-                String pickupLocation = locationNode.has("name") ? getNodeValue(locationNode, "name") : null;
+                logger.debug("Asking for hold request from: {}", requestUrl);
+                JsonNode requestNode = okapiRequestJsonNode(requestUrl, HttpMethod.GET);
+                if (requestNode != null) {
+                    type = getNodeValue(requestNode, "requestType");
+                }
+
+                String locationUrl = pickupLocationId == null ? null : String.format("%s/locations/%s", properties.getBaseOkapiUrl(), pickupLocationId);
+                String pickupLocation = null;
+
+                logger.debug("Asking for location from: {}", locationUrl);
+                JsonNode locationNode = okapiRequestJsonNode(locationUrl, HttpMethod.GET);
+                if (locationNode != null) {
+                    pickupLocation = getNodeValue(locationNode, "name");
+                }
 
                 list.add(new HoldRequest(requestId, itemId, type, title, status, pickupLocation, queuePosition, date));
             }
         }
 
         return list;
+    }
+
+    /**
+     * Use OKAPI to retrieve the JSONNode, returning null if not found throwing all other exceptions.
+     *
+     * @param <T> generic class for response body type.
+     * @param url String the URL to retrieve.
+     * @return response entity with response type as body.
+     */
+    JsonNode okapiRequestJsonNode(String url, HttpMethod method) {
+        try {
+            if (url != null) {
+                return okapiRequest(url, method, JsonNode.class).getBody();
+            }
+        }
+        catch (HttpClientErrorException e) {
+            if (!e.getStatusCode().equals(HttpStatus.NOT_FOUND)) {
+                throw e;
+            }
+
+            logger.warn(e.getMessage());
+
+            if (logger.isDebugEnabled()) {
+                e.printStackTrace();
+            }
+        }
+
+        return null;
     }
 
     /**

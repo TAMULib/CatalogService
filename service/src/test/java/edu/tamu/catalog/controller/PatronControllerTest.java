@@ -7,6 +7,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.response
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
+import static org.springframework.test.web.client.ExpectedCount.between;
 import static org.springframework.test.web.client.ExpectedCount.never;
 import static org.springframework.test.web.client.ExpectedCount.once;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
@@ -59,6 +60,7 @@ public class PatronControllerTest {
 
     private static final String UIN = "1234567890";
     private static final String LOCATION_ID = "ebab9ccc-4ece-4f35-bc82-01f3325abed8";
+    private static final String REQUEST_ID = "8bbac557-d66f-4571-bbbf-47a107cc1589";
     private static final String BASE_PATH = "http://localhost:8080/";
     private static final String API_KEY = "mock_api_key";
     private static final String FOLIO_CATALOG = "folio";
@@ -79,6 +81,9 @@ public class PatronControllerTest {
 
     @Value("classpath:mock/response/location/location.json")
     private Resource locationResource;
+
+    @Value("classpath:mock/response/request/holdRequest.json")
+    private Resource holdRequestResource;
 
     @Autowired
     private MockMvc mockMvc;
@@ -167,7 +172,8 @@ public class PatronControllerTest {
             fieldWithPath("[].expirationDate").description("A timestamp in milliseconds from UNIX epoch representing the date the hold request will expire.")
         );
 
-        performHoldsGetWithCatalogName(once(), once(), once(), successResponse(patronAccountResource), successResponse(locationResource), FOLIO_CATALOG)
+        performHoldsGetWithCatalogName(once(), once(), once(), once(), successResponse(patronAccountResource),
+            successResponse(holdRequestResource), successResponse(locationResource), FOLIO_CATALOG)
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
             .andDo(
@@ -204,7 +210,8 @@ public class PatronControllerTest {
 
     @Test
     public void testHoldsUINNotFound() throws Exception {
-        performHoldsGet(once(), once(), never(), withStatus(HttpStatus.NOT_FOUND), withNoContent())
+        performHoldsGet(never(), once(), never(), never(), withStatus(HttpStatus.NOT_FOUND), withNoContent(),
+            withNoContent())
             .andExpect(status().isNotFound());
 
         restServer.verify();
@@ -222,7 +229,8 @@ public class PatronControllerTest {
 
     @Test
     public void testHoldsDateParseError() throws Exception {
-        performHoldsGet(once(), once(), never(), successResponse(patronAccountDateParseErrorResource), withNoContent())
+        performHoldsGet(between(0, 1), once(), between(0, 1), between(0, 1), successResponse(patronAccountDateParseErrorResource),
+            successResponse(holdRequestResource), successResponse(locationResource))
             .andExpect(status().isInternalServerError());
 
         restServer.verify();
@@ -240,7 +248,8 @@ public class PatronControllerTest {
 
     @Test
     public void testHoldsNotSupportedForCatalog() throws Exception {
-        performHoldsGetWithCatalogName(never(), never(), never(), withNoContent(), withNoContent(), VOYAGER_CATALOG)
+        performHoldsGetWithCatalogName(never(), never(), never(), never(), withNoContent(), withNoContent(),
+            withNoContent(), VOYAGER_CATALOG)
             .andExpect(status().isBadRequest());
 
         restServer.verify();
@@ -258,7 +267,8 @@ public class PatronControllerTest {
 
     @Test
     public void testHoldsClientException() throws Exception {
-        performHoldsGet(once(), once(), never(), withStatus(HttpStatus.BAD_REQUEST), withNoContent())
+        performHoldsGet(never(), once(), never(), never(), withStatus(HttpStatus.BAD_REQUEST), withNoContent(),
+            withNoContent())
             .andExpect(status().isBadRequest());
 
         restServer.verify();
@@ -276,7 +286,8 @@ public class PatronControllerTest {
 
     @Test
     public void testHoldsServerException() throws Exception {
-        performHoldsGet(once(), once(), never(), withStatus(HttpStatus.INTERNAL_SERVER_ERROR), withNoContent())
+        performHoldsGet(never(), once(), never(), never(), withStatus(HttpStatus.INTERNAL_SERVER_ERROR),
+            withNoContent(), withNoContent())
             .andExpect(status().isInternalServerError());
 
         restServer.verify();
@@ -358,9 +369,10 @@ public class PatronControllerTest {
         );
     }
 
-    private ResultActions performHoldsGet(ExpectedCount okapiCount, ExpectedCount holdsCount, ExpectedCount locationsCount, DefaultResponseCreator holdsResponse, DefaultResponseCreator locationsResponse) throws Exception  {
+    private ResultActions performHoldsGet(ExpectedCount okapiCount, ExpectedCount holdsCount, ExpectedCount requestsCount, ExpectedCount locationsCount, DefaultResponseCreator holdsResponse, DefaultResponseCreator requestsResponse, DefaultResponseCreator locationsResponse) throws Exception  {
+        expectResponse(getHoldsUrl(), holdsCount, holdsResponse);
         expectOkapiLoginResponse(okapiCount, withStatus(HttpStatus.CREATED));
-        expectResponse(getOkapiHoldsUrl(), holdsCount, holdsResponse);
+        expectResponse(getOkapiRequestsUrl(), requestsCount, requestsResponse);
         expectResponse(getOkapiLocationsUrl(), locationsCount, locationsResponse);
 
         return mockMvc.perform(get("/patron/{uin}/" + HOLDS_ENDPOINT, UIN)
@@ -368,9 +380,10 @@ public class PatronControllerTest {
         );
     }
 
-    private ResultActions performHoldsGetWithCatalogName(ExpectedCount okapiCount, ExpectedCount holdsCount, ExpectedCount locationsCount, DefaultResponseCreator holdsResponse, DefaultResponseCreator locationsResponse, String catalogName) throws Exception  {
+    private ResultActions performHoldsGetWithCatalogName(ExpectedCount okapiCount, ExpectedCount holdsCount, ExpectedCount requestsCount, ExpectedCount locationsCount, DefaultResponseCreator holdsResponse, DefaultResponseCreator requestsResponse, DefaultResponseCreator locationsResponse, String catalogName) throws Exception  {
+        expectResponse(getHoldsUrl(), holdsCount, holdsResponse);
         expectOkapiLoginResponse(okapiCount, withStatus(HttpStatus.CREATED));
-        expectResponse(getOkapiHoldsUrl(), holdsCount, holdsResponse);
+        expectResponse(getOkapiRequestsUrl(), requestsCount, requestsResponse);
         expectResponse(getOkapiLocationsUrl(), locationsCount, locationsResponse);
 
         return mockMvc.perform(get("/patron/{uin}/" + HOLDS_ENDPOINT, UIN)
@@ -402,13 +415,16 @@ public class PatronControllerTest {
         return getAccountUrl(true, false, false);
     }
 
-    private String getOkapiHoldsUrl() {
-        return String.format("%spatron/account/%s?includeLoans=false&includeCharges=false&includeHolds=true",
-            OKAPI_PATH, UIN);
+    private String getHoldsUrl() {
+        return getAccountUrl(false, false, true);
     }
 
     private String getOkapiLocationsUrl() {
         return String.format("%slocations/%s", OKAPI_PATH, LOCATION_ID);
+    }
+
+    private String getOkapiRequestsUrl() {
+        return String.format("%scirculation/requests/%s", OKAPI_PATH, REQUEST_ID);
     }
 
     private String getOkapiLoginUrl() {
