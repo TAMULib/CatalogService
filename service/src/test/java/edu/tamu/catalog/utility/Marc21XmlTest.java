@@ -35,10 +35,10 @@ import edu.tamu.catalog.utility.Marc21Xml;
 @RunWith(SpringRunner.class)
 public class Marc21XmlTest {
 
-    @Value("classpath:mock/holdings/basic.xml")
+    @Value("classpath:mock/response/holdings/basic.xml")
     private Resource basicHolding;
 
-    @Value("classpath:mock/holdings/voyager.xml")
+    @Value("classpath:mock/response/holdings/voyager.xml")
     private Resource voyagerHolding;
 
     private Map<String, String> recordValues;

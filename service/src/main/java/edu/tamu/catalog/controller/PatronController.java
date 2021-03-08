@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import edu.tamu.catalog.annotation.DefaultCatalog;
 import edu.tamu.catalog.domain.model.FeesFines;
+import edu.tamu.catalog.domain.model.HoldRequest;
 import edu.tamu.catalog.domain.model.LoanItem;
 import edu.tamu.catalog.service.CatalogService;
 
@@ -54,6 +55,24 @@ public class PatronController {
 
         return ResponseEntity.status(HttpStatus.OK)
             .body(loanItems);
+    }
+
+    /**
+     * Provides data for all loan items associated with a patron.
+     *
+     * @param CatalogService catalogService (resolved by query parameter catalogName)
+     * @param String uin
+     * @return
+     */
+    @GetMapping("/{uin}/holds")
+    public @ResponseBody ResponseEntity<List<HoldRequest>> getHoldRequests(
+        @DefaultCatalog("folio") CatalogService catalogService,
+        @PathVariable(required = true) String uin
+    ) throws Exception {
+        List<HoldRequest> holdRequests = catalogService.getHoldRequests(uin);
+
+        return ResponseEntity.status(HttpStatus.OK)
+            .body(holdRequests);
     }
 
 }

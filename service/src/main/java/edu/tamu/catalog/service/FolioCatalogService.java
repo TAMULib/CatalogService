@@ -20,7 +20,6 @@ import static edu.tamu.catalog.utility.Marc21Xml.RECORD_YEAR;
 import java.io.IOException;
 import java.io.StringReader;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -29,13 +28,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TimeZone;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-
-import com.fasterxml.jackson.databind.JsonNode;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -57,13 +53,17 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import edu.tamu.catalog.domain.model.FeeFine;
 import edu.tamu.catalog.domain.model.FeesFines;
+import edu.tamu.catalog.domain.model.HoldRequest;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
 import edu.tamu.catalog.properties.CatalogServiceProperties;
 import edu.tamu.catalog.properties.Credentials;
 import edu.tamu.catalog.properties.FolioProperties;
+import edu.tamu.catalog.utility.FolioDatetime;
 import edu.tamu.catalog.utility.Marc21Xml;
 import edu.tamu.catalog.utility.TokenUtility;
 
@@ -151,7 +151,7 @@ public class FolioCatalogService implements CatalogService {
 
                 String fineId = charge.has("feeFineId") ? charge.get("feeFineId").asText() : null;
                 String type = charge.has("reason") ? charge.get("reason").asText() : null;
-                Date date = charge.has("accrualDate") ? folioDateToDate(charge.get("accrualDate").asText()) : null;
+                Date date = charge.has("accrualDate") ? FolioDatetime.parse(charge.get("accrualDate").asText()) : null;
 
                 String title = null;
                 if (charge.has("item") && charge.get("item").has("title")) {
@@ -186,8 +186,8 @@ public class FolioCatalogService implements CatalogService {
                 if (loan.has("item")) {
                     JsonNode item = loan.get("item");
 
-                    Date loanDate = loan.has("loanDate") ? folioDateToDate(loan.get("loanDate").asText()) : null;
-                    Date loanDueDate = loan.has("dueDate") ? folioDateToDate(loan.get("dueDate").asText()) : null;
+                    Date loanDate = loan.has("loanDate") ? FolioDatetime.parse(loan.get("loanDate").asText()) : null;
+                    Date loanDueDate = loan.has("dueDate") ? FolioDatetime.parse(loan.get("dueDate").asText()) : null;
                     String overDueString = getNodeValue(loan, "overdue");
                     boolean overDue = false;
                     if (overDueString != null) {
@@ -204,6 +204,44 @@ public class FolioCatalogService implements CatalogService {
                 }
             }
         }
+        return list;
+    }
+
+    public List<HoldRequest> getHoldRequests(String uin) throws Exception {
+        String path = properties.getBaseOkapiUrl() + "/patron/account";
+        String additional = "&includeLoans=false&includeCharges=false&includeHolds=true";
+        String url = String.format("%s/%s?%s", path, uin, additional);
+
+        logger.debug("Asking for patron hold requests from: {}", url);
+
+        JsonNode node = okapiRequest(url, HttpMethod.GET, JsonNode.class).getBody();
+
+        List<HoldRequest> list = new ArrayList<>();
+
+        if (node.has("holds")) {
+            Iterator<JsonNode> iter = node.get("holds").elements();
+
+            while (iter.hasNext()) {
+                JsonNode hold = iter.next();
+
+                String requestId = getNodeValue(hold, "requestId");
+                String itemId = getNodeNestedValue(hold, "item", "itemId");
+                String type = getNodeValue(hold, "requestType");
+                String title = getNodeNestedValue(hold, "item", "title");
+                String status = getNodeValue(hold, "status");
+                String pickupLocationId = getNodeValue(hold, "pickupLocationId");
+                Integer queuePosition = hold.has("queuePosition") ? hold.get("queuePosition").asInt() : null;
+                Date date = getNodeDateValue(hold, "expirationDate");
+
+                String locationUrl = pickupLocationId == null ? null : String.format("%s/locations/%s", properties.getBaseOkapiUrl(), pickupLocationId);
+                JsonNode locationNode = okapiRequest(locationUrl, HttpMethod.GET, JsonNode.class).getBody();
+
+                String pickupLocation = locationNode.has("name") ? getNodeValue(locationNode, "name") : null;
+
+                list.add(new HoldRequest(requestId, itemId, type, title, status, pickupLocation, queuePosition, date));
+            }
+        }
+
         return list;
     }
 
@@ -430,22 +468,20 @@ public class FolioCatalogService implements CatalogService {
         catalogItems.put(barcode, itemData);
     }
 
+    private String getNodeNestedValue(JsonNode node, String parentField, String childField) {
+        if (node.has(parentField) && node.get(parentField).has(childField)) {
+            return node.get(parentField).get(childField).asText();
+        }
+
+        return null;
+    }
+
     private String getNodeValue(JsonNode node, String fieldName) {
         return node.has(fieldName) ? node.get(fieldName).asText() : null;
     }
 
-    /**
-     * Convert from Folio dates, "yyyy-MM-dd'T'HH:mm:ss.SSSZ", to the Java Date.
-     *
-     * @param folioDate
-     * @return
-     * @throws ParseException
-     */
-    private Date folioDateToDate(String folioDate) throws ParseException {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-        return Date.from(formatter.parse(folioDate).toInstant());
+    private Date getNodeDateValue(JsonNode node, String fieldName) throws ParseException {
+        return node.has(fieldName) ? FolioDatetime.parse(node.get(fieldName).asText()) : null;
     }
 
     /**
@@ -483,13 +519,16 @@ public class FolioCatalogService implements CatalogService {
     private String okapiLogin() {
         String url = properties.getBaseOkapiUrl() + "/authn/login";
         HttpEntity<Credentials> entity = new HttpEntity<>(properties.getCredentials(), headers(properties.getTenant()));
-        ResponseEntity<?> response = restTemplate.postForObject(url, entity, ResponseEntity.class);
-        if (response.getStatusCode().equals(HttpStatus.CREATED)) {
+        ResponseEntity<?> response = restTemplate.postForEntity(url, entity, Object.class);
+
+        if (response != null && response.getStatusCode().equals(HttpStatus.CREATED)) {
             String token = response.getHeaders().getFirst(OKAPI_TOKEN_HEADER);
             TokenUtility.setToken(getName(), token);
             return token;
         } else {
-            logger.error("Failed to login {}: {}", response.getStatusCodeValue(), response.getBody());
+            Integer statusCode = response == null ? null : response.getStatusCodeValue();
+            Object body = response == null ? null : response.getBody();
+            logger.error("Failed to login {}: {}", statusCode, body);
             throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Catalog service failed to login into Okapi!");
         }
     }

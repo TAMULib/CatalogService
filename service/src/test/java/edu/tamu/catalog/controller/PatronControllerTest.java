@@ -11,6 +11,7 @@ import static org.springframework.test.web.client.ExpectedCount.never;
 import static org.springframework.test.web.client.ExpectedCount.once;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withNoContent;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -18,10 +19,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.io.IOException;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-
-import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,6 +28,7 @@ import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDoc
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -40,14 +38,18 @@ import org.springframework.restdocs.request.RequestParametersSnippet;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.ExpectedCount;
 import org.springframework.test.web.client.MockRestServiceServer;
-import org.springframework.test.web.client.ResponseCreator;
+import org.springframework.test.web.client.MockRestServiceServer.MockRestServiceServerBuilder;
 import org.springframework.test.web.client.response.DefaultResponseCreator;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+
 import edu.tamu.catalog.config.CatalogServiceConfig;
 import edu.tamu.catalog.config.RestConfig;
+import edu.tamu.catalog.utility.TokenUtility;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(value = PatronController.class, secure = false)
@@ -56,18 +58,27 @@ import edu.tamu.catalog.config.RestConfig;
 public class PatronControllerTest {
 
     private static final String UIN = "1234567890";
-    private static final String BASE_PATH = "http://localhost:8080/patron";
+    private static final String LOCATION_ID = "ebab9ccc-4ece-4f35-bc82-01f3325abed8";
+    private static final String BASE_PATH = "http://localhost:8080/";
     private static final String API_KEY = "mock_api_key";
     private static final String FOLIO_CATALOG = "folio";
     private static final String VOYAGER_CATALOG = "msl";
     private static final String LOANS_ENDPOINT = "loans";
     private static final String FINES_ENDPOINT = "fines";
+    private static final String HOLDS_ENDPOINT = "holds";
 
-    @Value("classpath:mock/patron/account.json")
+    private static final String OKAPI_PATH = "http://localhost:9130/";
+    private static final String OKAPI_TOKEN = "mocked_token";
+    private static final String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
+
+    @Value("classpath:mock/response/patron/account.json")
     private Resource patronAccountResource;
 
-    @Value("classpath:mock/patron/accountDateParseError.json")
+    @Value("classpath:mock/response/patron/accountDateParseError.json")
     private Resource patronAccountDateParseErrorResource;
+
+    @Value("classpath:mock/response/location/location.json")
+    private Resource locationResource;
 
     @Autowired
     private MockMvc mockMvc;
@@ -79,7 +90,13 @@ public class PatronControllerTest {
 
     @Before
     public void setup() throws JsonParseException, JsonMappingException, IOException {
-        restServer = MockRestServiceServer.createServer(restTemplate);
+        MockRestServiceServerBuilder builder = MockRestServiceServer.bindTo(restTemplate);
+
+        builder.ignoreExpectOrder(true);
+
+        restServer = builder.build();
+
+        TokenUtility.clearAll();
     }
 
     @Test
@@ -130,6 +147,42 @@ public class PatronControllerTest {
     }
 
     @Test
+    public void testHoldRequestsMockMVC() throws Exception {
+        PathParametersSnippet pathParameters = pathParameters(
+            parameterWithName("uin").description("The patron UIN.")
+        );
+
+        RequestParametersSnippet requestParameters = requestParameters(
+            parameterWithName("catalogName").description("The name of the catalog to use.").optional()
+        );
+
+        ResponseFieldsSnippet responseFields = responseFields(
+            fieldWithPath("[].requestId").description("The UUID of the hold request."),
+            fieldWithPath("[].itemId").description("The UUID of the item associated with the hold request."),
+            fieldWithPath("[].requestType").description("The type of the hold request."),
+            fieldWithPath("[].itemTitle").description("The title of the item associated with the fine."),
+            fieldWithPath("[].statusText").description("A descriptive status of the hold request."),
+            fieldWithPath("[].pickupLocation").description("A title describing the pickup location."),
+            fieldWithPath("[].queuePosition").description("The position within the queue."),
+            fieldWithPath("[].expirationDate").description("A timestamp in milliseconds from UNIX epoch representing the date the hold request will expire.")
+        );
+
+        performHoldsGetWithCatalogName(once(), once(), once(), successResponse(patronAccountResource), successResponse(locationResource), FOLIO_CATALOG)
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+            .andDo(
+                document(
+                    "patron/" + HOLDS_ENDPOINT,
+                    pathParameters,
+                    requestParameters,
+                    responseFields
+                )
+            );
+
+        restServer.verify();
+    }
+
+    @Test
     public void testFinesMockMVCWithCatalogName() throws Exception {
         getEndpointWithCatalogName(getFinesUrl(), FINES_ENDPOINT);
     }
@@ -150,6 +203,14 @@ public class PatronControllerTest {
     }
 
     @Test
+    public void testHoldsUINNotFound() throws Exception {
+        performHoldsGet(once(), once(), never(), withStatus(HttpStatus.NOT_FOUND), withNoContent())
+            .andExpect(status().isNotFound());
+
+        restServer.verify();
+    }
+
+    @Test
     public void testFinesDateParseError() throws Exception  {
         getEndpointDateParseError(getFinesUrl(), FINES_ENDPOINT);
     }
@@ -157,6 +218,14 @@ public class PatronControllerTest {
     @Test
     public void testLoansDateParseError() throws Exception  {
         getEndpointDateParseError(getLoansUrl(), LOANS_ENDPOINT);
+    }
+
+    @Test
+    public void testHoldsDateParseError() throws Exception {
+        performHoldsGet(once(), once(), never(), successResponse(patronAccountDateParseErrorResource), withNoContent())
+            .andExpect(status().isInternalServerError());
+
+        restServer.verify();
     }
 
     @Test
@@ -170,6 +239,14 @@ public class PatronControllerTest {
     }
 
     @Test
+    public void testHoldsNotSupportedForCatalog() throws Exception {
+        performHoldsGetWithCatalogName(never(), never(), never(), withNoContent(), withNoContent(), VOYAGER_CATALOG)
+            .andExpect(status().isBadRequest());
+
+        restServer.verify();
+    }
+
+    @Test
     public void testFinesClientException() throws Exception {
         getEndpointBadRequest(getFinesUrl(), FINES_ENDPOINT);
     }
@@ -180,6 +257,14 @@ public class PatronControllerTest {
     }
 
     @Test
+    public void testHoldsClientException() throws Exception {
+        performHoldsGet(once(), once(), never(), withStatus(HttpStatus.BAD_REQUEST), withNoContent())
+            .andExpect(status().isBadRequest());
+
+        restServer.verify();
+    }
+
+    @Test
     public void testFinesServerException() throws Exception {
         getEndpointInternalServerError(getFinesUrl(), FINES_ENDPOINT);
     }
@@ -187,6 +272,14 @@ public class PatronControllerTest {
     @Test
     public void testLoansServerException() throws Exception {
         getEndpointInternalServerError(getLoansUrl(), LOANS_ENDPOINT);
+    }
+
+    @Test
+    public void testHoldsServerException() throws Exception {
+        performHoldsGet(once(), once(), never(), withStatus(HttpStatus.INTERNAL_SERVER_ERROR), withNoContent())
+            .andExpect(status().isInternalServerError());
+
+        restServer.verify();
     }
 
     private void getEndpointWithMockMVC(String sourceUrl, String catalogEndpoint, PathParametersSnippet pathParameters, RequestParametersSnippet requestParameters, ResponseFieldsSnippet responseFields) throws Exception {
@@ -248,7 +341,7 @@ public class PatronControllerTest {
         restServer.verify();
     }
 
-    private ResultActions performGet(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response) throws Exception  {
+    private ResultActions performGet(String sourceUrl, String catalogEndpoint, ExpectedCount count, DefaultResponseCreator response) throws Exception  {
         expectResponse(sourceUrl, count, response);
 
         return mockMvc.perform(get("/patron/{uin}/" + catalogEndpoint, UIN)
@@ -256,7 +349,7 @@ public class PatronControllerTest {
         );
     }
 
-    private ResultActions performGetWithCatalogName(String sourceUrl, String catalogEndpoint, ExpectedCount count, ResponseCreator response, String catalogName) throws Exception  {
+    private ResultActions performGetWithCatalogName(String sourceUrl, String catalogEndpoint, ExpectedCount count, DefaultResponseCreator response, String catalogName) throws Exception  {
         expectResponse(sourceUrl, count, response);
 
         return mockMvc.perform(get("/patron/{uin}/" + catalogEndpoint, UIN)
@@ -265,7 +358,37 @@ public class PatronControllerTest {
         );
     }
 
-    private void expectResponse(String sourceUrl, ExpectedCount count, ResponseCreator response) throws Exception  {
+    private ResultActions performHoldsGet(ExpectedCount okapiCount, ExpectedCount holdsCount, ExpectedCount locationsCount, DefaultResponseCreator holdsResponse, DefaultResponseCreator locationsResponse) throws Exception  {
+        expectOkapiLoginResponse(okapiCount, withStatus(HttpStatus.CREATED));
+        expectResponse(getOkapiHoldsUrl(), holdsCount, holdsResponse);
+        expectResponse(getOkapiLocationsUrl(), locationsCount, locationsResponse);
+
+        return mockMvc.perform(get("/patron/{uin}/" + HOLDS_ENDPOINT, UIN)
+            .contentType(MediaType.APPLICATION_JSON)
+        );
+    }
+
+    private ResultActions performHoldsGetWithCatalogName(ExpectedCount okapiCount, ExpectedCount holdsCount, ExpectedCount locationsCount, DefaultResponseCreator holdsResponse, DefaultResponseCreator locationsResponse, String catalogName) throws Exception  {
+        expectOkapiLoginResponse(okapiCount, withStatus(HttpStatus.CREATED));
+        expectResponse(getOkapiHoldsUrl(), holdsCount, holdsResponse);
+        expectResponse(getOkapiLocationsUrl(), locationsCount, locationsResponse);
+
+        return mockMvc.perform(get("/patron/{uin}/" + HOLDS_ENDPOINT, UIN)
+            .param("catalogName", catalogName)
+            .contentType(MediaType.APPLICATION_JSON)
+        );
+    }
+
+    private void expectOkapiLoginResponse(ExpectedCount count, DefaultResponseCreator response) throws Exception  {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(OKAPI_TOKEN_HEADER, OKAPI_TOKEN);
+
+        restServer.expect(count, requestTo(getOkapiLoginUrl()))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(response.headers(headers));
+    }
+
+    private void expectResponse(String sourceUrl, ExpectedCount count, DefaultResponseCreator response) throws Exception  {
         restServer.expect(count, requestTo(sourceUrl))
             .andExpect(method(HttpMethod.GET))
             .andRespond(response);
@@ -279,17 +402,26 @@ public class PatronControllerTest {
         return getAccountUrl(true, false, false);
     }
 
+    private String getOkapiHoldsUrl() {
+        return String.format("%spatron/account/%s?includeLoans=false&includeCharges=false&includeHolds=true",
+            OKAPI_PATH, UIN);
+    }
+
+    private String getOkapiLocationsUrl() {
+        return String.format("%slocations/%s", OKAPI_PATH, LOCATION_ID);
+    }
+
+    private String getOkapiLoginUrl() {
+        return String.format("%sauthn/login", OKAPI_PATH);
+    }
+
     private String getAccountUrl(boolean loans, boolean charges, boolean holds) {
-        return String.format("%s/account/%s?apikey=%s&includeLoans=%s&includeCharges=%s&includeHolds=%s",
+        return String.format("%spatron/account/%s?apikey=%s&includeLoans=%s&includeCharges=%s&includeHolds=%s",
             BASE_PATH, UIN, API_KEY, Boolean.toString(loans), Boolean.toString(charges), Boolean.toString(holds));
     }
 
     private DefaultResponseCreator successResponse(Resource resource) throws Exception {
-        return withSuccess(getMockJson(resource), MediaType.APPLICATION_JSON);
-    }
-
-    private String getMockJson(Resource resource) throws JsonParseException, JsonMappingException, IOException {
-        return IOUtils.toString(resource.getInputStream(), "UTF-8");
+        return withSuccess(resource, MediaType.APPLICATION_JSON);
     }
 
 }

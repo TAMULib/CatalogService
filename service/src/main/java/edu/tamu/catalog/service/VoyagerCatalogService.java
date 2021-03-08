@@ -41,6 +41,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import edu.tamu.catalog.domain.model.FeesFines;
+import edu.tamu.catalog.domain.model.HoldRequest;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
 import edu.tamu.catalog.properties.CatalogServiceProperties;
@@ -252,6 +253,11 @@ public class VoyagerCatalogService implements CatalogService {
 
     @Override
     public List<LoanItem> getLoanItems(String uin) throws Exception {
+        throw new UnsupportedOperationException("Not supported by the requested catalog.");
+    }
+
+    @Override
+    public List<HoldRequest> getHoldRequests(String uin) throws Exception {
         throw new UnsupportedOperationException("Not supported by the requested catalog.");
     }
 
