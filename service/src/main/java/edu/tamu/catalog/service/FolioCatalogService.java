@@ -57,10 +57,10 @@ import org.xml.sax.SAXException;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import edu.tamu.catalog.domain.model.FeeFine;
-import edu.tamu.catalog.domain.model.FeesFines;
 import edu.tamu.catalog.domain.model.HoldRequest;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
+import edu.tamu.catalog.model.FolioHoldCancellation;
 import edu.tamu.catalog.properties.CatalogServiceProperties;
 import edu.tamu.catalog.properties.Credentials;
 import edu.tamu.catalog.properties.FolioProperties;
@@ -122,7 +122,7 @@ public class FolioCatalogService implements CatalogService {
     }
 
     @Override
-    public FeesFines getFeesFines(String uin) throws ParseException {
+    public List<FeeFine> getFeesFines(String uin) throws ParseException {
         String path = "patron/account";
         String queryString = "apikey={apikey}&includeLoans=false&includeCharges=true&includeHolds=false";
         String url = String.format("%s/%s/%s?%s", properties.getBaseEdgeUrl(), path, uin, queryString);
@@ -131,11 +131,6 @@ public class FolioCatalogService implements CatalogService {
         logger.debug("Asking for fines from: {}", url);
 
         JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
-
-        Double total = null;
-        if (node.has("totalCharges") && node.get("totalCharges").has("amount")) {
-            total = node.get("totalCharges").get("amount").asDouble();
-        }
 
         List<FeeFine> list = new ArrayList<>();
 
@@ -163,7 +158,7 @@ public class FolioCatalogService implements CatalogService {
             }
         }
 
-        return new FeesFines(uin, total, list.size(), list);
+        return list;
     }
 
     @Override
@@ -177,31 +172,16 @@ public class FolioCatalogService implements CatalogService {
 
         JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
 
-        List<LoanItem> list = new ArrayList<LoanItem>();
+        List<LoanItem> list = new ArrayList<>();
 
         if (node.has("loans")) {
             Iterator<JsonNode> iter = node.get("loans").elements();
 
             while (iter.hasNext()) {
                 JsonNode loan = iter.next();
-                if (loan.has("item")) {
-                    JsonNode item = loan.get("item");
-
-                    Date loanDate = loan.has("loanDate") ? FolioDatetime.parse(loan.get("loanDate").asText()) : null;
-                    Date loanDueDate = loan.has("dueDate") ? FolioDatetime.parse(loan.get("dueDate").asText()) : null;
-                    String overDueString = getNodeValue(loan, "overdue");
-                    boolean overDue = false;
-                    if (overDueString != null) {
-                        overDue = Boolean.valueOf(overDueString);
-                    }
-
-                    String loanId = getNodeValue(loan, "id");
-                    String itemId = getNodeValue(item, "itemId");
-                    String instanceId = getNodeValue(item, "instanceId");
-                    String title = getNodeValue(item, "title");
-                    String author = getNodeValue(item, "author");
-
-                    list.add(new LoanItem(loanId, itemId, instanceId, loanDate, loanDueDate, overDue, title, author));
+                LoanItem loanItem = buildLoanItem(loan);
+                if (loanItem.getItemId() != null) {
+                    list.add(loanItem);
                 }
             }
         }
@@ -286,9 +266,43 @@ public class FolioCatalogService implements CatalogService {
         }
     }
 
+    @Override
+    public void cancelHoldRequest(String uin, String requestId) throws Exception {
+        String path = "%s/patron/account/%s/holds/%s/cancel?apikey={apikey}";
+        String url = String.format(path, properties.getBaseEdgeUrl(), uin, requestId);
+        String apiKey = properties.getEdgeApiKey();
+
+        logger.debug("Cancelling hold request via: {}", url);
+
+        FolioHoldCancellation folioCancellation = new FolioHoldCancellation();
+        folioCancellation.setHoldId(requestId);
+        folioCancellation.setCancellationReasonId(properties.getCancelHoldReasonId());
+        folioCancellation.setCanceledDate(FolioDatetime.convert(new Date()));
+
+        restTemplate.postForObject(url, folioCancellation, Object.class, apiKey);
+    }
+
+    @Override
+    public LoanItem renewItem(String uin, String itemId) throws ParseException {
+        String path = "/patron/account/";
+        String itemPath = "/item/";
+        String renewPath = "/renew";
+        String url = String.format("%s%s%s%s%s%s?apikey={apikey}", properties.getBaseEdgeUrl(), path, uin, itemPath, itemId, renewPath);
+        String apiKey = properties.getEdgeApiKey();
+
+        return buildLoanItem(restTemplate.postForObject(url, null, JsonNode.class, apiKey));
+    }
+
+    @Override
+    public Boolean getBlockStatus(String uin) throws Exception {
+        //for now, no FOLIO user will be blocked
+        //leave the exception throw so the interface is future stable
+        return false;
+    }
+
     /**
      * Okapi request method not requiring a request body. i.e. HEAD, GET, DELETE.
-     * 
+     *
      * @param <T> generic class for response body type.
      * @param url String
      * @param method HttpMethod
@@ -546,6 +560,38 @@ public class FolioCatalogService implements CatalogService {
     }
 
     /**
+     * Build the loan item, based on the current information we can get from folio.
+     *
+     * @param loanJson
+     */
+    private LoanItem buildLoanItem(JsonNode loanJson) throws ParseException {
+        Date loanDate = getNodeDateValue(loanJson, "loanDate");
+        Date loanDueDate = getNodeDateValue(loanJson, "dueDate");
+        String overDueString = getNodeValue(loanJson, "overdue");
+        boolean overDue = StringUtils.isNotEmpty(overDueString)
+            ? Boolean.valueOf(overDueString)
+            : false;
+
+        String loanId = getNodeValue(loanJson, "id");
+
+        String itemId = null;
+        String instanceId = null;
+        String title = null;
+        String author = null;
+
+        if (loanJson.has("item")) {
+            JsonNode item = loanJson.get("item");
+
+            itemId = getNodeValue(item, "itemId");
+            instanceId = getNodeValue(item, "instanceId");
+            title = getNodeValue(item, "title");
+            author = getNodeValue(item, "author");
+        }
+
+        return new LoanItem(loanId, itemId, instanceId, loanDate, loanDueDate, overDue, title, author);
+    }
+
+    /**
      * Get the nested node value as a string.
      *
      * @param node the node.
@@ -591,7 +637,7 @@ public class FolioCatalogService implements CatalogService {
 
     /**
      * Okapi request method to attempt one token refresh and retry if request unauthorized.
-     * 
+     *
      * @param <T> generic class for response body type
      * @param attempt int
      * @param url String

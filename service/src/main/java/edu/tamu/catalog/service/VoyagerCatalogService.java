@@ -40,7 +40,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import edu.tamu.catalog.domain.model.FeesFines;
+import edu.tamu.catalog.domain.model.FeeFine;
 import edu.tamu.catalog.domain.model.HoldRequest;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
@@ -247,7 +247,7 @@ public class VoyagerCatalogService implements CatalogService {
     }
 
     @Override
-    public FeesFines getFeesFines(String uin) throws Exception {
+    public List<FeeFine> getFeesFines(String uin) throws Exception {
         throw new UnsupportedOperationException("Not supported by the requested catalog.");
     }
 
@@ -258,6 +258,21 @@ public class VoyagerCatalogService implements CatalogService {
 
     @Override
     public List<HoldRequest> getHoldRequests(String uin) throws Exception {
+        throw new UnsupportedOperationException("Not supported by the requested catalog.");
+    }
+
+    @Override
+    public void cancelHoldRequest(String uin, String requestId) throws Exception {
+        throw new UnsupportedOperationException("Not supported by the requested catalog.");
+    }
+
+    @Override
+    public LoanItem renewItem(String uin, String itemId) {
+        throw new UnsupportedOperationException("Not supported by the requested catalog.");
+    }
+
+    @Override
+    public Boolean getBlockStatus(String uin) throws Exception {
         throw new UnsupportedOperationException("Not supported by the requested catalog.");
     }
 

@@ -93,11 +93,7 @@
             <ignoreTrivial>true</ignoreTrivial>
             <ignores>
               <ignore>java.util.logging.*</ignore>
-              <ignore>edu.tamu.catalog.config.AppEmailConfig</ignore>
             </ignores>
-            <excludes>
-              <exclude>**/ProjectInitialization.class</exclude>
-            </excludes>
           </instrumentation>
           <formats>
             <format>html</format>
@@ -110,9 +106,6 @@
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>**/ProjectInitialization.class</exclude>
-          </excludes>
         </configuration>
         <executions>
           <execution>
