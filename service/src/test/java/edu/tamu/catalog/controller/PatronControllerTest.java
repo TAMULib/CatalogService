@@ -247,6 +247,7 @@ public class PatronControllerTest {
         restServer.verify();
     }
 
+    @Test
     public void testCancelHoldRequestMockMVC() throws Exception {
         PathParametersSnippet pathParameters = pathParameters(
             parameterWithName("uin").description("The patron UIN."),
@@ -286,6 +287,7 @@ public class PatronControllerTest {
         );
 
         mockMvc.perform(get("/patron/{uin}/" + BLOCK_ENDPOINT, UIN)
+            .param("catalogName", FOLIO_CATALOG)
             .contentType(MediaType.APPLICATION_JSON)
         )
         .andExpect(status().isOk())
