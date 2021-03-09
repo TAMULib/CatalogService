@@ -452,6 +452,15 @@ public class PatronControllerTest {
     }
 
     @Test
+    public void testHoldsOkapiClientException() throws Exception {
+        performHoldsGet(once(), once(), once(), never(), successResponse(patronAccountResource),
+            withStatus(HttpStatus.BAD_REQUEST), withNoContent())
+            .andExpect(status().isBadRequest());
+
+        restServer.verify();
+    }
+
+    @Test
     public void testCancelHoldClientException() throws Exception {
         performHoldsCancelPost(once(), withStatus(HttpStatus.BAD_REQUEST))
             .andExpect(status().isBadRequest());
@@ -487,6 +496,15 @@ public class PatronControllerTest {
     public void testHoldsServerException() throws Exception {
         performHoldsGet(never(), once(), never(), never(), withStatus(HttpStatus.INTERNAL_SERVER_ERROR),
             withNoContent(), withNoContent())
+            .andExpect(status().isInternalServerError());
+
+        restServer.verify();
+    }
+
+    @Test
+    public void testHoldsOkapiServerException() throws Exception {
+        performHoldsGet(once(), once(), once(), never(), successResponse(patronAccountResource),
+            withStatus(HttpStatus.INTERNAL_SERVER_ERROR), withNoContent())
             .andExpect(status().isInternalServerError());
 
         restServer.verify();
