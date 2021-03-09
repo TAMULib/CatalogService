@@ -59,7 +59,7 @@ import edu.tamu.catalog.utility.TokenUtility;
 public class PatronControllerTest {
 
     private static final String UIN = "1234567890";
-    private static final String LOCATION_ID = "ebab9ccc-4ece-4f35-bc82-01f3325abed8";
+    private static final String SERVICE_POINTS_ID = "ebab9ccc-4ece-4f35-bc82-01f3325abed8";
     private static final String REQUEST_ID = "8bbac557-d66f-4571-bbbf-47a107cc1589";
     private static final String BASE_PATH = "http://localhost:8080/";
     private static final String API_KEY = "mock_api_key";
@@ -79,8 +79,8 @@ public class PatronControllerTest {
     @Value("classpath:mock/response/patron/accountDateParseError.json")
     private Resource patronAccountDateParseErrorResource;
 
-    @Value("classpath:mock/response/location/location.json")
-    private Resource locationResource;
+    @Value("classpath:mock/response/service-point/servicePoint.json")
+    private Resource servicePointResource;
 
     @Value("classpath:mock/response/request/holdRequest.json")
     private Resource holdRequestResource;
@@ -167,13 +167,13 @@ public class PatronControllerTest {
             fieldWithPath("[].requestType").description("The type of the hold request."),
             fieldWithPath("[].itemTitle").description("The title of the item associated with the fine."),
             fieldWithPath("[].statusText").description("A descriptive status of the hold request."),
-            fieldWithPath("[].pickupLocation").description("A title describing the pickup location."),
+            fieldWithPath("[].pickupServicePoint").description("A title describing the pickup service point location."),
             fieldWithPath("[].queuePosition").description("The position within the queue."),
             fieldWithPath("[].expirationDate").description("A timestamp in milliseconds from UNIX epoch representing the date the hold request will expire.")
         );
 
         performHoldsGetWithCatalogName(once(), once(), once(), once(), successResponse(patronAccountResource),
-            successResponse(holdRequestResource), successResponse(locationResource), FOLIO_CATALOG)
+            successResponse(holdRequestResource), successResponse(servicePointResource), FOLIO_CATALOG)
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
             .andDo(
@@ -230,7 +230,7 @@ public class PatronControllerTest {
     @Test
     public void testHoldsDateParseError() throws Exception {
         performHoldsGet(between(0, 1), once(), between(0, 1), between(0, 1), successResponse(patronAccountDateParseErrorResource),
-            successResponse(holdRequestResource), successResponse(locationResource))
+            successResponse(holdRequestResource), successResponse(servicePointResource))
             .andExpect(status().isInternalServerError());
 
         restServer.verify();
@@ -369,22 +369,22 @@ public class PatronControllerTest {
         );
     }
 
-    private ResultActions performHoldsGet(ExpectedCount okapiCount, ExpectedCount holdsCount, ExpectedCount requestsCount, ExpectedCount locationsCount, DefaultResponseCreator holdsResponse, DefaultResponseCreator requestsResponse, DefaultResponseCreator locationsResponse) throws Exception  {
+    private ResultActions performHoldsGet(ExpectedCount okapiCount, ExpectedCount holdsCount, ExpectedCount requestsCount, ExpectedCount servicePointsCount, DefaultResponseCreator holdsResponse, DefaultResponseCreator requestsResponse, DefaultResponseCreator servicePointsResponse) throws Exception  {
         expectResponse(getHoldsUrl(), holdsCount, holdsResponse);
         expectOkapiLoginResponse(okapiCount, withStatus(HttpStatus.CREATED));
         expectResponse(getOkapiRequestsUrl(), requestsCount, requestsResponse);
-        expectResponse(getOkapiLocationsUrl(), locationsCount, locationsResponse);
+        expectResponse(getOkapiServicePointsUrl(), servicePointsCount, servicePointsResponse);
 
         return mockMvc.perform(get("/patron/{uin}/" + HOLDS_ENDPOINT, UIN)
             .contentType(MediaType.APPLICATION_JSON)
         );
     }
 
-    private ResultActions performHoldsGetWithCatalogName(ExpectedCount okapiCount, ExpectedCount holdsCount, ExpectedCount requestsCount, ExpectedCount locationsCount, DefaultResponseCreator holdsResponse, DefaultResponseCreator requestsResponse, DefaultResponseCreator locationsResponse, String catalogName) throws Exception  {
+    private ResultActions performHoldsGetWithCatalogName(ExpectedCount okapiCount, ExpectedCount holdsCount, ExpectedCount requestsCount, ExpectedCount servicePointsCount, DefaultResponseCreator holdsResponse, DefaultResponseCreator requestsResponse, DefaultResponseCreator servicePointsResponse, String catalogName) throws Exception  {
         expectResponse(getHoldsUrl(), holdsCount, holdsResponse);
         expectOkapiLoginResponse(okapiCount, withStatus(HttpStatus.CREATED));
         expectResponse(getOkapiRequestsUrl(), requestsCount, requestsResponse);
-        expectResponse(getOkapiLocationsUrl(), locationsCount, locationsResponse);
+        expectResponse(getOkapiServicePointsUrl(), servicePointsCount, servicePointsResponse);
 
         return mockMvc.perform(get("/patron/{uin}/" + HOLDS_ENDPOINT, UIN)
             .param("catalogName", catalogName)
@@ -419,8 +419,8 @@ public class PatronControllerTest {
         return getAccountUrl(false, false, true);
     }
 
-    private String getOkapiLocationsUrl() {
-        return String.format("%slocations/%s", OKAPI_PATH, LOCATION_ID);
+    private String getOkapiServicePointsUrl() {
+        return String.format("%sservice-points/%s", OKAPI_PATH, SERVICE_POINTS_ID);
     }
 
     private String getOkapiRequestsUrl() {

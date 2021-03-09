@@ -208,6 +208,7 @@ public class FolioCatalogService implements CatalogService {
         return list;
     }
 
+    @Override
     public List<HoldRequest> getHoldRequests(String uin) throws Exception {
         String path = "patron/account";
         String additional = "&includeLoans=false&includeCharges=false&includeHolds=true";
@@ -230,29 +231,33 @@ public class FolioCatalogService implements CatalogService {
                 String itemId = getNodeNestedValue(hold, "item", "itemId");
                 String title = getNodeNestedValue(hold, "item", "title");
                 String status = getNodeValue(hold, "status");
-                String pickupLocationId = getNodeValue(hold, "pickupLocationId");
                 Integer queuePosition = hold.has("queuePosition") ? hold.get("queuePosition").asInt() : null;
                 Date date = getNodeDateValue(hold, "expirationDate");
+
+                // Note: the "pickupLocationId" holds the "servicePointId" UUID.
+                String servicePointId = getNodeValue(hold, "pickupLocationId");
 
                 String requestUrl = requestId == null ? null : String.format("%s/circulation/requests/%s", properties.getBaseOkapiUrl(), requestId);
                 String type = null;
 
                 logger.debug("Asking for hold request from: {}", requestUrl);
-                JsonNode requestNode = okapiRequestJsonNode(requestUrl, HttpMethod.GET);
+                String message = String.format("hold request with id \"%s\"", requestId);
+                JsonNode requestNode = okapiRequestJsonNode(requestUrl, HttpMethod.GET, message);
                 if (requestNode != null) {
                     type = getNodeValue(requestNode, "requestType");
                 }
 
-                String locationUrl = pickupLocationId == null ? null : String.format("%s/locations/%s", properties.getBaseOkapiUrl(), pickupLocationId);
-                String pickupLocation = null;
+                String sercicePointUrl = servicePointId == null ? null : String.format("%s/service-points/%s", properties.getBaseOkapiUrl(), servicePointId);
+                String pickupServicePoint = null;
 
-                logger.debug("Asking for location from: {}", locationUrl);
-                JsonNode locationNode = okapiRequestJsonNode(locationUrl, HttpMethod.GET);
-                if (locationNode != null) {
-                    pickupLocation = getNodeValue(locationNode, "name");
+                logger.debug("Asking for service-point from: {}", sercicePointUrl);
+                message = String.format("service point with id \"%s\"", servicePointId);
+                JsonNode servicePointNode = okapiRequestJsonNode(sercicePointUrl, HttpMethod.GET, message);
+                if (servicePointNode != null) {
+                    pickupServicePoint = getNodeValue(servicePointNode, "discoveryDisplayName");
                 }
 
-                list.add(new HoldRequest(requestId, itemId, type, title, status, pickupLocation, queuePosition, date));
+                list.add(new HoldRequest(requestId, itemId, type, title, status, pickupServicePoint, queuePosition, date));
             }
         }
 
@@ -260,41 +265,36 @@ public class FolioCatalogService implements CatalogService {
     }
 
     /**
-     * Use OKAPI to retrieve the JSONNode, returning null if not found throwing all other exceptions.
+     * Use OKAPI to retrieve the JsonNode, throwing a customized exception on client or server errors.
      *
      * @param <T> generic class for response body type.
      * @param url String the URL to retrieve.
+     *
      * @return response entity with response type as body.
      */
-    JsonNode okapiRequestJsonNode(String url, HttpMethod method) {
+    JsonNode okapiRequestJsonNode(String url, HttpMethod method, String message) {
         try {
-            if (url != null) {
-                return okapiRequest(url, method, JsonNode.class).getBody();
-            }
+            return okapiRequest(url, method, JsonNode.class).getBody();
         }
         catch (HttpClientErrorException e) {
-            if (!e.getStatusCode().equals(HttpStatus.NOT_FOUND)) {
-                throw e;
-            }
-
-            logger.warn(e.getMessage());
-
-            if (logger.isDebugEnabled()) {
-                e.printStackTrace();
-            }
+            throw new HttpClientErrorException(e.getStatusCode(),
+                String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
         }
-
-        return null;
+        catch (HttpServerErrorException e) {
+            throw new HttpServerErrorException(e.getStatusCode(),
+                String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
+        }
     }
 
     /**
-     * Okapi request method not requiring a request body. i.e. HEAD, GET, DELETE
+     * Okapi request method not requiring a request body. i.e. HEAD, GET, DELETE.
      * 
-     * @param <T> generic class for response body type
+     * @param <T> generic class for response body type.
      * @param url String
      * @param method HttpMethod
      * @param responseType Class<T>
-     * @param uriVariables Object... uri variables to be expanded into url
+     * @param uriVariables Object... uri variables to be expanded into url.
+     *
      * @return response entity with response type as body
      */
     <T> ResponseEntity<T> okapiRequest(String url, HttpMethod method, Class<T> responseType, Object... uriVariables) {
@@ -304,15 +304,16 @@ public class FolioCatalogService implements CatalogService {
     }
 
     /**
-     * Okapi request method requiring a request body. i.e. PUT, POST
+     * Okapi request method requiring a request body. i.e. PUT, POST.
      *
-     * @param <B> generic class for request body type
-     * @param <T> generic class for response body type
+     * @param <B> generic class for request body type.
+     * @param <T> generic class for response body type.
      * @param url String
      * @param method HttpMethod
      * @param body B request body
      * @param responseType Class<T>
-     * @param uriVariables Object... uri variables to be expanded into url
+     * @param uriVariables Object... uri variables to be expanded into url.
+     *
      * @return response entity with response type as body
      */
     <B,T> ResponseEntity<T> okapiRequest(String url, HttpMethod method, B body, Class<T> responseType, Object... uriVariables) {
@@ -321,6 +322,14 @@ public class FolioCatalogService implements CatalogService {
         return okapiRequest(1, url, method, requestEntity, responseType, uriVariables);
     }
 
+    /**
+     * Process the Holdings.
+     *
+     * @param instanceId
+     * @param holdingId
+     *
+     * @return
+     */
     private List<HoldingsRecord> requestHoldings(String instanceId, String holdingId) {
         List<HoldingsRecord> holdings = new ArrayList<>();
 
@@ -394,6 +403,14 @@ public class FolioCatalogService implements CatalogService {
         return holdings;
     }
 
+    /**
+     * Process the metadata.
+     *
+     * @param instanceId
+     * @param metadataNode
+     *
+     * @return
+     */
     private List<HoldingsRecord> processMetadata(String instanceId, Node metadataNode) {
         List<HoldingsRecord> holdings = new ArrayList<HoldingsRecord>();
 
@@ -410,6 +427,14 @@ public class FolioCatalogService implements CatalogService {
         return holdings;
     }
 
+    /**
+     * Process the Marc Record.
+     *
+     * @param instanceId
+     * @param marcRecord
+     *
+     * @return
+     */
     private HoldingsRecord processMarcRecord(String instanceId, Node marcRecord) {
         Map<String, String> recordValues = new HashMap<>();
         Map<String, String> recordBackupValues = new HashMap<>();
@@ -487,6 +512,11 @@ public class FolioCatalogService implements CatalogService {
     /**
      * Attempt to (case-insensitively) match the tag name (nodeName) against the
      * desired match with the marc prefix.
+     *
+     * @param nodeName
+     * @param matchName
+     *
+     * @return
      */
     private boolean nodeNameMatches(String nodeName, String matchName) {
         return nodeName.equalsIgnoreCase(NODE_PREFIX + matchName);
@@ -494,6 +524,11 @@ public class FolioCatalogService implements CatalogService {
 
     /**
      * Build the core item, based on the current information we can get from folio.
+     *
+     * @param instanceId
+     * @param barcode
+     * @param nodes
+     * @param catalogItems
      */
     private void buildCoreItem(String instanceId, String barcode, NodeList nodes, Map<String, Map<String, String>> catalogItems) {
         Map<String, String> itemData = new HashMap<String, String>();
@@ -510,6 +545,16 @@ public class FolioCatalogService implements CatalogService {
         catalogItems.put(barcode, itemData);
     }
 
+    /**
+     * Get the nested node value as a string.
+     *
+     * @param node the node.
+     * @param parentField the parent field that should contain the child field.
+     * @param childField the field within the parent field to get the value of.
+     *
+     * @return The retrieved string or NULL if the field is not found.
+     * @throws ParseException
+     */
     private String getNodeNestedValue(JsonNode node, String parentField, String childField) {
         if (node.has(parentField) && node.get(parentField).has(childField)) {
             return node.get(parentField).get(childField).asText();
@@ -518,10 +563,28 @@ public class FolioCatalogService implements CatalogService {
         return null;
     }
 
+    /**
+     * Get the node value as a string.
+     *
+     * @param node the node.
+     * @param fieldName the field to get the value of.
+     *
+     * @return The retrieved string or NULL if the field is not found.
+     * @throws ParseException
+     */
     private String getNodeValue(JsonNode node, String fieldName) {
         return node.has(fieldName) ? node.get(fieldName).asText() : null;
     }
 
+    /**
+     * Get the node date value as a date.
+     *
+     * @param node the node.
+     * @param fieldName the field to get the value of.
+     * @return The retrieved date or NULL if the field is not found.
+     *
+     * @throws ParseException
+     */
     private Date getNodeDateValue(JsonNode node, String fieldName) throws ParseException {
         return node.has(fieldName) ? FolioDatetime.parse(node.get(fieldName).asText()) : null;
     }
@@ -536,6 +599,7 @@ public class FolioCatalogService implements CatalogService {
      * @param requestEntity HttpEntity<T>
      * @param responseType Class<T>
      * @param uriVariables Object... uri variables to be expanded into url
+     *
      * @return response entity with response type as body
      */
     private <T> ResponseEntity<T> okapiRequest(int attempt, String url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType, Object... uriVariables) {
@@ -550,6 +614,11 @@ public class FolioCatalogService implements CatalogService {
         }
     }
 
+    /**
+     * Retrieve the Okapi token, which may be cached.
+     *
+     * @return the authentication token.
+     */
     private String getToken() {
         Optional<String> token = TokenUtility.getToken(getName());
         if (token.isPresent()) {
@@ -558,6 +627,11 @@ public class FolioCatalogService implements CatalogService {
         return okapiLogin();
     }
 
+    /**
+     * Login to Okapi.
+     *
+     * @return the authentication token.
+     */
     private String okapiLogin() {
         String url = properties.getBaseOkapiUrl() + "/authn/login";
         HttpEntity<Credentials> entity = new HttpEntity<>(properties.getCredentials(), headers(properties.getTenant()));
@@ -575,13 +649,28 @@ public class FolioCatalogService implements CatalogService {
         }
     }
 
+    /**
+     * Build the headers containing the Okapi token.
+     *
+     * @param tenant The tenant name.
+     * @param token The token associated with the tenant.
+     *
+     * @return the headers.
+     */
     private HttpHeaders headers(String tenant, String token) {
         HttpHeaders headers = headers(tenant);
         headers.set(OKAPI_TOKEN_HEADER, token);
         return headers;
     }
 
-    // NOTE: assuming all accept and content type will be application/json
+    /**
+     * Build the headers containing the Okapi tenant.
+     * This assumes all accept and content type will be application/json.
+     *
+     * @param tenant The tenant name.
+     *
+     * @return the headers.
+     */
     private HttpHeaders headers(String tenant) {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN));

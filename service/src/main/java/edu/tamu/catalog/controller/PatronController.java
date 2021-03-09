@@ -23,8 +23,9 @@ public class PatronController {
     /**
      * Provides data for all fees and fines associated with a patron.
      *
-     * @param CatalogService catalogService (resolved by query parameter catalogName)
+     * @param CatalogService catalogService (resolved by query parameter catalogName).
      * @param String uin
+     *
      * @return
      * @throws Exception
      */
@@ -42,8 +43,9 @@ public class PatronController {
     /**
      * Provides data for all loan items associated with a patron.
      *
-     * @param CatalogService catalogService (resolved by query parameter catalogName)
+     * @param CatalogService catalogService (resolved by query parameter catalogName).
      * @param String uin
+     *
      * @return
      */
     @GetMapping("/{uin}/loans")
@@ -60,8 +62,9 @@ public class PatronController {
     /**
      * Provides data for all loan items associated with a patron.
      *
-     * @param CatalogService catalogService (resolved by query parameter catalogName)
+     * @param CatalogService catalogService (resolved by query parameter catalogName).
      * @param String uin
+     *
      * @return
      */
     @GetMapping("/{uin}/holds")

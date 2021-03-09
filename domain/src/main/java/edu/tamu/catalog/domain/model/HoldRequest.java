@@ -19,7 +19,7 @@ public class HoldRequest {
 
     private String statusText;
 
-    private String pickupLocation;
+    private String pickupServicePoint;
 
     private Integer queuePosition;
 
