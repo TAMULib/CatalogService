@@ -42,6 +42,8 @@ public class HoldingsRecordTest {
         Assert.assertEquals("callNumber", holdingsRecord.getCallNumber());
         Assert.assertEquals(false, holdingsRecord.isLargeVolume());
         Assert.assertEquals(1, holdingsRecord.getCatalogItems().size());
+
+        Assert.assertFalse(holdingsRecord.isMultiVolume());
     }
 
     @Test
@@ -101,6 +103,8 @@ public class HoldingsRecordTest {
         Assert.assertEquals("updatedCallNumber", holdingsRecord.getCallNumber());
         Assert.assertEquals(true, holdingsRecord.isLargeVolume());
         Assert.assertEquals(2, holdingsRecord.getCatalogItems().size());
+
+        Assert.assertTrue(holdingsRecord.isMultiVolume());
     }
 
     @Test
@@ -112,7 +116,7 @@ public class HoldingsRecordTest {
 
         final HoldingsRecord holdingsRecord1 = new HoldingsRecord("marcRecordLeader", "mfhd", "issn", "isbn", "title",
             "author", "publisher", "place", "year", "genre", "fallbackLocationCode", "edition", "oclc", "recordId",
-            "callNumber", false, catalogItems);
+            "callNumber", catalogItems);
 
         final HoldingsRecord holdingsRecord2 = new HoldingsRecord("marcRecordLeader", "mfhd", "issn", "isbn", "title",
             "author", "publisher", "place", "year", "genre", "fallbackLocationCode", "edition", "oclc", "recordId",
