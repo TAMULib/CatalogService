@@ -19,7 +19,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    @ExceptionHandler({RestClientResponseException.class})
+    @ExceptionHandler(RestClientResponseException.class)
     public ResponseEntity<String> clientError(HttpClientErrorException e, WebRequest request) {
         logger.warn(e.getMessage());
 
@@ -31,7 +31,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
             .body(e.getMessage());
     }
 
-    @ExceptionHandler({HttpServerErrorException.class})
+    @ExceptionHandler(HttpServerErrorException.class)
     public ResponseEntity<String> serverError(HttpServerErrorException e, WebRequest request) {
         logger.error(e.getMessage());
 
@@ -43,7 +43,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
             .body(e.getMessage());
     }
 
-    @ExceptionHandler({UnsupportedOperationException.class})
+    @ExceptionHandler(UnsupportedOperationException.class)
     public ResponseEntity<String> unsupportedOperationError(UnsupportedOperationException e, WebRequest request) {
         logger.warn(e.getMessage());
 
@@ -55,7 +55,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
             .body(e.getMessage());
     }
 
-    @ExceptionHandler({ParseException.class})
+    @ExceptionHandler(ParseException.class)
     public ResponseEntity<String> parseError(ParseException e, WebRequest request) {
         logger.error(e.getMessage());
 

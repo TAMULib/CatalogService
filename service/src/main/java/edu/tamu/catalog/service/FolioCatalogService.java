@@ -1,5 +1,9 @@
 package edu.tamu.catalog.service;
 
+import static edu.tamu.catalog.utility.JsonNodeUtility.getBoolean;
+import static edu.tamu.catalog.utility.JsonNodeUtility.getDouble;
+import static edu.tamu.catalog.utility.JsonNodeUtility.getInt;
+import static edu.tamu.catalog.utility.JsonNodeUtility.getText;
 import static edu.tamu.catalog.utility.Marc21Xml.RECORD_AUTHOR;
 import static edu.tamu.catalog.utility.Marc21Xml.RECORD_CALL_NUMBER;
 import static edu.tamu.catalog.utility.Marc21Xml.RECORD_EDITION;
@@ -27,11 +31,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -53,8 +60,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-
-import com.fasterxml.jackson.databind.JsonNode;
 
 import edu.tamu.catalog.domain.model.FeeFine;
 import edu.tamu.catalog.domain.model.HoldRequest;
@@ -134,27 +139,20 @@ public class FolioCatalogService implements CatalogService {
 
         List<FeeFine> list = new ArrayList<>();
 
-        if (node.has("charges")) {
-            Iterator<JsonNode> iter = node.get("charges").elements();
+        JsonNode charges = node.at("/charges");
+
+        if (charges.isContainerNode() && charges.isArray()) {
+            Iterator<JsonNode> iter = charges.elements();
 
             while (iter.hasNext()) {
                 JsonNode charge = iter.next();
-
-                double amount = 0;
-                if (charge.has("chargeAmount") && charge.get("chargeAmount").has("amount")) {
-                    amount = charge.get("chargeAmount").get("amount").asDouble();
-                }
-
-                String fineId = charge.has("feeFineId") ? charge.get("feeFineId").asText() : null;
-                String type = charge.has("reason") ? charge.get("reason").asText() : null;
-                Date date = charge.has("accrualDate") ? FolioDatetime.parse(charge.get("accrualDate").asText()) : null;
-
-                String title = null;
-                if (charge.has("item") && charge.get("item").has("title")) {
-                    title = charge.get("item").get("title").asText();
-                }
-
-                list.add(new FeeFine(amount, fineId, type, date, title));
+                list.add(FeeFine.builder()
+                    .fineId(getText(charge, "/feeFineId"))
+                    .fineType(getText(charge, "/reason"))
+                    .fineDate(getDate(charge, "/accrualDate"))
+                    .itemTitle(getText(charge, "/item/title"))
+                    .amount(getDouble(charge, "/chargeAmount/amount", 0))
+                    .build());
             }
         }
 
@@ -174,13 +172,15 @@ public class FolioCatalogService implements CatalogService {
 
         List<LoanItem> list = new ArrayList<>();
 
-        if (node.has("loans")) {
-            Iterator<JsonNode> iter = node.get("loans").elements();
+        JsonNode loans = node.at("/loans");
+
+        if (loans.isContainerNode() && loans.isArray()) {
+            Iterator<JsonNode> iter = loans.elements();
 
             while (iter.hasNext()) {
                 JsonNode loan = iter.next();
                 LoanItem loanItem = buildLoanItem(loan);
-                if (loanItem.getItemId() != null) {
+                if (Objects.nonNull(loanItem.getItemId())) {
                     list.add(loanItem);
                 }
             }
@@ -201,70 +201,32 @@ public class FolioCatalogService implements CatalogService {
 
         List<HoldRequest> list = new ArrayList<>();
 
-        if (node.has("holds")) {
-            Iterator<JsonNode> iter = node.get("holds").elements();
+        JsonNode holds = node.at("/holds");
+
+        if (holds.isContainerNode() && holds.isArray()) {
+            Iterator<JsonNode> iter = holds.elements();
 
             while (iter.hasNext()) {
                 JsonNode hold = iter.next();
-
-                String requestId = getNodeValue(hold, "requestId");
-                String itemId = getNodeNestedValue(hold, "item", "itemId");
-                String title = getNodeNestedValue(hold, "item", "title");
-                String status = getNodeValue(hold, "status");
-                Integer queuePosition = hold.has("queuePosition") ? hold.get("queuePosition").asInt() : null;
-                Date date = getNodeDateValue(hold, "expirationDate");
-
-                // Note: the "pickupLocationId" holds the "servicePointId" UUID.
-                String servicePointId = getNodeValue(hold, "pickupLocationId");
-
-                String requestUrl = requestId == null ? null : String.format("%s/circulation/requests/%s", properties.getBaseOkapiUrl(), requestId);
-                String type = null;
-
-                logger.debug("Asking for hold request from: {}", requestUrl);
-                String message = String.format("hold request with id \"%s\"", requestId);
-                JsonNode requestNode = okapiRequestJsonNode(requestUrl, HttpMethod.GET, message);
-                if (requestNode != null) {
-                    type = getNodeValue(requestNode, "requestType");
-                }
-
-                String sercicePointUrl = servicePointId == null ? null : String.format("%s/service-points/%s", properties.getBaseOkapiUrl(), servicePointId);
-                String pickupServicePoint = null;
-
-                logger.debug("Asking for service-point from: {}", sercicePointUrl);
-                message = String.format("service point with id \"%s\"", servicePointId);
-                JsonNode servicePointNode = okapiRequestJsonNode(sercicePointUrl, HttpMethod.GET, message);
-                if (servicePointNode != null) {
-                    pickupServicePoint = getNodeValue(servicePointNode, "discoveryDisplayName");
-                }
-
-                list.add(new HoldRequest(requestId, itemId, type, title, status, pickupServicePoint, queuePosition, date));
+                String requestId = getText(hold, "/requestId");
+                String servicePointId = getText(hold, "/pickupLocationId");
+                list.add(HoldRequest.builder()
+                    .itemId(getText(hold, "/item/itemId"))
+                    .itemTitle(getText(hold, "/item/title"))
+                    .statusText(getText(hold, "/status"))
+                    .queuePosition(getInt(hold, "/queuePosition"))
+                    .expirationDate(getDate(hold, "/expirationDate"))
+                    .requestId(requestId)
+                    .requestType(getRequestType(requestId))
+                    .pickupServicePoint(getServicePointDisplayName(servicePointId))
+                    .build());
             }
         }
 
         return list;
     }
 
-    /**
-     * Use OKAPI to retrieve the JsonNode, throwing a customized exception on client or server errors.
-     *
-     * @param <T> generic class for response body type.
-     * @param url String the URL to retrieve.
-     *
-     * @return response entity with response type as body.
-     */
-    JsonNode okapiRequestJsonNode(String url, HttpMethod method, String message) {
-        try {
-            return okapiRequest(url, method, JsonNode.class).getBody();
-        }
-        catch (HttpClientErrorException e) {
-            throw new HttpClientErrorException(e.getStatusCode(),
-                String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
-        }
-        catch (HttpServerErrorException e) {
-            throw new HttpServerErrorException(e.getStatusCode(),
-                String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
-        }
-    }
+    
 
     @Override
     public void cancelHoldRequest(String uin, String requestId) throws Exception {
@@ -298,6 +260,28 @@ public class FolioCatalogService implements CatalogService {
         //for now, no FOLIO user will be blocked
         //leave the exception throw so the interface is future stable
         return false;
+    }
+
+    /**
+     * Use OKAPI to retrieve the JsonNode, throwing a customized exception on client or server errors.
+     *
+     * @param <T> generic class for response body type.
+     * @param url String the URL to retrieve.
+     *
+     * @return response entity with response type as body.
+     */
+    JsonNode okapiRequestJsonNode(String url, HttpMethod method, String message) {
+        try {
+            return okapiRequest(url, method, JsonNode.class).getBody();
+        }
+        catch (HttpClientErrorException e) {
+            throw new HttpClientErrorException(e.getStatusCode(),
+                String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
+        }
+        catch (HttpServerErrorException e) {
+            throw new HttpServerErrorException(e.getStatusCode(),
+                String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
+        }
     }
 
     /**
@@ -337,12 +321,60 @@ public class FolioCatalogService implements CatalogService {
     }
 
     /**
+     * Get request type.
+     *
+     * @param requestId String
+     * @return request type
+     */
+    private String getRequestType(String requestId) {
+        if (Objects.isNull(requestId)) {
+            return null;
+        }
+        String requestUrl = String.format("%s/circulation/requests/%s", properties.getBaseOkapiUrl(), requestId);
+        logger.debug("Asking for hold request from: {}", requestUrl);
+        String message = String.format("hold request with id \"%s\"", requestId);
+        JsonNode response = okapiRequestJsonNode(requestUrl, HttpMethod.GET, message);
+        if (response.isContainerNode()) {
+            JsonNode requestType = response.at("/requestType");
+            if (requestType.isValueNode()) {
+                return requestType.asText();
+            }
+        }
+
+        return  null;
+    }
+
+    /**
+     * Get service point display name.
+     *
+     * @param servicePointId String
+     * @return service point display name
+     */
+    private String getServicePointDisplayName(String servicePointId) {
+        if (Objects.isNull(servicePointId)) {
+            return null;
+        }
+        String sercicePointUrl = String.format("%s/service-points/%s", properties.getBaseOkapiUrl(), servicePointId);
+        logger.debug("Asking for service-point from: {}", sercicePointUrl);
+        String message = String.format("service point with id \"%s\"", servicePointId);
+        JsonNode response = okapiRequestJsonNode(sercicePointUrl, HttpMethod.GET, message);
+        if (response.isContainerNode()) {
+            JsonNode discoveryDisplayName = response.at("/discoveryDisplayName");
+            if (discoveryDisplayName.isValueNode()) {
+                return discoveryDisplayName.asText();
+            }
+        }
+
+        return  null;
+    }
+
+    /**
      * Process the Holdings.
      *
-     * @param instanceId
-     * @param holdingId
+     * @param instanceId String
+     * @param holdingId String
      *
-     * @return
+     * @return list of holdings records
      */
     private List<HoldingsRecord> requestHoldings(String instanceId, String holdingId) {
         List<HoldingsRecord> holdings = new ArrayList<>();
@@ -420,10 +452,10 @@ public class FolioCatalogService implements CatalogService {
     /**
      * Process the metadata.
      *
-     * @param instanceId
-     * @param metadataNode
+     * @param instanceId String
+     * @param metadataNode Node
      *
-     * @return
+     * @return list of holdings records
      */
     private List<HoldingsRecord> processMetadata(String instanceId, Node metadataNode) {
         List<HoldingsRecord> holdings = new ArrayList<HoldingsRecord>();
@@ -444,10 +476,10 @@ public class FolioCatalogService implements CatalogService {
     /**
      * Process the Marc Record.
      *
-     * @param instanceId
-     * @param marcRecord
+     * @param instanceId String
+     * @param marcRecord Node
      *
-     * @return
+     * @return holdings record
      */
     private HoldingsRecord processMarcRecord(String instanceId, Node marcRecord) {
         Map<String, String> recordValues = new HashMap<>();
@@ -527,10 +559,10 @@ public class FolioCatalogService implements CatalogService {
      * Attempt to (case-insensitively) match the tag name (nodeName) against the
      * desired match with the marc prefix.
      *
-     * @param nodeName
-     * @param matchName
+     * @param nodeName String
+     * @param matchName String
      *
-     * @return
+     * @return whether node name matches
      */
     private boolean nodeNameMatches(String nodeName, String matchName) {
         return nodeName.equalsIgnoreCase(NODE_PREFIX + matchName);
@@ -539,10 +571,10 @@ public class FolioCatalogService implements CatalogService {
     /**
      * Build the core item, based on the current information we can get from folio.
      *
-     * @param instanceId
-     * @param barcode
-     * @param nodes
-     * @param catalogItems
+     * @param instanceId String
+     * @param barcode String
+     * @param nodes NodeList
+     * @param catalogItems Map<String, Map<String, String>>
      */
     private void buildCoreItem(String instanceId, String barcode, NodeList nodes, Map<String, Map<String, String>> catalogItems) {
         Map<String, String> itemData = new HashMap<String, String>();
@@ -562,77 +594,32 @@ public class FolioCatalogService implements CatalogService {
     /**
      * Build the loan item, based on the current information we can get from folio.
      *
-     * @param loanJson
+     * @param loanJson JsonNode
      */
-    private LoanItem buildLoanItem(JsonNode loanJson) throws ParseException {
-        Date loanDate = getNodeDateValue(loanJson, "loanDate");
-        Date loanDueDate = getNodeDateValue(loanJson, "dueDate");
-        String overDueString = getNodeValue(loanJson, "overdue");
-        boolean overDue = StringUtils.isNotEmpty(overDueString)
-            ? Boolean.valueOf(overDueString)
-            : false;
-
-        String loanId = getNodeValue(loanJson, "id");
-
-        String itemId = null;
-        String instanceId = null;
-        String title = null;
-        String author = null;
-
-        if (loanJson.has("item")) {
-            JsonNode item = loanJson.get("item");
-
-            itemId = getNodeValue(item, "itemId");
-            instanceId = getNodeValue(item, "instanceId");
-            title = getNodeValue(item, "title");
-            author = getNodeValue(item, "author");
-        }
-
-        return new LoanItem(loanId, itemId, instanceId, loanDate, loanDueDate, overDue, title, author);
+    private LoanItem buildLoanItem(JsonNode loan) throws ParseException {
+        return LoanItem.builder()
+            .loanId(getText(loan, "/id"))
+            .loanDate(getDate(loan, "/loanDate"))
+            .loanDueDate(getDate(loan, "/dueDate"))
+            .overdue(getBoolean(loan, "/overdue", false))
+            .itemId(getText(loan, "/item/itemId"))
+            .instanceId(getText(loan, "/item/instanceId"))
+            .title(getText(loan, "/item/title"))
+            .author(getText(loan, "/item/author"))
+            .build();
     }
 
     /**
-     * Get the nested node value as a string.
-     *
-     * @param node the node.
-     * @param parentField the parent field that should contain the child field.
-     * @param childField the field within the parent field to get the value of.
-     *
-     * @return The retrieved string or NULL if the field is not found.
+     * Get parsed data time from JsonNode at path expression. Return null if value not found.
+     * 
+     * @param input JsonNode
+     * @param jsonPtrExpr String
+     * @return date time value
      * @throws ParseException
      */
-    private String getNodeNestedValue(JsonNode node, String parentField, String childField) {
-        if (node.has(parentField) && node.get(parentField).has(childField)) {
-            return node.get(parentField).get(childField).asText();
-        }
-
-        return null;
-    }
-
-    /**
-     * Get the node value as a string.
-     *
-     * @param node the node.
-     * @param fieldName the field to get the value of.
-     *
-     * @return The retrieved string or NULL if the field is not found.
-     * @throws ParseException
-     */
-    private String getNodeValue(JsonNode node, String fieldName) {
-        return node.has(fieldName) ? node.get(fieldName).asText() : null;
-    }
-
-    /**
-     * Get the node date value as a date.
-     *
-     * @param node the node.
-     * @param fieldName the field to get the value of.
-     * @return The retrieved date or NULL if the field is not found.
-     *
-     * @throws ParseException
-     */
-    private Date getNodeDateValue(JsonNode node, String fieldName) throws ParseException {
-        return node.has(fieldName) ? FolioDatetime.parse(node.get(fieldName).asText()) : null;
+    private Date getDate(JsonNode input, String jsonPtrExpr) throws ParseException {
+        JsonNode property = input.at(jsonPtrExpr);
+        return property.isValueNode() ? FolioDatetime.parse(property.asText()) : null;
     }
 
     /**
@@ -683,13 +670,13 @@ public class FolioCatalogService implements CatalogService {
         HttpEntity<Credentials> entity = new HttpEntity<>(properties.getCredentials(), headers(properties.getTenant()));
         ResponseEntity<?> response = restTemplate.postForEntity(url, entity, Object.class);
 
-        if (response != null && response.getStatusCode().equals(HttpStatus.CREATED)) {
+        if (response.getStatusCode().equals(HttpStatus.CREATED)) {
             String token = response.getHeaders().getFirst(OKAPI_TOKEN_HEADER);
             TokenUtility.setToken(getName(), token);
             return token;
         } else {
-            Integer statusCode = response == null ? null : response.getStatusCodeValue();
-            Object body = response == null ? null : response.getBody();
+            Integer statusCode = response.getStatusCodeValue();
+            Object body = response.getBody();
             logger.error("Failed to login {}: {}", statusCode, body);
             throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Catalog service failed to login into Okapi!");
         }

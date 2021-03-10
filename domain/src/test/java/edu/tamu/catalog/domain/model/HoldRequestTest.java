@@ -1,8 +1,13 @@
 package edu.tamu.catalog.domain.model;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Date;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -11,23 +16,67 @@ import org.springframework.test.context.junit4.SpringRunner;
 public class HoldRequestTest {
 
     @Test
-    public void testCreate() {
+    public void testCreateAllArgs() {
         final Date now = new Date();
         final Integer one = 1;
 
         final HoldRequest holdRequest = new HoldRequest("requestId", "itemId", "requestType", "itemTitle", "statusText", "pickupServicePoint", one, now);
 
-        Assert.assertNotNull(holdRequest);
-        Assert.assertNotNull(holdRequest.getExpirationDate());
+        assertNotNull(holdRequest);
+        assertNotNull(holdRequest.getExpirationDate());
 
-        Assert.assertEquals("requestId", holdRequest.getRequestId());
-        Assert.assertEquals("itemId", holdRequest.getItemId());
-        Assert.assertEquals("requestType", holdRequest.getRequestType());
-        Assert.assertEquals("itemTitle", holdRequest.getItemTitle());
-        Assert.assertEquals("statusText", holdRequest.getStatusText());
-        Assert.assertEquals("pickupServicePoint", holdRequest.getPickupServicePoint());
-        Assert.assertEquals(one, holdRequest.getQueuePosition());
-        Assert.assertEquals(now.toString(), holdRequest.getExpirationDate().toString());
+        assertEquals("requestId", holdRequest.getRequestId());
+        assertEquals("itemId", holdRequest.getItemId());
+        assertEquals("requestType", holdRequest.getRequestType());
+        assertEquals("itemTitle", holdRequest.getItemTitle());
+        assertEquals("statusText", holdRequest.getStatusText());
+        assertEquals("pickupServicePoint", holdRequest.getPickupServicePoint());
+        assertEquals(one, holdRequest.getQueuePosition());
+        assertEquals(now.toString(), holdRequest.getExpirationDate().toString());
+    }
+
+    @Test
+    public void testCreateNoArgs() {
+        final HoldRequest holdRequest = new HoldRequest();
+
+        assertNotNull(holdRequest);
+
+        assertNull(holdRequest.getRequestId());
+        assertNull(holdRequest.getItemId());
+        assertNull(holdRequest.getRequestType());
+        assertNull(holdRequest.getItemTitle());
+        assertNull(holdRequest.getStatusText());
+        assertNull(holdRequest.getPickupServicePoint());
+        assertNull(holdRequest.getQueuePosition());
+        assertNull(holdRequest.getExpirationDate());
+    }
+
+    @Test
+    public void testBuilder() {
+        final Date now = new Date();
+        final Integer one = 1;
+        final HoldRequest holdRequest = new HoldRequest.HoldRequestBuilder()
+            .requestId("requestId")
+            .itemId("itemId")
+            .requestType("requestType")
+            .itemTitle("itemTitle")
+            .statusText("statusText")
+            .pickupServicePoint("pickupServicePoint")
+            .queuePosition(one)
+            .expirationDate(now)
+            .build();
+
+        assertNotNull(holdRequest);
+        assertNotNull(holdRequest.getExpirationDate());
+
+        assertEquals("requestId", holdRequest.getRequestId());
+        assertEquals("itemId", holdRequest.getItemId());
+        assertEquals("requestType", holdRequest.getRequestType());
+        assertEquals("itemTitle", holdRequest.getItemTitle());
+        assertEquals("statusText", holdRequest.getStatusText());
+        assertEquals("pickupServicePoint", holdRequest.getPickupServicePoint());
+        assertEquals(one, holdRequest.getQueuePosition());
+        assertEquals(now.toString(), holdRequest.getExpirationDate().toString());
     }
 
     @Test
@@ -48,17 +97,17 @@ public class HoldRequestTest {
         holdRequest.setQueuePosition(two);
         holdRequest.setExpirationDate(later);
 
-        Assert.assertNotNull(holdRequest);
-        Assert.assertNotNull(holdRequest.getExpirationDate());
+        assertNotNull(holdRequest);
+        assertNotNull(holdRequest.getExpirationDate());
 
-        Assert.assertEquals("updatedRequestId", holdRequest.getRequestId());
-        Assert.assertEquals("updatedItemId", holdRequest.getItemId());
-        Assert.assertEquals("updatedRequestType", holdRequest.getRequestType());
-        Assert.assertEquals("updatedItemTitle", holdRequest.getItemTitle());
-        Assert.assertEquals("updatedStatusText", holdRequest.getStatusText());
-        Assert.assertEquals("updatedPickupServicePoint", holdRequest.getPickupServicePoint());
-        Assert.assertEquals(two, holdRequest.getQueuePosition());
-        Assert.assertEquals(later.toString(), holdRequest.getExpirationDate().toString());
+        assertEquals("updatedRequestId", holdRequest.getRequestId());
+        assertEquals("updatedItemId", holdRequest.getItemId());
+        assertEquals("updatedRequestType", holdRequest.getRequestType());
+        assertEquals("updatedItemTitle", holdRequest.getItemTitle());
+        assertEquals("updatedStatusText", holdRequest.getStatusText());
+        assertEquals("updatedPickupServicePoint", holdRequest.getPickupServicePoint());
+        assertEquals(two, holdRequest.getQueuePosition());
+        assertEquals(later.toString(), holdRequest.getExpirationDate().toString());
     }
 
     @Test
@@ -68,10 +117,10 @@ public class HoldRequestTest {
 
         final HoldRequest holdRequest1 = new HoldRequest("requestId", "itemId", "requestType", "itemTitle", "statusText", "pickupServicePoint", one, now);
         final HoldRequest holdRequest2 = new HoldRequest("requestId", "itemId", "requestType", "itemTitle", "statusText", "pickupServicePoint", one, now);
-        final HoldRequest holdRequest3 = new HoldRequest("different", "itemId", "requestType", "itemTitle", "statusText", "pickupServicePoint", one, now);
+        final HoldRequest holdRequest3 = new HoldRequest();
 
-        Assert.assertTrue(holdRequest1.equals(holdRequest2));
-        Assert.assertFalse(holdRequest1.equals(holdRequest3));
+        assertTrue(holdRequest1.equals(holdRequest2));
+        assertFalse(holdRequest1.equals(holdRequest3));
     }
 
 }
