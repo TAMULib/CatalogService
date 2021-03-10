@@ -1,9 +1,14 @@
 package edu.tamu.catalog.domain.model;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -12,7 +17,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 public class HoldingsRecordTest {
 
     @Test
-    public void testCreate() {
+    public void testCreateAllArgs() {
         final Map<String, Map<String, String>> catalogItems = new HashMap<>();
         final Map<String, String> catalogItem = new HashMap<>();
         catalogItem.put("key", "value");
@@ -22,28 +27,104 @@ public class HoldingsRecordTest {
             "author", "publisher", "place", "year", "genre", "fallbackLocationCode", "edition", "oclc", "recordId",
             "callNumber", false, catalogItems);
 
-        Assert.assertNotNull(holdingsRecord);
-        Assert.assertNotNull(holdingsRecord.getCatalogItems());
+        assertNotNull(holdingsRecord);
+        assertNotNull(holdingsRecord.getCatalogItems());
 
-        Assert.assertEquals("marcRecordLeader", holdingsRecord.getMarcRecordLeader());
-        Assert.assertEquals("mfhd", holdingsRecord.getMfhd());
-        Assert.assertEquals("issn", holdingsRecord.getIssn());
-        Assert.assertEquals("isbn", holdingsRecord.getIsbn());
-        Assert.assertEquals("title", holdingsRecord.getTitle());
-        Assert.assertEquals("author", holdingsRecord.getAuthor());
-        Assert.assertEquals("publisher", holdingsRecord.getPublisher());
-        Assert.assertEquals("place", holdingsRecord.getPlace());
-        Assert.assertEquals("year", holdingsRecord.getYear());
-        Assert.assertEquals("genre", holdingsRecord.getGenre());
-        Assert.assertEquals("fallbackLocationCode", holdingsRecord.getFallbackLocationCode());
-        Assert.assertEquals("edition", holdingsRecord.getEdition());
-        Assert.assertEquals("oclc", holdingsRecord.getOclc());
-        Assert.assertEquals("recordId", holdingsRecord.getRecordId());
-        Assert.assertEquals("callNumber", holdingsRecord.getCallNumber());
-        Assert.assertEquals(false, holdingsRecord.isLargeVolume());
-        Assert.assertEquals(1, holdingsRecord.getCatalogItems().size());
+        assertEquals("marcRecordLeader", holdingsRecord.getMarcRecordLeader());
+        assertEquals("mfhd", holdingsRecord.getMfhd());
+        assertEquals("issn", holdingsRecord.getIssn());
+        assertEquals("isbn", holdingsRecord.getIsbn());
+        assertEquals("title", holdingsRecord.getTitle());
+        assertEquals("author", holdingsRecord.getAuthor());
+        assertEquals("publisher", holdingsRecord.getPublisher());
+        assertEquals("place", holdingsRecord.getPlace());
+        assertEquals("year", holdingsRecord.getYear());
+        assertEquals("genre", holdingsRecord.getGenre());
+        assertEquals("fallbackLocationCode", holdingsRecord.getFallbackLocationCode());
+        assertEquals("edition", holdingsRecord.getEdition());
+        assertEquals("oclc", holdingsRecord.getOclc());
+        assertEquals("recordId", holdingsRecord.getRecordId());
+        assertEquals("callNumber", holdingsRecord.getCallNumber());
+        assertEquals(false, holdingsRecord.isLargeVolume());
+        assertEquals(1, holdingsRecord.getCatalogItems().size());
 
-        Assert.assertFalse(holdingsRecord.isMultiVolume());
+        assertFalse(holdingsRecord.isMultiVolume());
+    }
+
+    @Test
+    public void testCreateNoArgs() {
+        final HoldingsRecord holdingsRecord = new HoldingsRecord();
+
+        assertNotNull(holdingsRecord);
+
+        assertNull(holdingsRecord.getMarcRecordLeader());
+        assertNull(holdingsRecord.getMfhd());
+        assertNull(holdingsRecord.getIssn());
+        assertNull(holdingsRecord.getIsbn());
+        assertNull(holdingsRecord.getTitle());
+        assertNull(holdingsRecord.getAuthor());
+        assertNull(holdingsRecord.getPublisher());
+        assertNull(holdingsRecord.getPlace());
+        assertNull(holdingsRecord.getYear());
+        assertNull(holdingsRecord.getGenre());
+        assertNull(holdingsRecord.getFallbackLocationCode());
+        assertNull(holdingsRecord.getEdition());
+        assertNull(holdingsRecord.getOclc());
+        assertNull(holdingsRecord.getRecordId());
+        assertNull(holdingsRecord.getCallNumber());
+        assertFalse(holdingsRecord.isLargeVolume());
+        assertNull(holdingsRecord.getCatalogItems());
+    }
+
+    @Test
+    public void testBuilder() {
+        final Map<String, Map<String, String>> catalogItems = new HashMap<>();
+        final Map<String, String> catalogItem = new HashMap<>();
+        catalogItem.put("key", "value");
+        catalogItems.put("item", catalogItem);
+
+        final HoldingsRecord holdingsRecord = new HoldingsRecord.HoldingsRecordBuilder()
+            .marcRecordLeader("marcRecordLeader")
+            .mfhd("mfhd")
+            .issn("issn")
+            .isbn("isbn")
+            .title("title")
+            .author("author")
+            .publisher("publisher")
+            .place("place")
+            .year("year")
+            .genre("genre")
+            .fallbackLocationCode("fallbackLocationCode")
+            .edition("edition")
+            .oclc("oclc")
+            .recordId("recordId")
+            .callNumber("callNumber")
+            .largeVolume(false)
+            .catalogItems(catalogItems)
+            .build();
+
+        assertNotNull(holdingsRecord);
+        assertNotNull(holdingsRecord.getCatalogItems());
+
+        assertEquals("marcRecordLeader", holdingsRecord.getMarcRecordLeader());
+        assertEquals("mfhd", holdingsRecord.getMfhd());
+        assertEquals("issn", holdingsRecord.getIssn());
+        assertEquals("isbn", holdingsRecord.getIsbn());
+        assertEquals("title", holdingsRecord.getTitle());
+        assertEquals("author", holdingsRecord.getAuthor());
+        assertEquals("publisher", holdingsRecord.getPublisher());
+        assertEquals("place", holdingsRecord.getPlace());
+        assertEquals("year", holdingsRecord.getYear());
+        assertEquals("genre", holdingsRecord.getGenre());
+        assertEquals("fallbackLocationCode", holdingsRecord.getFallbackLocationCode());
+        assertEquals("edition", holdingsRecord.getEdition());
+        assertEquals("oclc", holdingsRecord.getOclc());
+        assertEquals("recordId", holdingsRecord.getRecordId());
+        assertEquals("callNumber", holdingsRecord.getCallNumber());
+        assertEquals(false, holdingsRecord.isLargeVolume());
+        assertEquals(1, holdingsRecord.getCatalogItems().size());
+
+        assertFalse(holdingsRecord.isMultiVolume());
     }
 
     @Test
@@ -83,28 +164,28 @@ public class HoldingsRecordTest {
         holdingsRecord.setLargeVolume(true);
         holdingsRecord.setCatalogItems(updatedCatalogItems);
 
-        Assert.assertNotNull(holdingsRecord);
-        Assert.assertNotNull(holdingsRecord.getCatalogItems());
+        assertNotNull(holdingsRecord);
+        assertNotNull(holdingsRecord.getCatalogItems());
 
-        Assert.assertEquals("updatedMarcRecordLeader", holdingsRecord.getMarcRecordLeader());
-        Assert.assertEquals("updatedMfhd", holdingsRecord.getMfhd());
-        Assert.assertEquals("updatedIssn", holdingsRecord.getIssn());
-        Assert.assertEquals("updatedIsbn", holdingsRecord.getIsbn());
-        Assert.assertEquals("updatedTitle", holdingsRecord.getTitle());
-        Assert.assertEquals("updatedAuthor", holdingsRecord.getAuthor());
-        Assert.assertEquals("updatedPublisher", holdingsRecord.getPublisher());
-        Assert.assertEquals("updatedPlace", holdingsRecord.getPlace());
-        Assert.assertEquals("updatedYear", holdingsRecord.getYear());
-        Assert.assertEquals("updatedGenre", holdingsRecord.getGenre());
-        Assert.assertEquals("updatedFallbackLocationCode", holdingsRecord.getFallbackLocationCode());
-        Assert.assertEquals("updatedEdition", holdingsRecord.getEdition());
-        Assert.assertEquals("updatedOclc", holdingsRecord.getOclc());
-        Assert.assertEquals("updatedRecordId", holdingsRecord.getRecordId());
-        Assert.assertEquals("updatedCallNumber", holdingsRecord.getCallNumber());
-        Assert.assertEquals(true, holdingsRecord.isLargeVolume());
-        Assert.assertEquals(2, holdingsRecord.getCatalogItems().size());
+        assertEquals("updatedMarcRecordLeader", holdingsRecord.getMarcRecordLeader());
+        assertEquals("updatedMfhd", holdingsRecord.getMfhd());
+        assertEquals("updatedIssn", holdingsRecord.getIssn());
+        assertEquals("updatedIsbn", holdingsRecord.getIsbn());
+        assertEquals("updatedTitle", holdingsRecord.getTitle());
+        assertEquals("updatedAuthor", holdingsRecord.getAuthor());
+        assertEquals("updatedPublisher", holdingsRecord.getPublisher());
+        assertEquals("updatedPlace", holdingsRecord.getPlace());
+        assertEquals("updatedYear", holdingsRecord.getYear());
+        assertEquals("updatedGenre", holdingsRecord.getGenre());
+        assertEquals("updatedFallbackLocationCode", holdingsRecord.getFallbackLocationCode());
+        assertEquals("updatedEdition", holdingsRecord.getEdition());
+        assertEquals("updatedOclc", holdingsRecord.getOclc());
+        assertEquals("updatedRecordId", holdingsRecord.getRecordId());
+        assertEquals("updatedCallNumber", holdingsRecord.getCallNumber());
+        assertEquals(true, holdingsRecord.isLargeVolume());
+        assertEquals(2, holdingsRecord.getCatalogItems().size());
 
-        Assert.assertTrue(holdingsRecord.isMultiVolume());
+        assertTrue(holdingsRecord.isMultiVolume());
     }
 
     @Test
@@ -122,12 +203,10 @@ public class HoldingsRecordTest {
             "author", "publisher", "place", "year", "genre", "fallbackLocationCode", "edition", "oclc", "recordId",
             "callNumber", false, catalogItems);
 
-        final HoldingsRecord holdingsRecord3 = new HoldingsRecord("different", "mfhd", "issn", "isbn", "title",
-            "author", "publisher", "place", "year", "genre", "fallbackLocationCode", "edition", "oclc", "recordId",
-            "callNumber", false, catalogItems);
+        final HoldingsRecord holdingsRecord3 = new HoldingsRecord();
 
-        Assert.assertTrue(holdingsRecord1.equals(holdingsRecord2));
-        Assert.assertFalse(holdingsRecord1.equals(holdingsRecord3));
+        assertTrue(holdingsRecord1.equals(holdingsRecord2));
+        assertFalse(holdingsRecord1.equals(holdingsRecord3));
     }
 
 }
