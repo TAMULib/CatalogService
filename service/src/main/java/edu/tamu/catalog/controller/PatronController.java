@@ -31,7 +31,7 @@ public class PatronController {
      * @throws Exception
      */
     @GetMapping("/{uin}/fines")
-    public @ResponseBody ResponseEntity<List<FeeFine>> fines(
+    public @ResponseBody ResponseEntity<List<FeeFine>> getFeesFines(
         @DefaultCatalog("folio") CatalogService catalogService,
         @PathVariable(required = true) String uin
     ) throws Exception {
@@ -131,8 +131,10 @@ public class PatronController {
         @DefaultCatalog("folio") CatalogService catalogService,
         @PathVariable(required = true) String uin
     ) throws Exception {
+        Boolean blockStatus = catalogService.getBlockStatus(uin);
+
         return ResponseEntity.status(HttpStatus.OK)
-            .body(catalogService.getBlockStatus(uin));
+            .body(blockStatus);
     }
 
 }
