@@ -18,4 +18,5 @@ public class FeeFine {
     private Date fineDate;
 
     private String itemTitle;
+
 }

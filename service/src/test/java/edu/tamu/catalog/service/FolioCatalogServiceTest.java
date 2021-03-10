@@ -91,7 +91,8 @@ public class FolioCatalogServiceTest extends AbstractTestRestController {
     private void performOkapiRequest(String path, HttpMethod method, HttpStatus status, JsonNode requestBody)
             throws Exception {
         expectOkapiJsonResponse(path, method, once(), respondJsonAuto(requestBody, status));
-        ResponseEntity<JsonNode> entity = folioCatalogService.okapiRequest(getOkapiUrl(path), method, requestBody, JsonNode.class);
+        ResponseEntity<JsonNode> entity = folioCatalogService.okapiRequest(getOkapiUrl(path), method, requestBody,
+            JsonNode.class);
 
         assertEquals(status, entity.getStatusCode());
         restServer.verify();
