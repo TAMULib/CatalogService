@@ -639,7 +639,7 @@ public class FolioCatalogService implements CatalogService {
         }
         JsonNode author = loan.at("/item/author");
         if (author.isValueNode()) {
-            loanItemBuilder.instanceId(author.asText());
+            loanItemBuilder.author(author.asText());
         }
 
         return loanItemBuilder.build();
