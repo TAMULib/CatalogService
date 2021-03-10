@@ -47,4 +47,15 @@ public class FeeFineTest {
         Assert.assertEquals("updatedTitle", feeFine.getItemTitle());
     }
 
+    @Test
+    public void testEquals() {
+        final Date now = new Date();
+        final FeeFine feeFine1 = new FeeFine(1.0, "fineId", "fineType", now, "itemTitle");
+        final FeeFine feeFine2 = new FeeFine(1.0, "fineId", "fineType", now, "itemTitle");
+        final FeeFine feeFine3 = new FeeFine(2.0, "fineId", "fineType", now, "itemTitle");
+
+        Assert.assertTrue(feeFine1.equals(feeFine2));
+        Assert.assertFalse(feeFine1.equals(feeFine3));
+    }
+
 }

@@ -63,4 +63,17 @@ public class LoanItemTest {
         Assert.assertEquals("updatedAuthor", loanItem.getAuthor());
     }
 
+    @Test
+    public void testEquals() {
+        final Date now = new Date();
+        final Date due = Date.from(now.toInstant().plusSeconds(100));
+
+        final LoanItem loanItem1 = new LoanItem("loanId", "itemId", "instanceId", now, due, false, "title", "author");
+        final LoanItem loanItem2 = new LoanItem("loanId", "itemId", "instanceId", now, due, false, "title", "author");
+        final LoanItem loanItem3 = new LoanItem("different", "itemId", "instanceId", now, due, false, "title", "author");
+
+        Assert.assertTrue(loanItem1.equals(loanItem2));
+        Assert.assertFalse(loanItem1.equals(loanItem3));
+    }
+
 }

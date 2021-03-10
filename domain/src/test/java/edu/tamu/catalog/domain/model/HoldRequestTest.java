@@ -61,4 +61,17 @@ public class HoldRequestTest {
         Assert.assertEquals(later.toString(), holdRequest.getExpirationDate().toString());
     }
 
+    @Test
+    public void testEquals() {
+        final Date now = new Date();
+        final Integer one = 1;
+
+        final HoldRequest holdRequest1 = new HoldRequest("requestId", "itemId", "requestType", "itemTitle", "statusText", "pickupServicePoint", one, now);
+        final HoldRequest holdRequest2 = new HoldRequest("requestId", "itemId", "requestType", "itemTitle", "statusText", "pickupServicePoint", one, now);
+        final HoldRequest holdRequest3 = new HoldRequest("different", "itemId", "requestType", "itemTitle", "statusText", "pickupServicePoint", one, now);
+
+        Assert.assertTrue(holdRequest1.equals(holdRequest2));
+        Assert.assertFalse(holdRequest1.equals(holdRequest3));
+    }
+
 }

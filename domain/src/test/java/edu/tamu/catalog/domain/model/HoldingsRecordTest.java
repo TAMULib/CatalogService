@@ -103,4 +103,27 @@ public class HoldingsRecordTest {
         Assert.assertEquals(2, holdingsRecord.getCatalogItems().size());
     }
 
+    @Test
+    public void testEquals() {
+        final Map<String, Map<String, String>> catalogItems = new HashMap<>();
+        final Map<String, String> catalogItem = new HashMap<>();
+        catalogItem.put("key", "value");
+        catalogItems.put("item", catalogItem);
+
+        final HoldingsRecord holdingsRecord1 = new HoldingsRecord("marcRecordLeader", "mfhd", "issn", "isbn", "title",
+            "author", "publisher", "place", "year", "genre", "fallbackLocationCode", "edition", "oclc", "recordId",
+            "callNumber", false, catalogItems);
+
+        final HoldingsRecord holdingsRecord2 = new HoldingsRecord("marcRecordLeader", "mfhd", "issn", "isbn", "title",
+            "author", "publisher", "place", "year", "genre", "fallbackLocationCode", "edition", "oclc", "recordId",
+            "callNumber", false, catalogItems);
+
+        final HoldingsRecord holdingsRecord3 = new HoldingsRecord("different", "mfhd", "issn", "isbn", "title",
+            "author", "publisher", "place", "year", "genre", "fallbackLocationCode", "edition", "oclc", "recordId",
+            "callNumber", false, catalogItems);
+
+        Assert.assertTrue(holdingsRecord1.equals(holdingsRecord2));
+        Assert.assertFalse(holdingsRecord1.equals(holdingsRecord3));
+    }
+
 }
