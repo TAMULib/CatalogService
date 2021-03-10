@@ -8,21 +8,37 @@ import lombok.Data;
 @AllArgsConstructor
 @Data
 public class HoldingsRecord {
+
     private String marcRecordLeader;
+
     private String mfhd;
+
     private String issn;
+
     private String isbn;
+
     private String title;
+
     private String author;
+
     private String publisher;
+
     private String place;
+
     private String year;
+
     private String genre;
+
     private String fallbackLocationCode;
+
     private String edition;
+
     private String oclc;
+
     private String recordId;
+
     private String callNumber;
+
     private boolean largeVolume;
 
     private Map<String, Map<String, String>> catalogItems;
@@ -36,4 +52,5 @@ public class HoldingsRecord {
     public boolean isMultiVolume() {
         return (this.getCatalogItems().size() > 1);
     }
+
 }
