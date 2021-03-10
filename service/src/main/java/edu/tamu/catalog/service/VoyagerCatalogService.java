@@ -50,8 +50,7 @@ import edu.tamu.catalog.utility.Marc21Xml;
 import edu.tamu.weaver.utility.HttpUtility;
 
 /**
- * A CatalogService implementation for interfacing with the Voyager REST VXWS
- * api
+ * A CatalogService implementation for interfacing with the Voyager REST VXWS api
  *
  * @author Jason Savell <jsavell@library.tamu.edu>
  * @author James Creel <jcreel@library.tamu.edu>
