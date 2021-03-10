@@ -1,5 +1,9 @@
 package edu.tamu.catalog.service;
 
+import static edu.tamu.catalog.utility.JsonNodeUtility.getBoolean;
+import static edu.tamu.catalog.utility.JsonNodeUtility.getDouble;
+import static edu.tamu.catalog.utility.JsonNodeUtility.getInt;
+import static edu.tamu.catalog.utility.JsonNodeUtility.getText;
 import static edu.tamu.catalog.utility.Marc21Xml.RECORD_AUTHOR;
 import static edu.tamu.catalog.utility.Marc21Xml.RECORD_CALL_NUMBER;
 import static edu.tamu.catalog.utility.Marc21Xml.RECORD_EDITION;
@@ -603,79 +607,6 @@ public class FolioCatalogService implements CatalogService {
             .title(getText(loan, "/item/title"))
             .author(getText(loan, "/item/author"))
             .build();
-    }
-
-    /**
-     * Get string value from JsonNode. Return null if value not found.
-     *
-     * @param input JsonNode
-     * @param jsonPtrExpr String
-     * @return string value
-     */
-    private String getText(JsonNode input, String jsonPtrExpr) {
-        JsonNode property = input.at(jsonPtrExpr);
-        return property.isValueNode() ? property.asText() : null;
-    }
-
-    /**
-     * Get integer value from JsonNode. Return null if value not found.
-     *
-     * @param input JsonNode
-     * @param jsonPtrExpr String
-     * @return integer value
-     */
-    private Integer getInt(JsonNode input, String jsonPtrExpr) {
-        JsonNode property = input.at(jsonPtrExpr);
-        return property.isValueNode() ? property.asInt() : null;
-    }
-
-    /**
-     * Get double value from JsonNode. Return default value if not found.
-     *
-     * @param input JsonNode
-     * @param jsonPtrExpr String
-     * @param defaultValue double
-     * @return double value
-     */
-    private Double getDouble(JsonNode input, String jsonPtrExpr, double defaultValue) {
-        Double value = getDouble(input, jsonPtrExpr);
-        return Objects.nonNull(value) ? value : defaultValue;
-    }
-
-    /**
-     * Get double value from JsonNode. Return null if value not found.
-     *
-     * @param input JsonNode
-     * @param jsonPtrExpr String
-     * @return integer value
-     */
-    private Double getDouble(JsonNode input, String jsonPtrExpr) {
-        JsonNode property = input.at(jsonPtrExpr);
-        return property.isValueNode() ? property.asDouble() : null;
-    }
-
-    /**
-     * Get boolean value from JsonNode. Return default value if not found.
-     * 
-     * @param input JsonNode
-     * @param jsonPtrExpr String
-     * @return boolean value
-     */
-    private Boolean getBoolean(JsonNode input, String jsonPtrExpr, boolean defaultValue) {
-        Boolean value = getBoolean(input, jsonPtrExpr);
-        return Objects.nonNull(value) ? value : defaultValue;
-    }
-
-    /**
-     * Get boolean value from JsonNode. Return null if value not found.
-     * 
-     * @param input JsonNode
-     * @param jsonPtrExpr String
-     * @return boolean value
-     */
-    private Boolean getBoolean(JsonNode input, String jsonPtrExpr) {
-        JsonNode property = input.at(jsonPtrExpr);
-        return property.isValueNode() ? property.booleanValue() : null;
     }
 
     /**
