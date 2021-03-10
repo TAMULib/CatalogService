@@ -11,9 +11,43 @@ import org.springframework.test.context.junit4.SpringRunner;
 public class FeeFineTest {
 
     @Test
-    public void testCreate() {
+    public void testCreateAllArgs() {
         final Date now = new Date();
         final FeeFine feeFine = new FeeFine(1.0, "fineId", "fineType", now, "itemTitle");
+
+        Assert.assertNotNull(feeFine);
+        Assert.assertNotNull(feeFine.getFineDate());
+
+        Assert.assertEquals(1.0, feeFine.getAmount(), 0);
+        Assert.assertEquals("fineId", feeFine.getFineId());
+        Assert.assertEquals("fineType", feeFine.getFineType());
+        Assert.assertEquals(now.toString(), feeFine.getFineDate().toString());
+        Assert.assertEquals("itemTitle", feeFine.getItemTitle());
+    }
+
+    @Test
+    public void testCreateNoArgs() {
+        final FeeFine feeFine = new FeeFine();
+
+        Assert.assertNotNull(feeFine);
+        Assert.assertNull(feeFine.getAmount());
+        Assert.assertNull(feeFine.getFineId());
+        Assert.assertNull(feeFine.getFineDate());
+        Assert.assertNull(feeFine.getItemTitle());
+    }
+
+    @Test
+    public void testBuilder() {
+        final Date now = new Date();
+        FeeFine.FeeFineBuilder feeFineBuilder = FeeFine.builder();
+
+        feeFineBuilder.amount(1.0);
+        feeFineBuilder.fineId("fineId");
+        feeFineBuilder.fineType("fineType");
+        feeFineBuilder.fineDate(now);
+        feeFineBuilder.itemTitle("itemTitle");
+
+        final FeeFine feeFine = feeFineBuilder.build();
 
         Assert.assertNotNull(feeFine);
         Assert.assertNotNull(feeFine.getFineDate());
