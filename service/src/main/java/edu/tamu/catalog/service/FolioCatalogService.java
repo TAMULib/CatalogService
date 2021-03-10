@@ -142,31 +142,13 @@ public class FolioCatalogService implements CatalogService {
 
             while (iter.hasNext()) {
                 JsonNode charge = iter.next();
-
-                FeeFine.FeeFineBuilder feeFine = FeeFine.builder();
-
-                JsonNode chargeAmount = charge.at("/chargeAmount/amount");
-                feeFine.amount(chargeAmount.isValueNode() ? chargeAmount.asDouble() : 0);
-
-                JsonNode feeFineId = charge.at("/feeFineId");
-                if (feeFineId.isValueNode()) {
-                    feeFine.fineId(feeFineId.asText());
-                }
-                JsonNode reason = charge.at("/reason");
-                if (reason.isValueNode()) {
-                    feeFine.fineType(reason.asText());
-                }
-                JsonNode accrualDate = charge.at("/accrualDate");
-                if (accrualDate.isValueNode()) {
-                    feeFine.fineDate(FolioDatetime.parse(accrualDate.asText()));
-                }
-
-                JsonNode itemTitle = charge.at("/item/title");
-                if (itemTitle.isValueNode()) {
-                    feeFine.itemTitle(itemTitle.asText());
-                }
-
-                list.add(feeFine.build());
+                list.add(FeeFine.builder()
+                    .fineId(getText(charge, "/feeFineId"))
+                    .fineType(getText(charge, "/reason"))
+                    .fineDate(getDate(charge, "/accrualDate"))
+                    .itemTitle(getText(charge, "/item/title"))
+                    .amount(getDouble(charge, "/chargeAmount/amount", 0))
+                    .build());
             }
         }
 
@@ -222,91 +204,25 @@ public class FolioCatalogService implements CatalogService {
 
             while (iter.hasNext()) {
                 JsonNode hold = iter.next();
-
-                HoldRequest.HoldRequestBuilder holdRequestBuilder = HoldRequest.builder();
-
-                JsonNode itemId = hold.at("/item/itemId");
-                if (itemId.isValueNode()) {
-                    holdRequestBuilder.itemId(itemId.asText());
-                }
-                JsonNode itemTitle = hold.at("/item/title");
-                if (itemTitle.isValueNode()) {
-                    holdRequestBuilder.itemTitle(itemTitle.asText());
-                }
-                JsonNode status = hold.at("/status");
-                if (status.isValueNode()) {
-                    holdRequestBuilder.statusText(status.asText());
-                }
-                JsonNode queuePosition = hold.at("/queuePosition");
-                if (queuePosition.isValueNode()) {
-                    holdRequestBuilder.queuePosition(queuePosition.asInt());
-                }
-
-                JsonNode expirationDate = hold.at("/expirationDate");
-                if (expirationDate.isValueNode()) {
-                    holdRequestBuilder.expirationDate(FolioDatetime.parse(expirationDate.asText()));
-                }
-
-                JsonNode requestId = hold.at("/requestId");
-                if (requestId.isValueNode()) {
-                    holdRequestBuilder.requestId(requestId.asText());
-
-                    String requestUrl = String.format("%s/circulation/requests/%s", properties.getBaseOkapiUrl(), requestId.asText());
-                    logger.debug("Asking for hold request from: {}", requestUrl);
-                    String message = String.format("hold request with id \"%s\"", requestId);
-                    JsonNode response = okapiRequestJsonNode(requestUrl, HttpMethod.GET, message);
-                    if (response.isContainerNode()) {
-                        JsonNode requestType = response.at("/requestType");
-                        if (requestType.isValueNode()) {
-                            holdRequestBuilder.requestType(requestType.asText());
-                        }
-                    }
-
-                }
-
-                // Note: the "pickupLocationId" holds the "servicePointId" UUID.
-                JsonNode servicePointId = hold.at("/pickupLocationId");
-                if (servicePointId.isValueNode()) {
-                    String sercicePointUrl = String.format("%s/service-points/%s", properties.getBaseOkapiUrl(), servicePointId.asText());
-                    logger.debug("Asking for service-point from: {}", sercicePointUrl);
-                    String message = String.format("service point with id \"%s\"", servicePointId);
-                    JsonNode response = okapiRequestJsonNode(sercicePointUrl, HttpMethod.GET, message);
-                    if (response.isContainerNode()) {
-                        JsonNode discoveryDisplayName = response.at("/discoveryDisplayName");
-                        if (discoveryDisplayName.isValueNode()) {
-                            holdRequestBuilder.pickupServicePoint(discoveryDisplayName.asText());
-                        }
-                    }
-                }
-
-                list.add(holdRequestBuilder.build());
+                String requestId = getText(hold, "/requestId");
+                String servicePointId = getText(hold, "/pickupLocationId");
+                list.add(HoldRequest.builder()
+                    .itemId(getText(hold, "/item/itemId"))
+                    .itemTitle(getText(hold, "/item/title"))
+                    .statusText(getText(hold, "/status"))
+                    .queuePosition(getInt(hold, "/queuePosition"))
+                    .expirationDate(getDate(hold, "/expirationDate"))
+                    .requestId(requestId)
+                    .requestType(getRequestType(requestId))
+                    .pickupServicePoint(getServicePointDisplayName(servicePointId))
+                    .build());
             }
         }
 
         return list;
     }
 
-    /**
-     * Use OKAPI to retrieve the JsonNode, throwing a customized exception on client or server errors.
-     *
-     * @param <T> generic class for response body type.
-     * @param url String the URL to retrieve.
-     *
-     * @return response entity with response type as body.
-     */
-    JsonNode okapiRequestJsonNode(String url, HttpMethod method, String message) {
-        try {
-            return okapiRequest(url, method, JsonNode.class).getBody();
-        }
-        catch (HttpClientErrorException e) {
-            throw new HttpClientErrorException(e.getStatusCode(),
-                String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
-        }
-        catch (HttpServerErrorException e) {
-            throw new HttpServerErrorException(e.getStatusCode(),
-                String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
-        }
-    }
+    
 
     @Override
     public void cancelHoldRequest(String uin, String requestId) throws Exception {
@@ -340,6 +256,28 @@ public class FolioCatalogService implements CatalogService {
         //for now, no FOLIO user will be blocked
         //leave the exception throw so the interface is future stable
         return false;
+    }
+
+    /**
+     * Use OKAPI to retrieve the JsonNode, throwing a customized exception on client or server errors.
+     *
+     * @param <T> generic class for response body type.
+     * @param url String the URL to retrieve.
+     *
+     * @return response entity with response type as body.
+     */
+    JsonNode okapiRequestJsonNode(String url, HttpMethod method, String message) {
+        try {
+            return okapiRequest(url, method, JsonNode.class).getBody();
+        }
+        catch (HttpClientErrorException e) {
+            throw new HttpClientErrorException(e.getStatusCode(),
+                String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
+        }
+        catch (HttpServerErrorException e) {
+            throw new HttpServerErrorException(e.getStatusCode(),
+                String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
+        }
     }
 
     /**
@@ -379,12 +317,60 @@ public class FolioCatalogService implements CatalogService {
     }
 
     /**
+     * Get request type.
+     *
+     * @param requestId String
+     * @return request type
+     */
+    private String getRequestType(String requestId) {
+        if (Objects.isNull(requestId)) {
+            return null;
+        }
+        String requestUrl = String.format("%s/circulation/requests/%s", properties.getBaseOkapiUrl(), requestId);
+        logger.debug("Asking for hold request from: {}", requestUrl);
+        String message = String.format("hold request with id \"%s\"", requestId);
+        JsonNode response = okapiRequestJsonNode(requestUrl, HttpMethod.GET, message);
+        if (response.isContainerNode()) {
+            JsonNode requestType = response.at("/requestType");
+            if (requestType.isValueNode()) {
+                return requestType.asText();
+            }
+        }
+
+        return  null;
+    }
+
+    /**
+     * Get service point display name.
+     *
+     * @param servicePointId String
+     * @return service point display name
+     */
+    private String getServicePointDisplayName(String servicePointId) {
+        if (Objects.isNull(servicePointId)) {
+            return null;
+        }
+        String sercicePointUrl = String.format("%s/service-points/%s", properties.getBaseOkapiUrl(), servicePointId);
+        logger.debug("Asking for service-point from: {}", sercicePointUrl);
+        String message = String.format("service point with id \"%s\"", servicePointId);
+        JsonNode response = okapiRequestJsonNode(sercicePointUrl, HttpMethod.GET, message);
+        if (response.isContainerNode()) {
+            JsonNode discoveryDisplayName = response.at("/discoveryDisplayName");
+            if (discoveryDisplayName.isValueNode()) {
+                return discoveryDisplayName.asText();
+            }
+        }
+
+        return  null;
+    }
+
+    /**
      * Process the Holdings.
      *
-     * @param instanceId
-     * @param holdingId
+     * @param instanceId String
+     * @param holdingId String
      *
-     * @return
+     * @return list of holdings records
      */
     private List<HoldingsRecord> requestHoldings(String instanceId, String holdingId) {
         List<HoldingsRecord> holdings = new ArrayList<>();
@@ -462,10 +448,10 @@ public class FolioCatalogService implements CatalogService {
     /**
      * Process the metadata.
      *
-     * @param instanceId
-     * @param metadataNode
+     * @param instanceId String
+     * @param metadataNode Node
      *
-     * @return
+     * @return list of holdings records
      */
     private List<HoldingsRecord> processMetadata(String instanceId, Node metadataNode) {
         List<HoldingsRecord> holdings = new ArrayList<HoldingsRecord>();
@@ -486,10 +472,10 @@ public class FolioCatalogService implements CatalogService {
     /**
      * Process the Marc Record.
      *
-     * @param instanceId
-     * @param marcRecord
+     * @param instanceId String
+     * @param marcRecord Node
      *
-     * @return
+     * @return holdings record
      */
     private HoldingsRecord processMarcRecord(String instanceId, Node marcRecord) {
         Map<String, String> recordValues = new HashMap<>();
@@ -569,10 +555,10 @@ public class FolioCatalogService implements CatalogService {
      * Attempt to (case-insensitively) match the tag name (nodeName) against the
      * desired match with the marc prefix.
      *
-     * @param nodeName
-     * @param matchName
+     * @param nodeName String
+     * @param matchName String
      *
-     * @return
+     * @return whether node name matches
      */
     private boolean nodeNameMatches(String nodeName, String matchName) {
         return nodeName.equalsIgnoreCase(NODE_PREFIX + matchName);
@@ -581,10 +567,10 @@ public class FolioCatalogService implements CatalogService {
     /**
      * Build the core item, based on the current information we can get from folio.
      *
-     * @param instanceId
-     * @param barcode
-     * @param nodes
-     * @param catalogItems
+     * @param instanceId String
+     * @param barcode String
+     * @param nodes NodeList
+     * @param catalogItems Map<String, Map<String, String>>
      */
     private void buildCoreItem(String instanceId, String barcode, NodeList nodes, Map<String, Map<String, String>> catalogItems) {
         Map<String, String> itemData = new HashMap<String, String>();
@@ -604,45 +590,105 @@ public class FolioCatalogService implements CatalogService {
     /**
      * Build the loan item, based on the current information we can get from folio.
      *
-     * @param loanJson
+     * @param loanJson JsonNode
      */
     private LoanItem buildLoanItem(JsonNode loan) throws ParseException {
-        LoanItem.LoanItemBuilder loanItemBuilder = LoanItem.builder();
+        return LoanItem.builder()
+            .loanId(getText(loan, "/id"))
+            .loanDate(getDate(loan, "/loanDate"))
+            .loanDueDate(getDate(loan, "/dueDate"))
+            .overdue(getBoolean(loan, "/overdue", false))
+            .itemId(getText(loan, "/item/itemId"))
+            .instanceId(getText(loan, "/item/instanceId"))
+            .title(getText(loan, "/item/title"))
+            .author(getText(loan, "/item/author"))
+            .build();
+    }
 
-        JsonNode loanDate = loan.at("/loanDate");
-        if (loanDate.isValueNode()) {
-            loanItemBuilder.loanDate(FolioDatetime.parse(loanDate.asText()));
-        }
-        JsonNode dueDate = loan.at("/dueDate");
-        if (dueDate.isValueNode()) {
-            loanItemBuilder.loanDueDate(FolioDatetime.parse(dueDate.asText()));
-        }
-        JsonNode overdue = loan.at("/overdue");
-        loanItemBuilder.overdue(overdue.isValueNode() ? overdue.booleanValue() : false);
+    /**
+     * Get string value from JsonNode. Return null if value not found.
+     *
+     * @param input JsonNode
+     * @param jsonPtrExpr String
+     * @return string value
+     */
+    private String getText(JsonNode input, String jsonPtrExpr) {
+        JsonNode property = input.at(jsonPtrExpr);
+        return property.isValueNode() ? property.asText() : null;
+    }
 
-        JsonNode id = loan.at("/id");
-        if (id.isValueNode()) {
-            loanItemBuilder.loanId(id.asText());
-        }
+    /**
+     * Get integer value from JsonNode. Return null if value not found.
+     *
+     * @param input JsonNode
+     * @param jsonPtrExpr String
+     * @return integer value
+     */
+    private Integer getInt(JsonNode input, String jsonPtrExpr) {
+        JsonNode property = input.at(jsonPtrExpr);
+        return property.isValueNode() ? property.asInt() : null;
+    }
 
-        JsonNode itemId = loan.at("/item/itemId");
-        if (itemId.isValueNode()) {
-            loanItemBuilder.itemId(itemId.asText());
-        }
-        JsonNode instanceId = loan.at("/item/instanceId");
-        if (instanceId.isValueNode()) {
-            loanItemBuilder.instanceId(instanceId.asText());
-        }
-        JsonNode title = loan.at("/item/title");
-        if (title.isValueNode()) {
-            loanItemBuilder.title(title.asText());
-        }
-        JsonNode author = loan.at("/item/author");
-        if (author.isValueNode()) {
-            loanItemBuilder.author(author.asText());
-        }
+    /**
+     * Get double value from JsonNode. Return default value if not found.
+     *
+     * @param input JsonNode
+     * @param jsonPtrExpr String
+     * @param defaultValue double
+     * @return double value
+     */
+    private Double getDouble(JsonNode input, String jsonPtrExpr, double defaultValue) {
+        Double value = getDouble(input, jsonPtrExpr);
+        return Objects.nonNull(value) ? value : defaultValue;
+    }
 
-        return loanItemBuilder.build();
+    /**
+     * Get double value from JsonNode. Return null if value not found.
+     *
+     * @param input JsonNode
+     * @param jsonPtrExpr String
+     * @return integer value
+     */
+    private Double getDouble(JsonNode input, String jsonPtrExpr) {
+        JsonNode property = input.at(jsonPtrExpr);
+        return property.isValueNode() ? property.asDouble() : null;
+    }
+
+    /**
+     * Get boolean value from JsonNode. Return default value if not found.
+     * 
+     * @param input JsonNode
+     * @param jsonPtrExpr String
+     * @return boolean value
+     */
+    private Boolean getBoolean(JsonNode input, String jsonPtrExpr, boolean defaultValue) {
+        Boolean value = getBoolean(input, jsonPtrExpr);
+        return Objects.nonNull(value) ? value : defaultValue;
+    }
+
+    /**
+     * Get boolean value from JsonNode. Return null if value not found.
+     * 
+     * @param input JsonNode
+     * @param jsonPtrExpr String
+     * @return boolean value
+     */
+    private Boolean getBoolean(JsonNode input, String jsonPtrExpr) {
+        JsonNode property = input.at(jsonPtrExpr);
+        return property.isValueNode() ? property.booleanValue() : null;
+    }
+
+    /**
+     * Get parsed data time from JsonNode at path expression. Return null if value not found.
+     * 
+     * @param input JsonNode
+     * @param jsonPtrExpr String
+     * @return date time value
+     * @throws ParseException
+     */
+    private Date getDate(JsonNode input, String jsonPtrExpr) throws ParseException {
+        JsonNode property = input.at(jsonPtrExpr);
+        return property.isValueNode() ? FolioDatetime.parse(property.asText()) : null;
     }
 
     /**
