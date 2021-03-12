@@ -1,0 +1,14 @@
+{
+  "name": "folio",
+  "type": "folio",
+  "baseOkapiUrl": "http://localhost:9130/",
+  "baseEdgeUrl": "http://localhost:8080/",
+  "tenant": "diku",
+  "credentials": {
+    "username": "diku_admin",
+    "password": "admin"
+  },
+  "edgeApiKey": "mock_api_key",
+  "repositoryBaseUrl": "localhost",
+  "cancelHoldReasonId": "75187e8d-e25a-47a7-89ad-23ba612338de"
+}

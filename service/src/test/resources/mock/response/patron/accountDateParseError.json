@@ -1,0 +1,94 @@
+{
+  "totalCharges": {
+    "amount": 2,
+    "isoCurrencyCode": "USD"
+  },
+  "totalChargesCount": 2,
+  "totalLoans": 3,
+  "totalHolds": 1,
+  "charges": [
+    {
+      "item": {
+        "instanceId": "bd173687-8355-3018-b2bc-eb3bfd14c869",
+        "itemId": "0b82a7d0-a681-39d9-8b11-5b09726722d9",
+        "title": "Guardians of the galaxy / Marvel Studios ; co-producers, David J. Grant, Jonathan Schwartz ; executive producers, Nik Korda, Stan Lee, Victoria Alonso, Jeremy Latcham, Alan Fine, Louis D'Esposito ; produced by Kevin Feige ; written by James Gunn and Nicole Perlman ; directed by James Gunn.",
+        "author": "Grant, David J.,; Schwartz, Jonathan,; Korda, Nik,; Lee, Stan, 1922-2018; Alonso, Victoria, 1965-; Latcham, Jeremy,; FIne, Alan,; D'Esposito, Louis,; Feige, Kevin,; Perlman, Nicole,; Gunn, James, 1966-; Pratt, Chris, 1979-; Saldana, Zoë, 1978-; Bautista, David, 1969-; Diesel, Vin,; Cooper, Bradley,; Pace, Lee, 1979-; Rooker, Michael, 1955-; Gillan, Karen, 1987-; Hounsou, Djimon, 1964-; Reilly, John C., 1965-; Close, Glenn, 1947-; Toro, Benicio del, 1967-; Bates, Tyler,; Byrne, Alexandra,; Raskin, Fred,; Wood, Craig,; Winborne, Hughes,; Wood, Charles,; Davis, Ben, 1962-; Marvel Studios,; Buena Vista Home Entertainment (Firm)"
+      },
+      "chargeAmount": {
+        "amount": 1,
+        "isoCurrencyCode": "USD"
+      },
+      "accrualDate": "2019-05-01T14:08:46.000+0000",
+      "state": "Outstanding",
+      "reason": "Overdue (migrated-do not use)"
+    },
+    {
+      "item": {
+        "instanceId": "d42f4d83-a5ab-38f4-b396-1a43a471b86f",
+        "itemId": "13c4044e-9ecc-3c90-93df-4a58d6e0f597",
+        "title": "Bill & Ted's excellent adventure / an Orion Pictures release ; Nelson Entertainment presents an Interscope Communications production ; in association with Soisson/Murphey Productions ;  written by Chris Matheson & Ed Solomon ; produced by Scott Kroopf, Michael S. Murphey, Joel Soisson ; directed by Stephen Herek.",
+        "author": "Reeves, Keanu; Winter, Alex, 1965-; Carlin, George; Matheson, Chris; Solomon, Ed; Kroopf, Scott; Murphey, Michael S; Soisson, Joel; Herek, Stephen; MGM Home Entertainment Inc"
+      },
+      "chargeAmount": {
+        "amount": 1,
+        "isoCurrencyCode": "USD"
+      },
+      "accrualDate": "An Invalid Date",
+      "state": "Outstanding",
+      "reason": "Overdue (migrated-do not use)"
+    }
+  ],
+  "holds": [
+    {
+      "requestId": "8bbac557-d66f-4571-bbbf-47a107cc1589",
+      "item": {
+        "instanceId": "255f82f3-5b1b-4239-93e4-ec6acf03ad9d",
+        "itemId": "26670295-716a-4f84-8f65-2ef31707c017",
+        "title": "I Want to Hold Your Hand",
+        "author": "John Lennon; Paul McCartney"
+      },
+      "requestDate": "2018-06-02T08:16:30Z",
+      "expirationDate": "Bad Date",
+      "pickupLocationId": "ebab9ccc-4ece-4f35-bc82-01f3325abed8",
+      "status": "Open - Not yet filled"
+    }
+  ],
+  "loans": [
+      {
+      "id": "71932c99-61f2-4a6e-b2bd-6aa2dc9f5313",
+      "item": {
+        "instanceId": "69dd6864-4d52-387c-b5b2-8db1ce8f5013",
+        "itemId": "04dbd368-5952-3779-9bcd-563cd2c53746",
+        "title": "Rising strong / Brené Brown.",
+        "author": "Brown, Brené,"
+      },
+      "loanDate": "2018-05-10T22:00:40.000+0000",
+      "dueDate": "2021-10-09T02:00:00.000+0000",
+      "overdue": false
+    },
+    {
+      "id": "d135ea73-f80e-45b6-9046-9414334d64ff",
+      "item": {
+        "instanceId": "829fecd3-67c3-3ca2-b9d4-281227690e0f",
+        "itemId": "f5a63a6f-4b1d-3a75-8fba-668efffae4ad",
+        "title": "Spam nation : the inside story of organized cybercrime--from global epidemic to your front door / Brian Krebs.",
+        "author": "Krebs, Brian,"
+      },
+      "loanDate": "2017-06-01T17:03:37.000+0000",
+      "dueDate": "2021-10-08T23:00:00.000+0000",
+      "overdue": false
+    },
+    {
+      "id": "9b9b592a-1b4c-43b4-a91f-901d4ec9d3d6",
+      "item": {
+        "instanceId": "2422160d-23c4-356b-ad1c-44d90fc1320b",
+        "itemId": "40053ccb-fd0c-304b-9547-b2fc06f34d3e",
+        "title": "An ontology of consciousness / by Ralph Ellis.",
+        "author": "Ellis, Ralph D"
+      },
+      "loanDate": "Bad Date",
+      "dueDate": "2021-10-09T02:00:00.000+0000",
+      "overdue": false
+    }
+  ]
+}
