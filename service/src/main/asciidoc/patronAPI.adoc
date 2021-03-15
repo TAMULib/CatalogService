@@ -1,15 +1,86 @@
 == Patron API
 A collection of endpoints for accessing Patron data.
 
-=== Get Patron Fines
 
-A `GET` to the `/patron/{uin}/fines` endpoint which will return a list of fines associated with the given patron.
+=== Get Patron Block
+
+A `GET` to the `/patron/{uin}/block` endpoint which will return a boolean representing whether or not the requested Patron is blocked.
 
 ==== Sample Request
-include::../../../target/generated-snippets/patron/fines/http-request.adoc[]
+include::../../../target/generated-docs/patron/block/http-request.adoc[]
 
 ==== Sample Response
-include::../../../target/generated-snippets/patron/fines/http-response.adoc[]
+include::../../../target/generated-docs/patron/block/http-response.adoc[]
 
 ==== Example Curl Request
-include::../../../target/generated-snippets/patron/fines/curl-request.adoc[]
+include::../../../target/generated-docs/patron/block/curl-request.adoc[]
+
+
+=== Get Patron Requests
+
+A `GET` to the `/patron/{uin}/holds` endpoint which will return a list of Requests associated with the given Patron.
+
+==== Sample Request
+include::../../../target/generated-docs/patron/holds/http-request.adoc[]
+
+==== Sample Response
+include::../../../target/generated-docs/patron/holds/http-response.adoc[]
+
+==== Example Curl Request
+include::../../../target/generated-docs/patron/holds/curl-request.adoc[]
+
+
+=== Get Patron Fines
+
+A `GET` to the `/patron/{uin}/fines` endpoint which will return a list of Fines associated with the given Patron.
+
+==== Sample Request
+include::../../../target/generated-docs/patron/fines/http-request.adoc[]
+
+==== Sample Response
+include::../../../target/generated-docs/patron/fines/http-response.adoc[]
+
+==== Example Curl Request
+include::../../../target/generated-docs/patron/fines/curl-request.adoc[]
+
+
+=== Get Patron Loans
+
+A `GET` to the `/patron/{uin}/loans` endpoint which will return a list of Loans associated with the given Patron.
+
+==== Sample Request
+include::../../../target/generated-docs/patron/loans/http-request.adoc[]
+
+==== Sample Response
+include::../../../target/generated-docs/patron/loans/http-response.adoc[]
+
+==== Example Curl Request
+include::../../../target/generated-docs/patron/loans/curl-request.adoc[]
+
+
+=== Cancel Patron Request
+
+A `POST` to the `/{uin}/holds/{requestId}/cancel` endpoint to cancel a Request associated with the given Patron.
+
+==== Sample Request
+include::../../../target/generated-docs/patron/holds/cancel/http-request.adoc[]
+
+==== Sample Response
+include::../../../target/generated-docs/patron/holds/cancel/http-response.adoc[]
+
+==== Example Curl Request
+include::../../../target/generated-docs/patron/holds/cancel/curl-request.adoc[]
+
+
+=== Renew Patron Item
+
+A `POST` to the `/{uin}/renew/{itemId}` endpoint to renew an Item associated with the given Patron.
+
+==== Sample Request
+include::../../../target/generated-docs/patron/renew/http-request.adoc[]
+
+==== Sample Response
+include::../../../target/generated-docs/patron/renew/http-response.adoc[]
+
+==== Example Curl Request
+include::../../../target/generated-docs/patron/renew/curl-request.adoc[]

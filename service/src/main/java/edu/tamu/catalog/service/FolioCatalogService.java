@@ -23,7 +23,6 @@ import static edu.tamu.catalog.utility.Marc21Xml.RECORD_YEAR;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -69,7 +68,7 @@ import edu.tamu.catalog.model.FolioHoldCancellation;
 import edu.tamu.catalog.properties.CatalogServiceProperties;
 import edu.tamu.catalog.properties.Credentials;
 import edu.tamu.catalog.properties.FolioProperties;
-import edu.tamu.catalog.utility.FolioDatetime;
+import edu.tamu.catalog.utility.FolioDateTime;
 import edu.tamu.catalog.utility.Marc21Xml;
 import edu.tamu.catalog.utility.TokenUtility;
 
@@ -127,7 +126,7 @@ public class FolioCatalogService implements CatalogService {
     }
 
     @Override
-    public List<FeeFine> getFeesFines(String uin) throws ParseException {
+    public List<FeeFine> getFeesFines(String uin) throws Exception {
         String path = "patron/account";
         String queryString = "apikey={apikey}&includeLoans=false&includeCharges=true&includeHolds=false";
         String url = String.format("%s/%s/%s?%s", properties.getBaseEdgeUrl(), path, uin, queryString);
@@ -160,7 +159,7 @@ public class FolioCatalogService implements CatalogService {
     }
 
     @Override
-    public List<LoanItem> getLoanItems(String uin) throws ParseException {
+    public List<LoanItem> getLoanItems(String uin) throws Exception {
         String path = "patron/account";
         String additional = "&includeLoans=true&includeCharges=false&includeHolds=false";
         String url = String.format("%s/%s/%s?apikey={apikey}%s", properties.getBaseEdgeUrl(), path, uin, additional);
@@ -239,13 +238,13 @@ public class FolioCatalogService implements CatalogService {
         FolioHoldCancellation folioCancellation = new FolioHoldCancellation();
         folioCancellation.setHoldId(requestId);
         folioCancellation.setCancellationReasonId(properties.getCancelHoldReasonId());
-        folioCancellation.setCanceledDate(FolioDatetime.convert(new Date()));
+        folioCancellation.setCanceledDate(FolioDateTime.convert(new Date()));
 
         restTemplate.postForObject(url, folioCancellation, Object.class, apiKey);
     }
 
     @Override
-    public LoanItem renewItem(String uin, String itemId) throws ParseException {
+    public LoanItem renewItem(String uin, String itemId) throws Exception {
         String path = "/patron/account/";
         String itemPath = "/item/";
         String renewPath = "/renew";
@@ -595,8 +594,9 @@ public class FolioCatalogService implements CatalogService {
      * Build the loan item, based on the current information we can get from folio.
      *
      * @param loanJson JsonNode
+     * @throws Exception
      */
-    private LoanItem buildLoanItem(JsonNode loan) throws ParseException {
+    private LoanItem buildLoanItem(JsonNode loan) throws Exception {
         return LoanItem.builder()
             .loanId(getText(loan, "/id"))
             .loanDate(getDate(loan, "/loanDate"))
@@ -615,11 +615,11 @@ public class FolioCatalogService implements CatalogService {
      * @param input JsonNode
      * @param jsonPtrExpr String
      * @return date time value
-     * @throws ParseException
+     * @throws Exception
      */
-    private Date getDate(JsonNode input, String jsonPtrExpr) throws ParseException {
+    private Date getDate(JsonNode input, String jsonPtrExpr) throws Exception {
         JsonNode property = input.at(jsonPtrExpr);
-        return property.isValueNode() ? FolioDatetime.parse(property.asText()) : null;
+        return property.isValueNode() ? FolioDateTime.parse(property.asText()) : null;
     }
 
     /**
