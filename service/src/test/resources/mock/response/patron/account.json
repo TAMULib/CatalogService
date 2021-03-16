@@ -20,7 +20,8 @@
       },
       "accrualDate": "2019-05-01T14:08:46.000+0000",
       "state": "Outstanding",
-      "reason": "Overdue (migrated-do not use)"
+      "reason": "Overdue (migrated-do not use)",
+      "feeFineId" : "d4d849f9-f953-4f7c-acf6-b16b65cb3bb4"
     },
     {
       "item": {
@@ -35,7 +36,8 @@
       },
       "accrualDate": "2019-08-20T13:41:41.000+0000",
       "state": "Outstanding",
-      "reason": "Overdue (migrated-do not use)"
+      "reason": "Overdue (migrated-do not use)",
+      "feeFineId" : "e2791487-9962-4e67-98dd-99f8bc89e3e4"
     }
   ],
   "holds": [
@@ -47,6 +49,7 @@
         "title": "I Want to Hold Your Hand",
         "author": "John Lennon; Paul McCartney"
       },
+      "queuePosition": 1,
       "requestDate": "2018-06-02T08:16:30Z",
       "expirationDate": "2018-10-02T08:16:30Z",
       "pickupLocationId": "ebab9ccc-4ece-4f35-bc82-01f3325abed8",

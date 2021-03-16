@@ -82,7 +82,7 @@ public abstract class AbstractTestRestController {
             .andRespond(response);
     }
 
-    protected DefaultResponseCreator respondJsonAuto(JsonNode node, HttpStatus status) throws Exception {
+    protected static DefaultResponseCreator respondJsonAuto(JsonNode node, HttpStatus status) throws Exception {
         if (status == CREATED) {
             return respondJsonCreated(node);
         }
@@ -90,39 +90,39 @@ public abstract class AbstractTestRestController {
         return respondJsonSuccess(node);
     }
 
-    protected DefaultResponseCreator respondJsonOk(Resource resource) throws Exception {
+    protected static DefaultResponseCreator respondJsonOk(Resource resource) throws Exception {
         return withStatus(OK).body(resource).contentType(MediaType.APPLICATION_JSON);
     }
 
-    protected DefaultResponseCreator respondJsonOk(JsonNode node) throws Exception {
+    protected static DefaultResponseCreator respondJsonOk(JsonNode node) throws Exception {
         return withStatus(OK).body(node.toString()).contentType(MediaType.APPLICATION_JSON);
     }
 
-    protected DefaultResponseCreator respondJsonCreated(Resource resource) throws Exception {
+    protected static DefaultResponseCreator respondJsonCreated(Resource resource) throws Exception {
         return withStatus(CREATED).body(resource).contentType(MediaType.APPLICATION_JSON);
     }
 
-    protected DefaultResponseCreator respondJsonCreated(JsonNode node) throws Exception {
+    protected static DefaultResponseCreator respondJsonCreated(JsonNode node) throws Exception {
         return withStatus(CREATED).body(node.toString()).contentType(MediaType.APPLICATION_JSON);
     }
 
-    protected DefaultResponseCreator respondJsonSuccess(Resource resource) throws Exception {
+    protected static DefaultResponseCreator respondJsonSuccess(Resource resource) throws Exception {
         return withSuccess(resource, MediaType.APPLICATION_JSON);
     }
 
-    protected DefaultResponseCreator respondJsonSuccess(JsonNode node) throws Exception {
+    protected static DefaultResponseCreator respondJsonSuccess(JsonNode node) throws Exception {
         return withSuccess(node.toString(), MediaType.APPLICATION_JSON);
     }
 
-    protected String getOkapiLoginUrl() {
+    protected static String getOkapiLoginUrl() {
         return getOkapiUrl(OKAPI_LOGIN_PATH);
     }
 
-    protected String getOkapiUrl(String path) {
+    protected static String getOkapiUrl(String path) {
         return String.format("%s%s", OKAPI_BASE_PATH, path);
     }
 
-    protected String loadJsonResource(Resource resource) throws JsonParseException, JsonMappingException, IOException {
+    protected static String loadJsonResource(Resource resource) throws JsonParseException, JsonMappingException, IOException {
         return IOUtils.toString(resource.getInputStream(), "UTF-8");
     }
 }
