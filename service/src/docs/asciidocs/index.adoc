@@ -1,0 +1,16 @@
+
+= CatalogService APIs
+{project-version}
+:doctype: book
+:copat-mode:
+:toc: left
+:toclevels: 3
+:sectanchors:
+:sectlinks:
+:sectnums:
+:linkattrs:
+:source-highlighter: hilightjs
+
+[%hardbreaks]
+
+include::patronAPI.adoc[]

@@ -61,7 +61,7 @@ import edu.tamu.catalog.utility.TokenUtility;
 
 @ExtendWith(SpringExtension.class)
 @WebMvcTest(value = PatronController.class, secure = false)
-@AutoConfigureRestDocs(outputDir = "target/generated-docs")
+@AutoConfigureRestDocs(outputDir = "target/generated-snippets")
 @Import({ RestConfig.class, CatalogServiceConfig.class })
 public class PatronControllerTest extends AbstractTestRestController {
 
