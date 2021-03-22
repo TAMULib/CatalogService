@@ -1,0 +1,128 @@
+{
+  "compositeUsers": [
+    {
+      "permissions": {
+        "permissions": []
+      },
+      "proxiesFor": [],
+      "groups": {
+        "group": "fast",
+        "desc": "Faculty/Staff",
+        "id": "e3b00d06-31ba-4c6d-8dd7-4dc8928147b1",
+        "metadata": {
+          "createdDate": "2021-01-02T10:23:40.381+00:00",
+          "createdByUserId": "9db5e585-1d07-4ce3-9a5f-89f868dc41df",
+          "updatedDate": "2021-01-02T10:23:40.381+00:00",
+          "updatedByUserId": "9db5e585-1d07-4ce3-9a5f-89f868dc41df"
+        }
+      },
+      "users": {
+        "username": "mockeduser",
+        "id": "93710b5b-aa9a-43be-af34-7dcb1f7b0669",
+        "externalSystemId": "  1234567890",
+        "barcode": "6016426592064428",
+        "active": true,
+        "type": "patron",
+        "patronGroup": "fc44aee5-c385-4847-aadd-c1bd181c8894",
+        "departments": [],
+        "proxyFor": [],
+        "personal": {
+          "lastName": "Last",
+          "firstName": "First",
+          "middleName": "I",
+          "email": "mock@example.com",
+          "addresses": [
+            {
+              "addressLine1": "Mock Home Address",
+              "addressLine2": "",
+              "city": "Mock Home City",
+              "region": "MK",
+              "postalCode": "23456",
+              "addressTypeId": "5766e939-518d-43bf-9c4b-3ce810fd877b",
+              "primaryAddress": true
+            },
+            {
+              "addressLine1": "Mock University",
+              "addressLine2": "Mock Address",
+              "city": "Mock City",
+              "region": "MK",
+              "postalCode": "12345",
+              "addressTypeId": "5766e939-518d-43bf-9c4b-3ce810fd877b",
+              "primaryAddress": false
+            }
+          ],
+          "preferredContactTypeId": "002"
+        },
+        "expirationDate": "2022-01-02T10:23:40.505+00:00",
+        "metadata": {
+          "createdDate": "2021-01-02T10:23:40.381+00:00",
+          "createdByUserId": "9db5e585-1d07-4ce3-9a5f-89f868dc41df",
+          "updatedDate": "2021-01-02T10:23:40.381+00:00",
+          "updatedByUserId": "9db5e585-1d07-4ce3-9a5f-89f868dc41df"
+        }
+      }
+    },
+    {
+      "permissions": {
+        "permissions": []
+      },
+      "proxiesFor": [],
+      "groups": {
+        "group": "fast",
+        "desc": "Faculty/Staff",
+        "id": "e3b00d06-31ba-4c6d-8dd7-4dc8928147b1",
+        "metadata": {
+          "createdDate": "2021-01-02T10:23:40.381+00:00",
+          "createdByUserId": "9db5e585-1d07-4ce3-9a5f-89f868dc41df",
+          "updatedDate": "2021-01-02T10:23:40.381+00:00",
+          "updatedByUserId": "9db5e585-1d07-4ce3-9a5f-89f868dc41df"
+        }
+      },
+      "users": {
+        "username": "mockeduser",
+        "id": "93710b5b-aa9a-43be-af34-7dcb1f7b0669",
+        "externalSystemId": "  1234567890",
+        "barcode": "6016426592064428",
+        "active": true,
+        "type": "patron",
+        "patronGroup": "fc44aee5-c385-4847-aadd-c1bd181c8894",
+        "departments": [],
+        "proxyFor": [],
+        "personal": {
+          "lastName": "Last",
+          "firstName": "First",
+          "middleName": "I",
+          "email": "mock@example.com",
+          "addresses": [
+            {
+              "addressLine1": "Mock Home Address",
+              "addressLine2": "",
+              "city": "Mock Home City",
+              "region": "MK",
+              "postalCode": "23456",
+              "addressTypeId": "5766e939-518d-43bf-9c4b-3ce810fd877b",
+              "primaryAddress": true
+            },
+            {
+              "addressLine1": "Mock University",
+              "addressLine2": "Mock Address",
+              "city": "Mock City",
+              "region": "MK",
+              "postalCode": "12345",
+              "addressTypeId": "5766e939-518d-43bf-9c4b-3ce810fd877b",
+              "primaryAddress": false
+            }
+          ],
+          "preferredContactTypeId": "002"
+        },
+        "expirationDate": "2022-01-02T10:23:40.505+00:00",
+        "metadata": {
+          "createdDate": "2021-01-02T10:23:40.381+00:00",
+          "createdByUserId": "9db5e585-1d07-4ce3-9a5f-89f868dc41df",
+          "updatedDate": "2021-01-02T10:23:40.381+00:00",
+          "updatedByUserId": "9db5e585-1d07-4ce3-9a5f-89f868dc41df"
+        }
+      }
+    }
+  ]
+}

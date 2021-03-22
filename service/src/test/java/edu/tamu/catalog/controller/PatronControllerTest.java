@@ -68,6 +68,7 @@ public class PatronControllerTest extends AbstractTestRestController {
     private static final String SERVICE_POINTS_ID = "ebab9ccc-4ece-4f35-bc82-01f3325abed8";
     private static final String REQUEST_ID = "8bbac557-d66f-4571-bbbf-47a107cc1589";
     private static final String ITEM_ID = "40053ccb-fd0c-304b-9547-b2fc06f34d3e";
+    private static final String USER_ID = "93710b5b-aa9a-43be-af34-7dcb1f7b0669";
 
     private static final String FOLIO_CATALOG = "folio";
     private static final String VOYAGER_CATALOG = "msl";
@@ -93,11 +94,18 @@ public class PatronControllerTest extends AbstractTestRestController {
     private static String patronAccountCancelHoldResponsePayload;
     private static String holdRequestPayload;
     private static String servicePointPayload;
+    private static String blUserResponsePayload;
+    private static String blUserBadUUIDErrorPayload;
+    private static String blUserDuplicateErrorPayload;
+    private static String blUserEmptyErrorPayload;
+    private static String automatedBlocksResponsePayload;
 
     private static String finesCatalogPayload;
     private static String loansCatalogPayload;
     private static String loanRenewalCatalogPayload;
     private static String requestsCatalogPayload;
+    private static String blockCatalogPayload;
+    private static String blockEmptyCatalogPayload;
 
     @Autowired
     private MockMvc mockMvc;
@@ -113,11 +121,18 @@ public class PatronControllerTest extends AbstractTestRestController {
         patronAccountCancelHoldResponsePayload = loadPayload("mock/response/patron/accountCancelHoldResponse.json");
         holdRequestPayload = loadPayload("mock/response/request/holdRequest.json");
         servicePointPayload = loadPayload("mock/response/service-point/servicePoint.json");
+        blUserResponsePayload = loadPayload("mock/response/bl-users/user.json");
+        blUserBadUUIDErrorPayload = loadPayload("mock/response/bl-users/userBadUUIDError.json");
+        blUserDuplicateErrorPayload = loadPayload("mock/response/bl-users/userDuplicateError.json");
+        blUserEmptyErrorPayload = loadPayload("mock/response/bl-users/userEmptyError.json");
+        automatedBlocksResponsePayload = loadPayload("mock/response/patron-blocks/automatedBlocks.json");
 
         finesCatalogPayload = loadPayload("mock/response/catalog/fines.json");
         loansCatalogPayload = loadPayload("mock/response/catalog/loans.json");
         loanRenewalCatalogPayload = loadPayload("mock/response/catalog/loanRenewal.json");
         requestsCatalogPayload = loadPayload("mock/response/catalog/requests.json");
+        blockCatalogPayload = loadPayload("mock/response/catalog/block.txt");
+        blockEmptyCatalogPayload = loadPayload("mock/response/catalog/blockEmpty.txt");
     }
 
     @BeforeEach
@@ -281,29 +296,29 @@ public class PatronControllerTest extends AbstractTestRestController {
     @Test
     public void testBlockMockMVC() throws Exception {
         PathParametersSnippet pathParameters = pathParameters(
-            parameterWithName(UIN_FIELD).description("The patron UIN.")
-        );
+            parameterWithName(UIN_FIELD).description("The patron UIN."));
 
         RequestParametersSnippet requestParameters = requestParameters(
-            parameterWithName(CATALOG_FIELD).description("The name of the catalog to use.").optional()
-        );
+            parameterWithName(CATALOG_FIELD).description("The name of the catalog to use.").optional());
+
+        expectOkapiLoginResponse(once(), withStatus(CREATED));
+        expectGetResponse(getOkapiBLUsersByUinUrl(), once(), respondJsonOk(blUserResponsePayload));
+        expectGetResponse(getOkapiAutomatedBlocksUrl(USER_ID), once(), respondJsonOk(automatedBlocksResponsePayload));
 
         mockMvc.perform(
             get(PATRON_MVC_PREFIX + BLOCK_ENDPOINT, UIN)
                 .param(CATALOG_FIELD, FOLIO_CATALOG)
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
-                .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML)
-            )
+                .contentType(MediaType.TEXT_PLAIN)
+                .characterEncoding(CHARSET)
+                .accept(MediaType.TEXT_PLAIN_VALUE, MediaType.TEXT_HTML_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
-            .andExpect(content().string("false")) // FIXME: this is clearly not json.
+            .andExpect(content().contentType(MediaType.TEXT_PLAIN))
+            .andExpect(content().string(blockCatalogPayload))
             .andDo(
                 document(
                     DOC_PREFIX + BLOCK_ENDPOINT,
                     pathParameters,
-                    requestParameters
-                )
-            );
+                    requestParameters));
     }
 
     @ParameterizedTest
@@ -331,6 +346,22 @@ public class PatronControllerTest extends AbstractTestRestController {
         expectOkapiLoginResponse(okapiCount, withStatus(CREATED));
         expectGetResponse(getOkapiRequestsUrl(), requestsCount, requestsResponse);
         expectGetResponse(getOkapiServicePointsUrl(), servicePointsCount, servicePointsResponse);
+
+        mockMvc.perform(builder)
+            .andExpect(result);
+
+        restServer.verify();
+    }
+
+    @ParameterizedTest
+    @MethodSource("argumentsBlockResponses")
+    public void testBlockEndpoint(MockHttpServletRequestBuilder builder, ExpectedCount okapiCount,
+            ExpectedCount blUsersCount, ExpectedCount automatedBlocksCount, DefaultResponseCreator blUsersResponse,
+            DefaultResponseCreator automatedBlocksResponse, String userId, ResultMatcher result) throws Exception {
+
+        expectOkapiLoginResponse(okapiCount, withStatus(CREATED));
+        expectGetResponse(getOkapiBLUsersByUinUrl(), blUsersCount, blUsersResponse);
+        expectGetResponse(getOkapiAutomatedBlocksUrl(userId), automatedBlocksCount, automatedBlocksResponse);
 
         mockMvc.perform(builder)
             .andExpect(result);
@@ -404,6 +435,41 @@ public class PatronControllerTest extends AbstractTestRestController {
             Arguments.of(holds, getHoldsUrl(), between(0, 1), once(), between(0, 1), between(0, 1),
                 respondJsonOk(patronAccountDateParseErrorPayload), respondJsonOk(holdRequestPayload),
                 respondJsonOk(servicePointPayload), status().isInternalServerError()));
+    }
+
+    private static Stream<? extends Arguments> argumentsBlockResponses() throws Exception {
+        final MockHttpServletRequestBuilder block = get(PATRON_MVC_PREFIX + BLOCK_ENDPOINT, UIN)
+            .contentType(MediaType.TEXT_PLAIN)
+            .characterEncoding(CHARSET);
+
+        final MockHttpServletRequestBuilder blockCatalog = get(PATRON_MVC_PREFIX + BLOCK_ENDPOINT, UIN)
+            .contentType(MediaType.TEXT_PLAIN)
+            .characterEncoding(CHARSET)
+            .param(CATALOG_FIELD, VOYAGER_CATALOG);
+
+        return Stream.of(
+            Arguments.of(block, once(), once(), never(), withStatus(NOT_FOUND), withNoContent(), USER_ID,
+                status().isNotFound()),
+            Arguments.of(block, once(), once(), never(), withStatus(BAD_REQUEST), withNoContent(), USER_ID,
+                status().isBadRequest()),
+            Arguments.of(block, once(), once(), never(), withStatus(INTERNAL_SERVER_ERROR), withNoContent(), USER_ID,
+                status().isInternalServerError()),
+            Arguments.of(block, once(), once(), once(), respondJsonOk(blUserResponsePayload),
+                withStatus(NOT_FOUND), USER_ID, status().isNotFound()),
+            Arguments.of(block, once(), once(), once(), respondJsonOk(blUserResponsePayload),
+                withStatus(BAD_REQUEST), USER_ID, status().isBadRequest()),
+            Arguments.of(block, once(), once(), once(), respondJsonOk(blUserResponsePayload),
+                withStatus(INTERNAL_SERVER_ERROR), USER_ID, status().isInternalServerError()),
+            Arguments.of(blockCatalog, never(), never(), never(), withNoContent(), withNoContent(), USER_ID,
+                status().isBadRequest()),
+            Arguments.of(block, between(0, 1), once(), once(), respondJsonOk(blUserBadUUIDErrorPayload),
+                withStatus(BAD_REQUEST), "Bad%20UUID", status().isBadRequest()),
+            Arguments.of(block, between(0, 1), once(), never(), respondJsonOk(blockEmptyCatalogPayload),
+                withNoContent(), USER_ID, status().isNotFound()),
+            Arguments.of(block, between(0, 1), once(), between(0, 1), respondJsonOk(blUserDuplicateErrorPayload),
+                respondJsonOk(automatedBlocksResponsePayload), USER_ID, status().isInternalServerError()),
+            Arguments.of(block, between(0, 1), once(), between(0, 1), respondJsonOk(blUserEmptyErrorPayload),
+                respondJsonOk(automatedBlocksResponsePayload), USER_ID, status().isNotFound()));
     }
 
     private static Stream<? extends Arguments> streamOfFines() throws Exception {
@@ -511,6 +577,14 @@ public class PatronControllerTest extends AbstractTestRestController {
 
     private static String getOkapiRequestsUrl() {
         return getOkapiUrl(String.format("circulation/requests/%s", REQUEST_ID));
+    }
+
+    private static String getOkapiBLUsersByUinUrl() {
+        return getOkapiUrl(String.format("bl-users?query=(externalSystemId%%3D%%3D%%22%s%%22)&limit=2", UIN));
+    }
+
+    private static String getOkapiAutomatedBlocksUrl(String userId) {
+        return getOkapiUrl(String.format("automated-patron-blocks/%s", userId));
     }
 
     private static String getCancelHoldRequestUrl() {
