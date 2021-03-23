@@ -17,6 +17,8 @@ public class HoldRequest {
 
     private String itemId;
 
+    private String instanceId;
+
     private String requestType;
 
     private String itemTitle;
