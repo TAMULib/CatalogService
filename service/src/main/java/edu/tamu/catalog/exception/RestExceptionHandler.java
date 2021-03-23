@@ -3,6 +3,7 @@ package edu.tamu.catalog.exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -25,6 +26,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         }
 
         return ResponseEntity.status(e.getRawStatusCode())
+            .contentType(MediaType.TEXT_PLAIN)
             .body(e.getMessage());
     }
 
@@ -37,6 +39,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         }
 
         return ResponseEntity.status(e.getRawStatusCode())
+            .contentType(MediaType.TEXT_PLAIN)
             .body(e.getMessage());
     }
 
@@ -49,6 +52,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         }
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .contentType(MediaType.TEXT_PLAIN)
             .body(e.getMessage());
     }
 
@@ -61,6 +65,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         }
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .contentType(MediaType.TEXT_PLAIN)
             .body(e.getMessage());
     }
 
