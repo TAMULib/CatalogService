@@ -236,8 +236,9 @@ public class FolioCatalogService implements CatalogService {
 
         logger.debug("Cancelling hold request via: {}", url);
 
+        // edge-patron uses "holdId" instead of "requestId" for the cancellation request body json.
         FolioHoldCancellation folioCancellation = new FolioHoldCancellation();
-        folioCancellation.setRequestId(requestId);
+        folioCancellation.setHoldId(requestId);
         folioCancellation.setCancellationReasonId(properties.getCancelHoldReasonId());
         folioCancellation.setCanceledDate(FolioDateTime.convert(new Date()));
 
