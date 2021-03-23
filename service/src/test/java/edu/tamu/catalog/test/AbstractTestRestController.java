@@ -7,12 +7,11 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import java.io.IOException;
+import java.net.URL;
 
 import org.apache.commons.io.IOUtils;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -23,8 +22,6 @@ import org.springframework.test.web.client.MockRestServiceServer.MockRestService
 import org.springframework.test.web.client.response.DefaultResponseCreator;
 import org.springframework.web.client.RestTemplate;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 
 public abstract class AbstractTestRestController {
@@ -37,6 +34,10 @@ public abstract class AbstractTestRestController {
     protected static final String OKAPI_TENANT = "diku";
     protected static final String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
     protected static final String API_KEY = "mock_api_key";
+
+    protected static final String CHARSET = "UTF-8";
+    protected static final String TEXT_PLAIN_UTF8_VALUE = MediaType.TEXT_PLAIN_VALUE
+        + ";charset=" + CHARSET;
 
     protected MockRestServiceServer restServer;
 
@@ -87,31 +88,29 @@ public abstract class AbstractTestRestController {
             return respondJsonCreated(node);
         }
 
-        return respondJsonSuccess(node);
+        return respondJsonOk(node);
     }
 
-    protected static DefaultResponseCreator respondJsonOk(Resource resource) throws Exception {
-        return withStatus(OK).body(resource).contentType(MediaType.APPLICATION_JSON);
+    protected static DefaultResponseCreator respondJsonOk(String payload) throws Exception {
+        return withStatus(OK).body(payload).contentType(MediaType.APPLICATION_JSON_UTF8);
     }
 
     protected static DefaultResponseCreator respondJsonOk(JsonNode node) throws Exception {
-        return withStatus(OK).body(node.toString()).contentType(MediaType.APPLICATION_JSON);
+        return withStatus(OK).body(node.toString()).contentType(MediaType.APPLICATION_JSON_UTF8);
     }
 
-    protected static DefaultResponseCreator respondJsonCreated(Resource resource) throws Exception {
-        return withStatus(CREATED).body(resource).contentType(MediaType.APPLICATION_JSON);
+    protected static DefaultResponseCreator respondJsonCreated(String payload) throws Exception {
+        return withStatus(CREATED).body(payload).contentType(MediaType.APPLICATION_JSON_UTF8);
     }
 
     protected static DefaultResponseCreator respondJsonCreated(JsonNode node) throws Exception {
-        return withStatus(CREATED).body(node.toString()).contentType(MediaType.APPLICATION_JSON);
+        return withStatus(CREATED).body(node.toString()).contentType(MediaType.APPLICATION_JSON_UTF8);
     }
 
-    protected static DefaultResponseCreator respondJsonSuccess(Resource resource) throws Exception {
-        return withSuccess(resource, MediaType.APPLICATION_JSON);
-    }
-
-    protected static DefaultResponseCreator respondJsonSuccess(JsonNode node) throws Exception {
-        return withSuccess(node.toString(), MediaType.APPLICATION_JSON);
+    protected static DefaultResponseCreator respondTextSuccess(String payload) throws Exception {
+        final HttpHeaders headers = new HttpHeaders();
+        headers.set("Content-Type", TEXT_PLAIN_UTF8_VALUE);
+        return withStatus(OK).body(payload).headers(headers);
     }
 
     protected static String getOkapiLoginUrl() {
@@ -122,7 +121,8 @@ public abstract class AbstractTestRestController {
         return String.format("%s%s", OKAPI_BASE_PATH, path);
     }
 
-    protected static String loadJsonResource(Resource resource) throws JsonParseException, JsonMappingException, IOException {
-        return IOUtils.toString(resource.getInputStream(), "UTF-8");
+    protected static String loadResource(URL url) throws IOException {
+        return IOUtils.toString(url.openStream(), CHARSET);
     }
+
 }
