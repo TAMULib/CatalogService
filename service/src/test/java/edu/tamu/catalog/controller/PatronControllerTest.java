@@ -123,11 +123,13 @@ public class PatronControllerTest extends AbstractTestRestController {
         );
 
         ResponseFieldsSnippet responseFields = responseFields(
-            fieldWithPath("[].amount").description("The title of the item associated with the fine."),
-            fieldWithPath("[].fineId").description("The UUID associated with the fine."),
-            fieldWithPath("[].fineType").description("The type of the fine."),
-            fieldWithPath("[].fineDate").description("A timestamp in milliseconds from UNIX epoch representing the date the fine was accrued."),
-            fieldWithPath("[].itemTitle").description("The title of the item associated with the fine.")
+            fieldWithPath("[].fineId").description("The Fine UUID."),
+            fieldWithPath("[].itemId").description("The Item UUID."),
+            fieldWithPath("[].instanceId").description("The Instance UUID."),
+            fieldWithPath("[].amount").description("The title of the Item associated with the fine."),
+            fieldWithPath("[].fineType").description("The type of the Fine."),
+            fieldWithPath("[].fineDate").description("A timestamp in milliseconds from UNIX epoch representing the date the Fine was accrued."),
+            fieldWithPath("[].itemTitle").description("The title of the Item associated with the Fine.")
         );
 
         performPatronGetWithMockMVC(getFinesUrl(), FINES_ENDPOINT, pathParameters,
@@ -145,14 +147,14 @@ public class PatronControllerTest extends AbstractTestRestController {
         );
 
         ResponseFieldsSnippet responseFields = responseFields(
-            fieldWithPath("[].loanId").description("The loan id."),
-            fieldWithPath("[].itemId").description("The item id."),
-            fieldWithPath("[].instanceId").description("The instance id."),
-            fieldWithPath("[].loanDate").description("The loan date."),
-            fieldWithPath("[].loanDueDate").description("The loan due date."),
-            fieldWithPath("[].overdue").description("Is the loan overdue."),
-            fieldWithPath("[].title").description("The title of the loan item."),
-            fieldWithPath("[].author").description("The author of the loan item.")
+            fieldWithPath("[].loanId").description("The Loan UUID."),
+            fieldWithPath("[].itemId").description("The Item UUID."),
+            fieldWithPath("[].instanceId").description("The Instance UUID."),
+            fieldWithPath("[].loanDate").description("The Loan date."),
+            fieldWithPath("[].loanDueDate").description("The Loan due date."),
+            fieldWithPath("[].overdue").description("Is the Loan overdue."),
+            fieldWithPath("[].title").description("The title of the Loan Item."),
+            fieldWithPath("[].author").description("The author of the Loan Item.")
         );
 
         performPatronGetWithMockMVC(getLoansUrl(), LOANS_ENDPOINT, pathParameters, requestParameters,
@@ -165,7 +167,7 @@ public class PatronControllerTest extends AbstractTestRestController {
     public void testLoanItemRenewalMockMVC() throws Exception {
         PathParametersSnippet pathParameters = pathParameters(
             parameterWithName(UIN_FIELD).description("The patron UIN."),
-            parameterWithName("itemId").description("The UUID of the loan item.")
+            parameterWithName("itemId").description("The UUID of the Loan Item.")
         );
 
         RequestParametersSnippet requestParameters = requestParameters(
@@ -173,14 +175,14 @@ public class PatronControllerTest extends AbstractTestRestController {
         );
 
         ResponseFieldsSnippet responseFields = responseFields(
-            fieldWithPath("loanId").description("The loan id."),
-            fieldWithPath("itemId").description("The item id."),
-            fieldWithPath("instanceId").description("The instance id."),
-            fieldWithPath("loanDate").description("The loan date."),
-            fieldWithPath("loanDueDate").description("The loan due date."),
-            fieldWithPath("overdue").description("Is the loan overdue."),
-            fieldWithPath("title").description("The title of the loan item."),
-            fieldWithPath("author").description("The author of the loan item.")
+            fieldWithPath("loanId").description("The Loan UUID."),
+            fieldWithPath("itemId").description("The Item UUID."),
+            fieldWithPath("instanceId").description("The Instance UUID."),
+            fieldWithPath("loanDate").description("The Loan date."),
+            fieldWithPath("loanDueDate").description("The Loan due date."),
+            fieldWithPath("overdue").description("Is the Loan overdue."),
+            fieldWithPath("title").description("The title of the Loan Item."),
+            fieldWithPath("author").description("The author of the Loan Item.")
         );
 
         expectPostResponse(getLoanItemRenewalUrl(), once(), respondJsonOk(patronAccountRenewalResource));
@@ -216,11 +218,12 @@ public class PatronControllerTest extends AbstractTestRestController {
         );
 
         ResponseFieldsSnippet responseFields = responseFields(
-            fieldWithPath("[].requestId").description("The UUID of the hold request."),
-            fieldWithPath("[].itemId").description("The UUID of the item associated with the hold request."),
-            fieldWithPath("[].requestType").description("The type of the hold request."),
-            fieldWithPath("[].itemTitle").description("The title of the item associated with the fine."),
-            fieldWithPath("[].statusText").description("A descriptive status of the hold request."),
+            fieldWithPath("[].requestId").description("The Hold Request UUID."),
+            fieldWithPath("[].itemId").description("The Item UUID."),
+            fieldWithPath("[].instanceId").description("The Instance UUID."),
+            fieldWithPath("[].requestType").description("The type of the Hold Request."),
+            fieldWithPath("[].itemTitle").description("The title of the Item associated with the Hold Request."),
+            fieldWithPath("[].statusText").description("A descriptive status of the Hold Request."),
             fieldWithPath("[].pickupServicePoint").description("A title describing the pickup service point location."),
             fieldWithPath("[].queuePosition").description("The position within the queue."),
             fieldWithPath("[].expirationDate").description("A timestamp in milliseconds from UNIX epoch representing the date the hold request will expire.")

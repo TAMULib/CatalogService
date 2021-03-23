@@ -147,6 +147,8 @@ public class FolioCatalogService implements CatalogService {
                 JsonNode charge = iter.next();
                 list.add(FeeFine.builder()
                     .fineId(getText(charge, "/feeFineId"))
+                    .itemId(getText(charge, "/item/itemId"))
+                    .instanceId(getText(charge, "/item/instanceId"))
                     .fineType(getText(charge, "/reason"))
                     .fineDate(getDate(charge, "/accrualDate"))
                     .itemTitle(getText(charge, "/item/title"))
@@ -210,12 +212,13 @@ public class FolioCatalogService implements CatalogService {
                 String requestId = getText(hold, "/requestId");
                 String servicePointId = getText(hold, "/pickupLocationId");
                 list.add(HoldRequest.builder()
+                    .requestId(requestId)
                     .itemId(getText(hold, "/item/itemId"))
+                    .instanceId(getText(hold, "/item/instanceId"))
                     .itemTitle(getText(hold, "/item/title"))
                     .statusText(getText(hold, "/status"))
                     .queuePosition(getInt(hold, "/queuePosition"))
                     .expirationDate(getDate(hold, "/expirationDate"))
-                    .requestId(requestId)
                     .requestType(getRequestType(requestId))
                     .pickupServicePoint(getServicePointDisplayName(servicePointId))
                     .build());
@@ -224,8 +227,6 @@ public class FolioCatalogService implements CatalogService {
 
         return list;
     }
-
-    
 
     @Override
     public void cancelHoldRequest(String uin, String requestId) throws Exception {
@@ -236,7 +237,7 @@ public class FolioCatalogService implements CatalogService {
         logger.debug("Cancelling hold request via: {}", url);
 
         FolioHoldCancellation folioCancellation = new FolioHoldCancellation();
-        folioCancellation.setHoldId(requestId);
+        folioCancellation.setRequestId(requestId);
         folioCancellation.setCancellationReasonId(properties.getCancelHoldReasonId());
         folioCancellation.setCanceledDate(FolioDateTime.convert(new Date()));
 
@@ -599,11 +600,11 @@ public class FolioCatalogService implements CatalogService {
     private LoanItem buildLoanItem(JsonNode loan) throws Exception {
         return LoanItem.builder()
             .loanId(getText(loan, "/id"))
+            .itemId(getText(loan, "/item/itemId"))
+            .instanceId(getText(loan, "/item/instanceId"))
             .loanDate(getDate(loan, "/loanDate"))
             .loanDueDate(getDate(loan, "/dueDate"))
             .overdue(getBoolean(loan, "/overdue", false))
-            .itemId(getText(loan, "/item/itemId"))
-            .instanceId(getText(loan, "/item/instanceId"))
             .title(getText(loan, "/item/title"))
             .author(getText(loan, "/item/author"))
             .build();

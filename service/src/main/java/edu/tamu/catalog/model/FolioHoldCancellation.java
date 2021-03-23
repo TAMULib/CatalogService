@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 public class FolioHoldCancellation {
 
-    private String holdId;
+    private String requestId;
 
     private String cancellationReasonId;
 
