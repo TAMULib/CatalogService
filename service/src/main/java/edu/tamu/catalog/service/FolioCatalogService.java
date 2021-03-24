@@ -258,9 +258,21 @@ public class FolioCatalogService implements CatalogService {
 
     @Override
     public Boolean getBlockStatus(String uin) throws Exception {
-        //for now, no FOLIO user will be blocked
-        //leave the exception throw so the interface is future stable
-        return false;
+        JsonNode user = getUserByUin(uin);
+
+        if (Objects.nonNull(user) && user.isObject()) {
+            Boolean block = getAutomatedBlockStatus(getText(user, "/id"));
+            if (Objects.nonNull(block)) {
+                return block;
+            }
+
+            HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+            throw new HttpClientErrorException(status,
+                String.format("%s: Unable to retrieve automated block status for user.", status.getReasonPhrase()));
+        }
+
+        HttpStatus status = HttpStatus.NOT_FOUND;
+        throw new HttpClientErrorException(status, String.format("%s: Unable to find user.", status.getReasonPhrase()));
     }
 
     /**
@@ -274,6 +286,28 @@ public class FolioCatalogService implements CatalogService {
     JsonNode okapiRequestJsonNode(String url, HttpMethod method, String message) {
         try {
             return okapiRequest(url, method, JsonNode.class).getBody();
+        }
+        catch (HttpClientErrorException e) {
+            throw new HttpClientErrorException(e.getStatusCode(),
+                String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
+        }
+        catch (HttpServerErrorException e) {
+            throw new HttpServerErrorException(e.getStatusCode(),
+                String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
+        }
+    }
+
+    /**
+     * Use OKAPI to retrieve the JsonNode, throwing a customized exception on client or server errors.
+     *
+     * @param <T> generic class for response body type.
+     * @param url String the URL to retrieve.
+     *
+     * @return response entity with response type as body.
+     */
+    JsonNode okapiRequestJsonNode(String url, HttpMethod method, String message, Object... uriVariables) {
+        try {
+            return okapiRequest(url, method, JsonNode.class, uriVariables).getBody();
         }
         catch (HttpClientErrorException e) {
             throw new HttpClientErrorException(e.getStatusCode(),
@@ -367,6 +401,78 @@ public class FolioCatalogService implements CatalogService {
         }
 
         return  null;
+    }
+
+    /**
+     * Get FOLIO User by the user's UIN via OKAPI.
+     *
+     * @param uin The user's UIN.
+     * @return request type
+     */
+    private JsonNode getUserByUin(String uin) {
+        if (Objects.isNull(uin)) {
+            return null;
+        }
+
+        String path = "%s/bl-users?query=(externalSystemId==\"{uin}\")&limit=2";
+        String url = String.format(path, properties.getBaseOkapiUrl(), uin);
+        String message = "user using external system id";
+
+        logger.debug("Asking for User from: {}", url);
+
+        JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, message, uin);
+
+        if (Objects.nonNull(response) && response.isObject()) {
+            JsonNode users = response.at("/compositeUsers");
+
+            if (Objects.nonNull(users) && users.isArray()) {
+                if (Objects.nonNull(users.get(1))) {
+                    throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Found multiple users with the same external system id");
+                }
+
+                JsonNode user = users.get(0);
+                if (Objects.nonNull(user) && user.isObject()) {
+                    return user.at("/users");
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get FOLIO automated block status via OKAPI.
+     *
+     * @param userId The user's UIN.
+     * @return automated block status
+     */
+    private Boolean getAutomatedBlockStatus(String userId) {
+        if (Objects.isNull(userId)) {
+            return null;
+        }
+
+        String path = "%s/automated-patron-blocks/%s";
+        String url = String.format(path, properties.getBaseOkapiUrl(), userId);
+        String message = String.format("automated block status for the user id");
+
+        logger.debug("Asking for Automated Block Status from: {}", url);
+
+        JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, message);
+
+        if (Objects.nonNull(response) && response.isObject()) {
+            JsonNode blocks = response.at("/automatedPatronBlocks");
+
+            if (Objects.nonNull(blocks)) {
+                if (blocks.isArray() && Objects.nonNull(blocks.get(0))) {
+                    return true;
+                }
+
+                return false;
+            }
+        }
+
+        return null;
     }
 
     /**
