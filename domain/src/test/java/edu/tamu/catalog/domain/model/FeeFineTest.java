@@ -18,13 +18,15 @@ public class FeeFineTest {
     @Test
     public void testCreateAllArgs() {
         final Date now = new Date();
-        final FeeFine feeFine = new FeeFine(1.0, "fineId", "fineType", now, "itemTitle");
+        final FeeFine feeFine = new FeeFine("fineId", "itemId", "instanceId", 1.0, "fineType", now, "itemTitle");
 
         assertNotNull(feeFine);
         assertNotNull(feeFine.getFineDate());
 
-        assertEquals(1.0, feeFine.getAmount(), 0);
         assertEquals("fineId", feeFine.getFineId());
+        assertEquals("itemId", feeFine.getItemId());
+        assertEquals("instanceId", feeFine.getInstanceId());
+        assertEquals(1.0, feeFine.getAmount(), 0);
         assertEquals("fineType", feeFine.getFineType());
         assertEquals(now.toString(), feeFine.getFineDate().toString());
         assertEquals("itemTitle", feeFine.getItemTitle());
@@ -36,8 +38,10 @@ public class FeeFineTest {
 
         assertNotNull(feeFine);
 
-        assertNull(feeFine.getAmount());
         assertNull(feeFine.getFineId());
+        assertNull(feeFine.getItemId());
+        assertNull(feeFine.getInstanceId());
+        assertNull(feeFine.getAmount());
         assertNull(feeFine.getFineDate());
         assertNull(feeFine.getItemTitle());
     }
@@ -48,6 +52,8 @@ public class FeeFineTest {
         final FeeFine feeFine = new FeeFine.FeeFineBuilder()
             .amount(1.0)
             .fineId("fineId")
+            .itemId("itemId")
+            .instanceId("instanceId")
             .fineType("fineType")
             .fineDate(now)
             .itemTitle("itemTitle")
@@ -58,6 +64,8 @@ public class FeeFineTest {
 
         assertEquals(1.0, feeFine.getAmount(), 0);
         assertEquals("fineId", feeFine.getFineId());
+        assertEquals("itemId", feeFine.getItemId());
+        assertEquals("instanceId", feeFine.getInstanceId());
         assertEquals("fineType", feeFine.getFineType());
         assertEquals(now.toString(), feeFine.getFineDate().toString());
         assertEquals("itemTitle", feeFine.getItemTitle());
@@ -67,10 +75,12 @@ public class FeeFineTest {
     public void testUpdate() {
         final Date now = new Date();
         final Date later = Date.from(now.toInstant().plusSeconds(100));
-        final FeeFine feeFine = new FeeFine(1.0, "fineId", "fineType", now, "itemTitle");
+        final FeeFine feeFine = new FeeFine("fineId", "itemId", "instanceId", 1.0, "fineType", now, "itemTitle");
 
-        feeFine.setAmount(2.0);
         feeFine.setFineId("updatedId");
+        feeFine.setItemId("updatedItemId");
+        feeFine.setInstanceId("updatedInstanceId");
+        feeFine.setAmount(2.0);
         feeFine.setFineType("updatedType");
         feeFine.setFineDate(later);
         feeFine.setItemTitle("updatedTitle");
@@ -78,8 +88,10 @@ public class FeeFineTest {
         assertNotNull(feeFine);
         assertNotNull(feeFine.getFineDate());
 
-        assertEquals(2.0, feeFine.getAmount(), 0);
         assertEquals("updatedId", feeFine.getFineId());
+        assertEquals("updatedItemId", feeFine.getItemId());
+        assertEquals("updatedInstanceId", feeFine.getInstanceId());
+        assertEquals(2.0, feeFine.getAmount(), 0);
         assertEquals("updatedType", feeFine.getFineType());
         assertEquals(later.toString(), feeFine.getFineDate().toString());
         assertEquals("updatedTitle", feeFine.getItemTitle());
@@ -88,8 +100,8 @@ public class FeeFineTest {
     @Test
     public void testEquals() {
         final Date now = new Date();
-        final FeeFine feeFine1 = new FeeFine(1.0, "fineId", "fineType", now, "itemTitle");
-        final FeeFine feeFine2 = new FeeFine(1.0, "fineId", "fineType", now, "itemTitle");
+        final FeeFine feeFine1 = new FeeFine("fineId", "itemId", "instanceId", 1.0, "fineType", now, "itemTitle");
+        final FeeFine feeFine2 = new FeeFine("fineId", "itemId", "instanceId", 1.0, "fineType", now, "itemTitle");
         final FeeFine feeFine3 = new FeeFine();
 
         assertTrue(feeFine1.equals(feeFine2));
