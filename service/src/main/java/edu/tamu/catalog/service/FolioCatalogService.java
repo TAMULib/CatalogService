@@ -353,10 +353,10 @@ public class FolioCatalogService implements CatalogService {
         if (Objects.isNull(servicePointId)) {
             return null;
         }
-        String sercicePointUrl = String.format("%s/service-points/%s", properties.getBaseOkapiUrl(), servicePointId);
-        logger.debug("Asking for service-point from: {}", sercicePointUrl);
+        String servicePointUrl = String.format("%s/service-points/%s", properties.getBaseOkapiUrl(), servicePointId);
+        logger.debug("Asking for service-point from: {}", servicePointUrl);
         String message = String.format("service point with id \"%s\"", servicePointId);
-        JsonNode response = okapiRequestJsonNode(sercicePointUrl, HttpMethod.GET, message);
+        JsonNode response = okapiRequestJsonNode(servicePointUrl, HttpMethod.GET, message);
         if (response.isContainerNode()) {
             JsonNode discoveryDisplayName = response.at("/discoveryDisplayName");
             if (discoveryDisplayName.isValueNode()) {
@@ -604,9 +604,29 @@ public class FolioCatalogService implements CatalogService {
             .overdue(getBoolean(loan, "/overdue", false))
             .itemId(getText(loan, "/item/itemId"))
             .instanceId(getText(loan, "/item/instanceId"))
+            .instanceHrid(getInstanceHrid(loan))
             .title(getText(loan, "/item/title"))
             .author(getText(loan, "/item/author"))
             .build();
+    }
+
+    private String getInstanceHrid(JsonNode loan) throws Exception {
+        // This approach is not the most efficient way and may incur network performance problems for large numbers of instances.
+        String instanceId = getText(loan, "/item/instanceId");
+        String url = String.format("%s/instance-storage/instances/%s", properties.getBaseOkapiUrl(), instanceId);
+        String message = String.format("user with instanceId \"%s\"", instanceId);
+
+        logger.debug("Asking for instance from: {}", url);
+
+        JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, message);
+        if (response.isObject()) {
+            JsonNode hrid = response.at("/hrid");
+            if (hrid.isValueNode()) {
+                return hrid.asText();
+            }
+        }
+
+        return null;
     }
 
     /**

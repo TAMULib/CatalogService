@@ -19,6 +19,8 @@ public class LoanItem {
 
     private String instanceId;
 
+    private String instanceHrid;
+
     private Date loanDate;
 
     private Date loanDueDate;

@@ -68,6 +68,10 @@ public class PatronControllerTest extends AbstractTestRestController {
     private static final String UIN = "1234567890";
     private static final String SERVICE_POINTS_ID = "ebab9ccc-4ece-4f35-bc82-01f3325abed8";
     private static final String REQUEST_ID = "8bbac557-d66f-4571-bbbf-47a107cc1589";
+    private static final String INSTANCE_ID1 = "2422160d-23c4-356b-ad1c-44d90fc1320b";
+    private static final String INSTANCE_ID2 = "829fecd3-67c3-3ca2-b9d4-281227690e0f";
+    private static final String INSTANCE_ID3 = "b8ea27b8-5280-3023-bbf8-9113849120a1";
+    private static final String INSTANCE_ID4 = "a0480d3f-181e-3abd-a091-288e1cfc05ab";
     private static final String ITEM_ID = "40053ccb-fd0c-304b-9547-b2fc06f34d3e";
 
     private static final String FOLIO_CATALOG = "folio";
@@ -94,6 +98,10 @@ public class PatronControllerTest extends AbstractTestRestController {
     private static Resource patronAccountCancelHoldResponseResource;
     private static Resource holdRequestResource;
     private static Resource servicePointResource;
+    private static Resource instance1Resource;
+    private static Resource instance2Resource;
+    private static Resource instance3Resource;
+    private static Resource instance4Resource;
 
     private static Resource finesCatalogResource;
     private static Resource loansCatalogResource;
@@ -148,6 +156,7 @@ public class PatronControllerTest extends AbstractTestRestController {
             fieldWithPath("[].loanId").description("The loan id."),
             fieldWithPath("[].itemId").description("The item id."),
             fieldWithPath("[].instanceId").description("The instance id."),
+            fieldWithPath("[].instanceHrid").description("The instance human-readable id."),
             fieldWithPath("[].loanDate").description("The loan date."),
             fieldWithPath("[].loanDueDate").description("The loan due date."),
             fieldWithPath("[].overdue").description("Is the loan overdue."),
@@ -155,8 +164,30 @@ public class PatronControllerTest extends AbstractTestRestController {
             fieldWithPath("[].author").description("The author of the loan item.")
         );
 
-        performPatronGetWithMockMVC(getLoansUrl(), LOANS_ENDPOINT, pathParameters, requestParameters,
-            responseFields, loadJsonResource(loansCatalogResource));
+        expectGetResponse(getLoansUrl(), once(), respondJsonSuccess(patronAccountResource));
+        expectOkapiLoginResponse(between(0, 4), withStatus(CREATED));
+        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID1), once(), respondJsonSuccess(instance1Resource));
+        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID2), once(), respondJsonSuccess(instance2Resource));
+        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID3), once(), respondJsonSuccess(instance3Resource));
+        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID4), once(), respondJsonSuccess(instance4Resource));
+
+        mockMvc.perform(
+            get(PATRON_MVC_PREFIX + LOANS_ENDPOINT, UIN)
+                .param(CATALOG_FIELD, FOLIO_CATALOG)
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML)
+            )
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+            .andExpect(content().json(loadJsonResource(loansCatalogResource)))
+            .andDo(
+                document(
+                    DOC_PREFIX + LOANS_ENDPOINT,
+                    pathParameters,
+                    requestParameters,
+                    responseFields
+                )
+            );
 
         restServer.verify();
     }
@@ -176,6 +207,7 @@ public class PatronControllerTest extends AbstractTestRestController {
             fieldWithPath("loanId").description("The loan id."),
             fieldWithPath("itemId").description("The item id."),
             fieldWithPath("instanceId").description("The instance id."),
+            fieldWithPath("instanceHrid").description("The instance human-readable id."),
             fieldWithPath("loanDate").description("The loan date."),
             fieldWithPath("loanDueDate").description("The loan due date."),
             fieldWithPath("overdue").description("Is the loan overdue."),
@@ -184,6 +216,8 @@ public class PatronControllerTest extends AbstractTestRestController {
         );
 
         expectPostResponse(getLoanItemRenewalUrl(), once(), respondJsonOk(patronAccountRenewalResource));
+        expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
+        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID1), once(), respondJsonSuccess(instance1Resource));
 
         mockMvc.perform(
             post(PATRON_MVC_PREFIX + RENEW_MVC_PATH, UIN, ITEM_ID)
@@ -327,6 +361,24 @@ public class PatronControllerTest extends AbstractTestRestController {
     }
 
     @ParameterizedTest
+    @MethodSource("argumentsLoansResponses")
+    public void testLoansEndpoints(MockHttpServletRequestBuilder builder, String url, HttpMethod method,
+            ExpectedCount count, DefaultResponseCreator response, ResultMatcher result) throws Exception {
+
+        expectResponse(url, method, count, response);
+        expectOkapiLoginResponse(between(0, 4), withStatus(CREATED));
+        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID1), between(0, 1), respondJsonSuccess(instance1Resource));
+        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID2), between(0, 1), respondJsonSuccess(instance2Resource));
+        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID3), between(0, 1), respondJsonSuccess(instance3Resource));
+        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID4), between(0, 1), respondJsonSuccess(instance4Resource));
+
+        mockMvc.perform(builder)
+            .andExpect(result);
+
+        restServer.verify();
+    }
+
+    @ParameterizedTest
     @MethodSource("argumentsHoldsResponses")
     public void testHoldsEndpoint(MockHttpServletRequestBuilder builder, String url,
             ExpectedCount okapiCount, ExpectedCount holdsCount, ExpectedCount requestsCount,
@@ -372,12 +424,18 @@ public class PatronControllerTest extends AbstractTestRestController {
 
     private static Stream<? extends Arguments> argumentsEndpointResponses() throws Exception {
         return Stream.of(
-                streamOfFines(),
-                streamOfLoans(),
-                streamOfLoanItems(),
-                streamOfHoldsCancel()
-            )
-            .flatMap(stream -> stream);
+            streamOfFines(),
+            streamOfHoldsCancel()
+        )
+        .flatMap(stream -> stream);
+    }
+
+    private static Stream<? extends Arguments> argumentsLoansResponses() throws Exception {
+        return Stream.of(
+            streamOfLoans(),
+            streamOfLoanItems()
+        )
+        .flatMap(stream -> stream);
     }
 
     private static Stream<? extends Arguments> argumentsHoldsResponses() throws Exception {
@@ -512,6 +570,10 @@ public class PatronControllerTest extends AbstractTestRestController {
         return getOkapiUrl(String.format("circulation/requests/%s", REQUEST_ID));
     }
 
+    private static String getOkapiInstancesUrl(String instanceId) {
+        return getOkapiUrl(String.format("instance-storage/instances/%s", instanceId));
+    }
+
     private static String getCancelHoldRequestUrl() {
         return String.format("%spatron/account/%s/holds/%s/cancel?apikey=%s", BASE_PATH, UIN, REQUEST_ID, API_KEY);
     }
@@ -548,6 +610,26 @@ public class PatronControllerTest extends AbstractTestRestController {
     @Value("classpath:mock/response/service-point/servicePoint.json")
     public void setServicePointResource(Resource resource) {
         servicePointResource = resource;
+    }
+
+    @Value("classpath:mock/response/instances/in1.json")
+    public void setInstance1Resource(Resource resource) {
+        instance1Resource = resource;
+    }
+
+    @Value("classpath:mock/response/instances/in2.json")
+    public void setInstance2Resource(Resource resource) {
+        instance2Resource = resource;
+    }
+
+    @Value("classpath:mock/response/instances/in3.json")
+    public void setInstance3Resource(Resource resource) {
+        instance3Resource = resource;
+    }
+
+    @Value("classpath:mock/response/instances/in4.json")
+    public void setInstance4Resource(Resource resource) {
+        instance4Resource = resource;
     }
 
     @Value("classpath:mock/response/catalog/fines.json")
