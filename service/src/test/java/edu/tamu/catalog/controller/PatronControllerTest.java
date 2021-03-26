@@ -24,6 +24,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -194,12 +196,18 @@ public class PatronControllerTest extends AbstractTestRestController {
             fieldWithPath("[].title").description("The title of the Loan Item."),
             fieldWithPath("[].author").description("The author of the Loan Item."));
 
+        String instancesPayload = "{" +
+            "\"instances\": [" +
+                instance1Payload + "," +
+                instance2Payload + "," +
+                instance3Payload + "," +
+                instance4Payload +
+            "]}";
+
         expectGetResponse(getLoansUrl(), once(), respondJsonOk(patronAccountPayload));
-        expectOkapiLoginResponse(between(0, 4), withStatus(CREATED));
-        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID1), once(), respondJsonOk(instance1Payload));
-        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID2), once(), respondJsonOk(instance2Payload));
-        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID3), once(), respondJsonOk(instance3Payload));
-        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID4), once(), respondJsonOk(instance4Payload));
+        expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
+
+        expectGetResponse(getOkapiBatchInstancesUrl(new String[] { INSTANCE_ID4, INSTANCE_ID3, INSTANCE_ID1, INSTANCE_ID2 }), between(0, 1), respondJsonOk(instancesPayload));
 
         mockMvc.perform(
             get(PATRON_MVC_PREFIX + LOANS_ENDPOINT, UIN)
@@ -380,12 +388,12 @@ public class PatronControllerTest extends AbstractTestRestController {
     public void testLoansEndpoints(MockHttpServletRequestBuilder builder, String url, HttpMethod method,
             ExpectedCount count, DefaultResponseCreator response, ResultMatcher result) throws Exception {
 
+        String instancesPayload = "{\"instances\": [" + instance1Payload +"]}";
+
         expectResponse(url, method, count, response);
-        expectOkapiLoginResponse(between(0, 4), withStatus(CREATED));
-        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID1), between(0, 1), respondJsonOk(instance1Payload));
-        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID2), between(0, 1), respondJsonOk(instance2Payload));
-        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID3), between(0, 1), respondJsonOk(instance3Payload));
-        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID4), between(0, 1), respondJsonOk(instance4Payload));
+        expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
+
+        expectGetResponse(getOkapiBatchInstancesUrl(new String[] { INSTANCE_ID1 }), between(0, 1), respondJsonOk(instancesPayload));
 
         mockMvc.perform(builder)
             .andExpect(result);
@@ -646,6 +654,12 @@ public class PatronControllerTest extends AbstractTestRestController {
 
     private static String getOkapiInstancesUrl(String instanceId) {
         return getOkapiUrl(String.format("instance-storage/instances/%s", instanceId));
+    }
+
+    private static String getOkapiBatchInstancesUrl(String[] instanceIds) {
+        List<String> batch = Arrays.asList(instanceIds);
+        String ids = String.join("%20OR%20", batch);
+        return getOkapiUrl(String.format("instance-storage/instances?limit=%s&query=id%%3D%%3D(%s)", batch.size(), ids));
     }
 
     private static String getOkapiBLUsersByUinUrl() {
