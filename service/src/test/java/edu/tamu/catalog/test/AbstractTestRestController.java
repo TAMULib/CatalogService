@@ -21,6 +21,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.client.MockRestServiceServer.MockRestServiceServerBuilder;
 import org.springframework.test.web.client.response.DefaultResponseCreator;
 import org.springframework.web.client.RestTemplate;
+import org.hamcrest.text.MatchesPattern;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -48,18 +49,26 @@ public abstract class AbstractTestRestController {
     }
 
     protected void expectOkapiResponse(String path, HttpMethod method, ExpectedCount count, DefaultResponseCreator response) throws Exception  {
+        expectOkapiResponse(path, method, count, response, false);
+    }
+
+    protected void expectOkapiResponse(String path, HttpMethod method, ExpectedCount count, DefaultResponseCreator response, Boolean wildcard) throws Exception  {
         HttpHeaders headers = new HttpHeaders();
         headers.set(OKAPI_TENANT_HEADER, OKAPI_TENANT);
 
-        expectResponse(getOkapiUrl(path), method, count, response.headers(headers));
+        expectResponse(getOkapiUrl(path), method, count, response.headers(headers), wildcard);
     }
 
     protected void expectOkapiJsonResponse(String path, HttpMethod method, ExpectedCount count, DefaultResponseCreator response) throws Exception  {
+        expectOkapiJsonResponse(path, method, count, response, false);
+    }
+
+    protected void expectOkapiJsonResponse(String path, HttpMethod method, ExpectedCount count, DefaultResponseCreator response, Boolean wildcard) throws Exception  {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set(OKAPI_TENANT_HEADER, OKAPI_TENANT);
 
-        expectResponse(getOkapiUrl(path), method, count, response.headers(headers));
+        expectResponse(getOkapiUrl(path), method, count, response.headers(headers), wildcard);
     }
 
     protected void expectOkapiLoginResponse(ExpectedCount count, DefaultResponseCreator response) throws Exception  {
@@ -70,15 +79,23 @@ public abstract class AbstractTestRestController {
     }
 
     protected void expectGetResponse(String url, ExpectedCount count, DefaultResponseCreator response) throws Exception {
-        expectResponse(url, GET, count, response);
+        expectResponse(url, GET, count, response, false);
+    }
+
+    protected void expectGetResponse(String url, ExpectedCount count, DefaultResponseCreator response, Boolean wildcard) throws Exception {
+        expectResponse(url, GET, count, response, wildcard);
     }
 
     protected void expectPostResponse(String url, ExpectedCount count, DefaultResponseCreator response) throws Exception {
-        expectResponse(url, POST, count, response);
+        expectResponse(url, POST, count, response, false);
     }
 
-    protected void expectResponse(String url, HttpMethod method, ExpectedCount count, DefaultResponseCreator response) throws Exception {
-        restServer.expect(count, requestTo(url))
+    protected void expectPostResponse(String url, ExpectedCount count, DefaultResponseCreator response, Boolean wildcard) throws Exception {
+        expectResponse(url, POST, count, response, wildcard);
+    }
+
+    protected void expectResponse(String url, HttpMethod method, ExpectedCount count, DefaultResponseCreator response, Boolean wildcard) throws Exception {
+        restServer.expect(count, wildcard ? requestTo(MatchesPattern.matchesPattern(url)) : requestTo(url))
             .andExpect(method(method))
             .andRespond(response);
     }
