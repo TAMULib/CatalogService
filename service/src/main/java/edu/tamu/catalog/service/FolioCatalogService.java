@@ -100,7 +100,7 @@ public class FolioCatalogService implements CatalogService {
     private static final String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
     private static final String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
 
-    private static final int MAX_INSTANCE_ID_BATCH_SIZE = 96;
+    private static final int MAX_INSTANCE_ID_BATCH_SIZE = 90;
 
     @Autowired
     private RestTemplate restTemplate;
