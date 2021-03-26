@@ -1,0 +1,120 @@
+{
+  "instances": [
+    {
+      "id": "2422160d-23c4-356b-ad1c-44d90fc1320b",
+      "hrid": "in1",
+      "source": "Local: MARC",
+      "title": "ADVANCING LIBRARY EDUCATION: TECHNOLOGICAL INNOVATION AND INSTRUCTIONAL DESIGN",
+      "contributors": [
+        {
+          "name": "Sigal, Ari",
+          "contributorNameTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2a",
+          "primary": true
+        }
+      ],
+      "identifiers": [
+        {
+          "identifierTypeId": "2e48e713-17f3-4c13-a9f8-23845bb210af",
+          "value": "9781466636897"
+        },
+        {
+          "identifierTypeId": "6051f95c-028e-4c6a-8a9e-ee689dd51453",
+          "value": "1"
+        }
+      ],
+      "instanceTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2c",
+      "tags" : {
+        "tagList" : [
+          "important"
+        ]
+      }
+    },
+    {
+      "id": "829fecd3-67c3-3ca2-b9d4-281227690e0f",
+      "hrid": "in2",
+      "source": "Local: MARC",
+      "title": "ADVANCING LIBRARY EDUCATION: TECHNOLOGICAL INNOVATION AND INSTRUCTIONAL DESIGN",
+      "contributors": [
+        {
+          "name": "Sigal, Ari",
+          "contributorNameTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2a",
+          "primary": true
+        }
+      ],
+      "identifiers": [
+        {
+          "identifierTypeId": "2e48e713-17f3-4c13-a9f8-23845bb210af",
+          "value": "9781466636897"
+        },
+        {
+          "identifierTypeId": "6051f95c-028e-4c6a-8a9e-ee689dd51453",
+          "value": "1"
+        }
+      ],
+      "instanceTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2c",
+      "tags" : {
+        "tagList" : [
+          "important"
+        ]
+      }
+    },
+    {
+      "id": "b8ea27b8-5280-3023-bbf8-9113849120a1",
+      "hrid": "in3",
+      "source": "Local: MARC",
+      "title": "ADVANCING LIBRARY EDUCATION: TECHNOLOGICAL INNOVATION AND INSTRUCTIONAL DESIGN",
+      "contributors": [
+        {
+          "name": "Sigal, Ari",
+          "contributorNameTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2a",
+          "primary": true
+        }
+      ],
+      "identifiers": [
+        {
+          "identifierTypeId": "2e48e713-17f3-4c13-a9f8-23845bb210af",
+          "value": "9781466636897"
+        },
+        {
+          "identifierTypeId": "6051f95c-028e-4c6a-8a9e-ee689dd51453",
+          "value": "1"
+        }
+      ],
+      "instanceTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2c",
+      "tags" : {
+        "tagList" : [
+          "important"
+        ]
+      }
+    },
+    {
+      "id": "a0480d3f-181e-3abd-a091-288e1cfc05ab",
+      "hrid": "in4",
+      "source": "Local: MARC",
+      "title": "ADVANCING LIBRARY EDUCATION: TECHNOLOGICAL INNOVATION AND INSTRUCTIONAL DESIGN",
+      "contributors": [
+        {
+          "name": "Sigal, Ari",
+          "contributorNameTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2a",
+          "primary": true
+        }
+      ],
+      "identifiers": [
+        {
+          "identifierTypeId": "2e48e713-17f3-4c13-a9f8-23845bb210af",
+          "value": "9781466636897"
+        },
+        {
+          "identifierTypeId": "6051f95c-028e-4c6a-8a9e-ee689dd51453",
+          "value": "1"
+        }
+      ],
+      "instanceTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2c",
+      "tags" : {
+        "tagList" : [
+          "important"
+        ]
+      }
+    }
+  ]
+}

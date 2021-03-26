@@ -72,6 +72,13 @@
       <version>2.10.10</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest</artifactId>
+      <version>2.2</version>
+      <scope>test</scope>
+    </dependency>
+
 
     <!-- Begin of Note: The following dependencies are candidates for removal after an upgrade to Spring Boot 2.x -->
 

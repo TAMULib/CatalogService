@@ -24,8 +24,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -70,11 +68,10 @@ public class PatronControllerTest extends AbstractTestRestController {
     private static final String SERVICE_POINTS_ID = "ebab9ccc-4ece-4f35-bc82-01f3325abed8";
     private static final String REQUEST_ID = "8bbac557-d66f-4571-bbbf-47a107cc1589";
     private static final String INSTANCE_ID1 = "2422160d-23c4-356b-ad1c-44d90fc1320b";
-    private static final String INSTANCE_ID2 = "829fecd3-67c3-3ca2-b9d4-281227690e0f";
-    private static final String INSTANCE_ID3 = "b8ea27b8-5280-3023-bbf8-9113849120a1";
-    private static final String INSTANCE_ID4 = "a0480d3f-181e-3abd-a091-288e1cfc05ab";
     private static final String ITEM_ID = "40053ccb-fd0c-304b-9547-b2fc06f34d3e";
     private static final String USER_ID = "93710b5b-aa9a-43be-af34-7dcb1f7b0669";
+
+    private static final int INSTANCES_TOTAL = 4;
 
     private static final String FOLIO_CATALOG = "folio";
     private static final String VOYAGER_CATALOG = "msl";
@@ -106,9 +103,7 @@ public class PatronControllerTest extends AbstractTestRestController {
     private static String blUserEmptyErrorPayload;
     private static String automatedBlocksResponsePayload;
     private static String instance1Payload;
-    private static String instance2Payload;
-    private static String instance3Payload;
-    private static String instance4Payload;
+    private static String instancesPayload;
 
     private static String finesCatalogPayload;
     private static String loansCatalogPayload;
@@ -137,9 +132,7 @@ public class PatronControllerTest extends AbstractTestRestController {
         blUserEmptyErrorPayload = loadPayload("mock/response/bl-users/userEmptyError.json");
         automatedBlocksResponsePayload = loadPayload("mock/response/patron-blocks/automatedBlocks.json");
         instance1Payload = loadPayload("mock/response/instances/in1.json");
-        instance2Payload = loadPayload("mock/response/instances/in2.json");
-        instance3Payload = loadPayload("mock/response/instances/in3.json");
-        instance4Payload = loadPayload("mock/response/instances/in4.json");
+        instancesPayload = loadPayload("mock/response/instances/instances.json");
 
         finesCatalogPayload = loadPayload("mock/response/catalog/fines.json");
         loansCatalogPayload = loadPayload("mock/response/catalog/loans.json");
@@ -196,18 +189,9 @@ public class PatronControllerTest extends AbstractTestRestController {
             fieldWithPath("[].title").description("The title of the Loan Item."),
             fieldWithPath("[].author").description("The author of the Loan Item."));
 
-        String instancesPayload = "{" +
-            "\"instances\": [" +
-                instance1Payload + "," +
-                instance2Payload + "," +
-                instance3Payload + "," +
-                instance4Payload +
-            "]}";
-
         expectGetResponse(getLoansUrl(), once(), respondJsonOk(patronAccountPayload));
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
-
-        expectGetResponse(getOkapiBatchInstancesUrl(new String[] { INSTANCE_ID4, INSTANCE_ID3, INSTANCE_ID1, INSTANCE_ID2 }), between(0, 1), respondJsonOk(instancesPayload));
+        expectGetResponse(getOkapiBatchInstancesUrl(INSTANCES_TOTAL), once(), respondJsonOk(instancesPayload), true);
 
         mockMvc.perform(
             get(PATRON_MVC_PREFIX + LOANS_ENDPOINT, UIN)
@@ -231,7 +215,7 @@ public class PatronControllerTest extends AbstractTestRestController {
     }
 
     @Test
-    public void testLoanItemRenewalMockMVC() throws Exception {
+    public void testLoanRenewalMockMVC() throws Exception {
         PathParametersSnippet pathParameters = pathParameters(
             parameterWithName(UIN_FIELD).description("The patron UIN."),
             parameterWithName("itemId").description("The UUID of the Loan Item."));
@@ -250,9 +234,9 @@ public class PatronControllerTest extends AbstractTestRestController {
             fieldWithPath("title").description("The title of the Loan Item."),
             fieldWithPath("author").description("The author of the Loan Item."));
 
-        expectPostResponse(getLoanItemRenewalUrl(), once(), respondJsonOk(patronAccountRenewalPayload));
+        expectPostResponse(getLoanRenewalUrl(), once(), respondJsonOk(patronAccountRenewalPayload));
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
-        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID1), once(), respondJsonOk(instance1Payload));
+        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID1), between(0, 1), respondJsonOk(instance1Payload));
 
         mockMvc.perform(
             post(PATRON_MVC_PREFIX + RENEW_MVC_PATH, UIN, ITEM_ID)
@@ -375,7 +359,7 @@ public class PatronControllerTest extends AbstractTestRestController {
     public void testEndpoints(MockHttpServletRequestBuilder builder, String url, HttpMethod method,
             ExpectedCount count, DefaultResponseCreator response, ResultMatcher result) throws Exception {
 
-        expectResponse(url, method, count, response);
+        expectResponse(url, method, count, response, false);
 
         mockMvc.perform(builder)
             .andExpect(result);
@@ -388,12 +372,25 @@ public class PatronControllerTest extends AbstractTestRestController {
     public void testLoansEndpoints(MockHttpServletRequestBuilder builder, String url, HttpMethod method,
             ExpectedCount count, DefaultResponseCreator response, ResultMatcher result) throws Exception {
 
-        String instancesPayload = "{\"instances\": [" + instance1Payload +"]}";
-
-        expectResponse(url, method, count, response);
+        expectResponse(url, method, count, response, false);
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
+        expectGetResponse(getOkapiBatchInstancesUrl(1), between(0, 1), respondJsonOk(instancesPayload), true);
+        expectGetResponse(getOkapiBatchInstancesUrl(INSTANCES_TOTAL), between(0, 1), respondJsonOk(instancesPayload), true);
 
-        expectGetResponse(getOkapiBatchInstancesUrl(new String[] { INSTANCE_ID1 }), between(0, 1), respondJsonOk(instancesPayload));
+        mockMvc.perform(builder)
+            .andExpect(result);
+
+        restServer.verify();
+    }
+
+    @ParameterizedTest
+    @MethodSource("argumentsLoanRenewalResponses")
+    public void testLoanRenewalEndpoints(MockHttpServletRequestBuilder builder, String url, HttpMethod method,
+            ExpectedCount count, DefaultResponseCreator response, ResultMatcher result) throws Exception {
+
+        expectResponse(url, method, count, response, false);
+        expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
+        expectGetResponse(getOkapiBatchInstancesUrl(1), between(0, 4), respondJsonOk(instancesPayload), true);
 
         mockMvc.perform(builder)
             .andExpect(result);
@@ -468,14 +465,6 @@ public class PatronControllerTest extends AbstractTestRestController {
         .flatMap(stream -> stream);
     }
 
-    private static Stream<? extends Arguments> argumentsLoansResponses() throws Exception {
-        return Stream.of(
-            streamOfLoans(),
-            streamOfLoanItems()
-        )
-        .flatMap(stream -> stream);
-    }
-
     private static Stream<? extends Arguments> argumentsHoldsResponses() throws Exception {
         final MockHttpServletRequestBuilder holds = get(PATRON_MVC_PREFIX + HOLDS_ENDPOINT, UIN)
             .contentType(MediaType.APPLICATION_JSON_UTF8)
@@ -545,27 +534,7 @@ public class PatronControllerTest extends AbstractTestRestController {
                 respondJsonOk(automatedBlocksResponsePayload), USER_ID, status().isNotFound()));
     }
 
-    private static Stream<? extends Arguments> streamOfFines() throws Exception {
-        final MockHttpServletRequestBuilder fines = get(PATRON_MVC_PREFIX + FINES_ENDPOINT, UIN)
-            .contentType(MediaType.APPLICATION_JSON_UTF8)
-            .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML);
-
-        final MockHttpServletRequestBuilder finesCatalog = get(PATRON_MVC_PREFIX + FINES_ENDPOINT, UIN)
-            .contentType(MediaType.APPLICATION_JSON_UTF8)
-            .param(CATALOG_FIELD, VOYAGER_CATALOG)
-            .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML);
-
-        return Stream.of(
-            Arguments.of(fines, getFinesUrl(), GET, once(), withStatus(NOT_FOUND), status().isNotFound()),
-            Arguments.of(fines, getFinesUrl(), GET, once(), withStatus(BAD_REQUEST), status().isBadRequest()),
-            Arguments.of(fines, getFinesUrl(), GET, once(), withStatus(INTERNAL_SERVER_ERROR),
-                status().isInternalServerError()),
-            Arguments.of(finesCatalog, getFinesUrl(), GET, never(), withStatus(OK), status().isBadRequest()),
-            Arguments.of(fines, getFinesUrl(), GET, once(), respondJsonOk(patronAccountDateParseErrorPayload),
-                status().isInternalServerError()));
-    }
-
-    private static Stream<? extends Arguments> streamOfLoans() throws Exception {
+    private static Stream<? extends Arguments> argumentsLoansResponses() throws Exception {
         final MockHttpServletRequestBuilder loans = get(PATRON_MVC_PREFIX + LOANS_ENDPOINT, UIN)
             .contentType(MediaType.APPLICATION_JSON_UTF8)
             .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML);
@@ -585,25 +554,45 @@ public class PatronControllerTest extends AbstractTestRestController {
                 status().isInternalServerError()));
     }
 
-    private static Stream<? extends Arguments> streamOfLoanItems() {
-        final MockHttpServletRequestBuilder loanItems = post(PATRON_MVC_PREFIX + RENEW_MVC_PATH, UIN, ITEM_ID)
+    private static Stream<? extends Arguments> argumentsLoanRenewalResponses() {
+        final MockHttpServletRequestBuilder loans = post(PATRON_MVC_PREFIX + RENEW_MVC_PATH, UIN, ITEM_ID)
+            .contentType(MediaType.APPLICATION_JSON_UTF8)
+            .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML)
+            .content(loanRenewalCatalogPayload);
+
+        final MockHttpServletRequestBuilder loansCatalog = post(PATRON_MVC_PREFIX + RENEW_MVC_PATH, UIN, ITEM_ID)
+            .contentType(MediaType.APPLICATION_JSON_UTF8)
+            .param(CATALOG_FIELD, VOYAGER_CATALOG)
+            .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML)
+            .content(loanRenewalCatalogPayload);
+
+        return Stream.of(
+            Arguments.of(loans, getLoanRenewalUrl(), POST, once(), withStatus(NOT_FOUND), status().isNotFound()),
+            Arguments.of(loans, getLoanRenewalUrl(), POST, once(), withStatus(BAD_REQUEST),
+                status().isBadRequest()),
+            Arguments.of(loans, getLoanRenewalUrl(), POST, once(), withStatus(INTERNAL_SERVER_ERROR),
+                status().isInternalServerError()),
+            Arguments.of(loansCatalog, getLoanRenewalUrl(), POST, never(), withStatus(OK), status().isBadRequest()));
+    }
+
+    private static Stream<? extends Arguments> streamOfFines() throws Exception {
+        final MockHttpServletRequestBuilder fines = get(PATRON_MVC_PREFIX + FINES_ENDPOINT, UIN)
             .contentType(MediaType.APPLICATION_JSON_UTF8)
             .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML);
 
-        final MockHttpServletRequestBuilder loanItemsCatalog = post(PATRON_MVC_PREFIX + RENEW_MVC_PATH, UIN, ITEM_ID)
+        final MockHttpServletRequestBuilder finesCatalog = get(PATRON_MVC_PREFIX + FINES_ENDPOINT, UIN)
             .contentType(MediaType.APPLICATION_JSON_UTF8)
             .param(CATALOG_FIELD, VOYAGER_CATALOG)
             .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML);
 
         return Stream.of(
-            Arguments.of(loanItems, getLoanItemRenewalUrl(), POST, once(), withStatus(NOT_FOUND),
-                status().isNotFound()),
-            Arguments.of(loanItems, getLoanItemRenewalUrl(), POST, once(), withStatus(BAD_REQUEST),
-                status().isBadRequest()),
-            Arguments.of(loanItems, getLoanItemRenewalUrl(), POST, once(), withStatus(INTERNAL_SERVER_ERROR),
+            Arguments.of(fines, getFinesUrl(), GET, once(), withStatus(NOT_FOUND), status().isNotFound()),
+            Arguments.of(fines, getFinesUrl(), GET, once(), withStatus(BAD_REQUEST), status().isBadRequest()),
+            Arguments.of(fines, getFinesUrl(), GET, once(), withStatus(INTERNAL_SERVER_ERROR),
                 status().isInternalServerError()),
-            Arguments.of(loanItemsCatalog, getLoanItemRenewalUrl(), POST, never(), withStatus(OK),
-                status().isBadRequest()));
+            Arguments.of(finesCatalog, getFinesUrl(), GET, never(), withStatus(OK), status().isBadRequest()),
+            Arguments.of(fines, getFinesUrl(), GET, once(), respondJsonOk(patronAccountDateParseErrorPayload),
+                status().isInternalServerError()));
     }
 
     private static Stream<? extends Arguments> streamOfHoldsCancel() {
@@ -656,10 +645,8 @@ public class PatronControllerTest extends AbstractTestRestController {
         return getOkapiUrl(String.format("instance-storage/instances/%s", instanceId));
     }
 
-    private static String getOkapiBatchInstancesUrl(String[] instanceIds) {
-        List<String> batch = Arrays.asList(instanceIds);
-        String ids = String.join("%20OR%20", batch);
-        return getOkapiUrl(String.format("instance-storage/instances?limit=%s&query=id%%3D%%3D(%s)", batch.size(), ids));
+    private static String getOkapiBatchInstancesUrl(int size) {
+        return getOkapiUrl(String.format("instance-storage/instances\\?limit=%s&query=id%%3D%%3D.*", size));
     }
 
     private static String getOkapiBLUsersByUinUrl() {
@@ -674,11 +661,12 @@ public class PatronControllerTest extends AbstractTestRestController {
         return String.format("%spatron/account/%s/holds/%s/cancel?apikey=%s", BASE_PATH, UIN, REQUEST_ID, API_KEY);
     }
 
-    private static String getLoanItemRenewalUrl() {
+    private static String getLoanRenewalUrl() {
         return String.format("%spatron/account/%s/item/%s/renew?apikey=%s", BASE_PATH, UIN, ITEM_ID, API_KEY);
     }
 
     private static String loadPayload(String path) throws IOException {
         return loadResource(PatronControllerTest.class.getClassLoader().getResource(path));
     }
+
 }
