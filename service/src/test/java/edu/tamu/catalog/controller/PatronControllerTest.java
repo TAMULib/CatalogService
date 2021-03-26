@@ -202,14 +202,7 @@ public class PatronControllerTest extends AbstractTestRestController {
                 instance2Payload + "," +
                 instance3Payload + "," +
                 instance4Payload +
-            "]," +
-            "\"totalRecords\": 4," +
-            "\"resultInfo\": {" +
-            "\"totalRecords\": 4," +
-            "\"facets\": []," +
-            "\"diagnostics\": []" +
-            "}" +
-        "}";
+            "]}";
 
         expectGetResponse(getLoansUrl(), once(), respondJsonOk(patronAccountPayload));
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
@@ -395,17 +388,7 @@ public class PatronControllerTest extends AbstractTestRestController {
     public void testLoansEndpoints(MockHttpServletRequestBuilder builder, String url, HttpMethod method,
             ExpectedCount count, DefaultResponseCreator response, ResultMatcher result) throws Exception {
 
-        String instancesPayload = "{" +
-            "\"instances\": [" +
-                instance1Payload +
-            "]," +
-            "\"totalRecords\": 1," +
-            "\"resultInfo\": {" +
-            "\"totalRecords\": 1," +
-            "\"facets\": []," +
-            "\"diagnostics\": []" +
-            "}" +
-        "}";
+        String instancesPayload = "{\"instances\": [" + instance1Payload +"]}";
 
         expectResponse(url, method, count, response);
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));

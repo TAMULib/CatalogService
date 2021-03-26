@@ -185,22 +185,22 @@ public class FolioCatalogService implements CatalogService {
 
         List<LoanItem> list = new ArrayList<>();
 
-        JsonNode loansNode = node.at("/loans");
+        JsonNode loans = node.at("/loans");
 
-        if (loansNode.isContainerNode() && loansNode.isArray()) {
-            Iterator<JsonNode> iter = loansNode.elements();
-            Map<String, JsonNode> loans = new HashMap<>();
+        if (loans.isContainerNode() && loans.isArray()) {
+            Iterator<JsonNode> iter = loans.elements();
+            Map<String, JsonNode> instanceToloan = new HashMap<>();
 
             while (iter.hasNext()) {
                 JsonNode loan = iter.next();
                 String instanceId = getText(loan, "/item/instanceId");
-                loans.put(instanceId, loan);
+                instanceToloan.put(instanceId, loan);
             }
 
-            for (JsonNode instance : getInstances(loans.keySet())) {
+            for (JsonNode instance : getInstances(instanceToloan.keySet())) {
                 String instanceId = getText(instance, "/id");
                 String instanceHrid = getText(instance, "/hrid");
-                JsonNode loan = loans.get(instanceId);
+                JsonNode loan = instanceToloan.get(instanceId);
                 list.add(LoanItem.builder()
                     .loanId(getText(loan, "/id"))
                     .itemId(getText(loan, "/item/itemId"))
