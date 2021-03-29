@@ -153,62 +153,62 @@ public class PatronControllerTestBase extends AbstractTestRestController {
         return loadResource(PatronControllerTestBase.class.getClassLoader().getResource(path));
     }
 
-    protected static String describeUIN() {
+    protected static String descUIN() {
         return "The *Patron* _UIN_.\n\n" +
             "In _FOLIO_, this is the `externalSystemId`.";
     }
 
-    protected static String describeCatalogName(String defaultName) {
+    protected static String descCatalogName(String defaultName) {
         return "A name of the catalog to use.\n\n" +
             "The catalog settings are loaded from `src/main/resources/catalogs/{catalogName}.json` file.\n\n" +
             "This endpoint defaults to `" + defaultName + "`.";
     }
 
-    protected static String describeId(String modelName) {
+    protected static String descId(String modelName) {
         return "A _UUID_ representing a " + modelName + ".";
     }
 
-    protected static String describeItemId(String modelName) {
+    protected static String descItemId(String modelName) {
         return "A _UUID_ representing the Item associated with this " + modelName + ".";
     }
 
-    protected static String describeItemTitle(String modelName) {
+    protected static String descItemTitle(String modelName) {
         return "A title of the *Item* associated with this " + modelName + ".";
     }
 
-    protected static String describeInstanceId(String modelName) {
+    protected static String descInstanceId(String modelName) {
         return "A _UUID_ representing a *Holding Record Instance* associated with this " + modelName + ".";
     }
 
-    protected static String describeInstanceHrid(String modelName) {
+    protected static String descInstanceHrid(String modelName) {
         return "A human-readable number representing associated with this " + modelName + ".";
     }
 
-    protected static String describeAmount(boolean futureTense) {
+    protected static String descAmount(boolean futureTense) {
         return "A dollar amount " + (futureTense ? "to be" : "") + " charged.";
     }
 
-    protected static String describeType(String modelName) {
+    protected static String descType(String modelName) {
         return "A type of the " + modelName + ".";
     }
 
-    protected static String describeTimestamp(String details) {
+    protected static String descTimestamp(String details) {
         return "A timestamp in milliseconds from _UNIX Epoch_ representing the date " + details + ".";
     }
 
-    protected static String describeBoolean(String details) {
+    protected static String descBoolean(String details) {
         return "Designates that the " + details + ".";
     }
 
-    protected static String describeField(String modelName, String fieldName) {
+    protected static String descField(String modelName, String fieldName) {
         return "A " + fieldName + " of the " + modelName + ".";
     }
 
-    protected static String describePickupServicePoint() {
+    protected static String descPickupServicePoint() {
         return "A title representing the *Pickup Service Point* location.";
     }
 
-    protected static String describeQueuePosition() {
+    protected static String descQueuePosition() {
         return "The position within the queue.";
     }
 

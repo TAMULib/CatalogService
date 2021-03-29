@@ -56,19 +56,19 @@ public class PatronControllerTest extends PatronControllerTestBase {
     @Test
     public void testFinesMockMVC() throws Exception {
         PathParametersSnippet pathParameters = pathParameters(
-            parameterWithName(UIN_FIELD).description(describeUIN()));
+            parameterWithName(UIN_FIELD).description(descUIN()));
 
         RequestParametersSnippet requestParameters = requestParameters(
-            parameterWithName(CATALOG_FIELD).description(describeCatalogName(FOLIO_CATALOG)).optional());
+            parameterWithName(CATALOG_FIELD).description(descCatalogName(FOLIO_CATALOG)).optional());
 
         ResponseFieldsSnippet responseFields = responseFields(
-            fieldWithPath("[].fineId").description(describeId("*Fee* or *Fine*")),
-            fieldWithPath("[].itemId").description(describeItemId("*Fee* or *Fine*")),
-            fieldWithPath("[].instanceId").description(describeInstanceId("*Fee* or *Fine*")),
-            fieldWithPath("[].amount").description(describeAmount(true)),
-            fieldWithPath("[].fineType").description(describeType("*Fee* or *Fine*")),
-            fieldWithPath("[].fineDate").description(describeTimestamp("the *Fee* or *Fine* was accrued")),
-            fieldWithPath("[].itemTitle").description(describeItemTitle("*Fee* or *Fine*")));
+            fieldWithPath("[].fineId").description(descId("*Fee* or *Fine*")),
+            fieldWithPath("[].itemId").description(descItemId("*Fee* or *Fine*")),
+            fieldWithPath("[].instanceId").description(descInstanceId("*Fee* or *Fine*")),
+            fieldWithPath("[].amount").description(descAmount(true)),
+            fieldWithPath("[].fineType").description(descType("*Fee* or *Fine*")),
+            fieldWithPath("[].fineDate").description(descTimestamp("the *Fee* or *Fine* was accrued")),
+            fieldWithPath("[].itemTitle").description(descItemTitle("*Fee* or *Fine*")));
 
         performPatronGetWithMockMVC(getFinesUrl(), FINES_ENDPOINT, pathParameters,
             requestParameters, responseFields, finesCatalogPayload);
@@ -77,21 +77,21 @@ public class PatronControllerTest extends PatronControllerTestBase {
     @Test
     public void testLoansMockMVC() throws Exception {
         PathParametersSnippet pathParameters = pathParameters(
-            parameterWithName(UIN_FIELD).description(describeUIN()));
+            parameterWithName(UIN_FIELD).description(descUIN()));
 
         RequestParametersSnippet requestParameters = requestParameters(
-            parameterWithName(CATALOG_FIELD).description(describeCatalogName(FOLIO_CATALOG)).optional());
+            parameterWithName(CATALOG_FIELD).description(descCatalogName(FOLIO_CATALOG)).optional());
 
         ResponseFieldsSnippet responseFields = responseFields(
-            fieldWithPath("[].loanId").description(describeId("*Loan*")),
-            fieldWithPath("[].itemId").description(describeItemId("*Loan*")),
-            fieldWithPath("[].instanceId").description(describeInstanceId("*Loan*")),
-            fieldWithPath("[].instanceHrid").description(describeInstanceHrid("*Loan*")),
-            fieldWithPath("[].loanDate").description(describeTimestamp("the *Loan* was created")),
-            fieldWithPath("[].loanDueDate").description(describeTimestamp("the *Loan* is due")),
-            fieldWithPath("[].overdue").description(describeBoolean("*Loan* is overdue")),
-            fieldWithPath("[].title").description(describeField("*Loan*", "title")),
-            fieldWithPath("[].author").description(describeField("*Loan*", "author")));
+            fieldWithPath("[].loanId").description(descId("*Loan*")),
+            fieldWithPath("[].itemId").description(descItemId("*Loan*")),
+            fieldWithPath("[].instanceId").description(descInstanceId("*Loan*")),
+            fieldWithPath("[].instanceHrid").description(descInstanceHrid("*Loan*")),
+            fieldWithPath("[].loanDate").description(descTimestamp("the *Loan* was created")),
+            fieldWithPath("[].loanDueDate").description(descTimestamp("the *Loan* is due")),
+            fieldWithPath("[].overdue").description(descBoolean("*Loan* is overdue")),
+            fieldWithPath("[].title").description(descField("*Loan*", "title")),
+            fieldWithPath("[].author").description(descField("*Loan*", "author")));
 
         expectGetResponse(getLoansUrl(), once(), respondJsonOk(patronAccountPayload));
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
@@ -121,22 +121,22 @@ public class PatronControllerTest extends PatronControllerTestBase {
     @Test
     public void testLoanRenewalMockMVC() throws Exception {
         PathParametersSnippet pathParameters = pathParameters(
-            parameterWithName(UIN_FIELD).description(describeUIN()),
-            parameterWithName("itemId").description(describeItemId("*Loan*")));
+            parameterWithName(UIN_FIELD).description(descUIN()),
+            parameterWithName("itemId").description(descItemId("*Loan*")));
 
         RequestParametersSnippet requestParameters = requestParameters(
-            parameterWithName(CATALOG_FIELD).description(describeCatalogName(FOLIO_CATALOG)).optional());
+            parameterWithName(CATALOG_FIELD).description(descCatalogName(FOLIO_CATALOG)).optional());
 
         ResponseFieldsSnippet responseFields = responseFields(
-            fieldWithPath("loanId").description(describeId("*Loan*")),
-            fieldWithPath("itemId").description(describeItemId("*Loan*")),
-            fieldWithPath("instanceId").description(describeInstanceId("*Loan*")),
-            fieldWithPath("instanceHrid").description(describeInstanceHrid("*Loan*")),
-            fieldWithPath("loanDate").description(describeTimestamp("the *Loan* was created")),
-            fieldWithPath("loanDueDate").description(describeTimestamp("the *Loan* is due")),
-            fieldWithPath("overdue").description(describeBoolean("*Loan* is overdue")),
-            fieldWithPath("title").description(describeField("*Loan*", "title")),
-            fieldWithPath("author").description(describeField("*Loan*", "author")));
+            fieldWithPath("loanId").description(descId("*Loan*")),
+            fieldWithPath("itemId").description(descItemId("*Loan*")),
+            fieldWithPath("instanceId").description(descInstanceId("*Loan*")),
+            fieldWithPath("instanceHrid").description(descInstanceHrid("*Loan*")),
+            fieldWithPath("loanDate").description(descTimestamp("the *Loan* was created")),
+            fieldWithPath("loanDueDate").description(descTimestamp("the *Loan* is due")),
+            fieldWithPath("overdue").description(descBoolean("*Loan* is overdue")),
+            fieldWithPath("title").description(descField("*Loan*", "title")),
+            fieldWithPath("author").description(descField("*Loan*", "author")));
 
         expectPostResponse(getLoanRenewalUrl(), once(), respondJsonOk(patronAccountRenewalPayload));
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
@@ -165,21 +165,21 @@ public class PatronControllerTest extends PatronControllerTestBase {
     @Test
     public void testHoldRequestsMockMVC() throws Exception {
         PathParametersSnippet pathParameters = pathParameters(
-            parameterWithName(UIN_FIELD).description(describeUIN()));
+            parameterWithName(UIN_FIELD).description(descUIN()));
 
         RequestParametersSnippet requestParameters = requestParameters(
-            parameterWithName(CATALOG_FIELD).description(describeCatalogName(FOLIO_CATALOG)).optional());
+            parameterWithName(CATALOG_FIELD).description(descCatalogName(FOLIO_CATALOG)).optional());
 
         ResponseFieldsSnippet responseFields = responseFields(
-            fieldWithPath("[].requestId").description(describeId("*Hold Request*")),
-            fieldWithPath("[].itemId").description(describeItemId("*Hold Request*")),
-            fieldWithPath("[].instanceId").description(describeInstanceId("*Hold Request*")),
-            fieldWithPath("[].requestType").description(describeType("*Hold Request*")),
-            fieldWithPath("[].itemTitle").description(describeItemTitle("*Hold Request*")),
-            fieldWithPath("[].statusText").description(describeField("*Hold Request*", "descriptive status")),
-            fieldWithPath("[].pickupServicePoint").description(describePickupServicePoint()),
-            fieldWithPath("[].queuePosition").description(describeQueuePosition()),
-            fieldWithPath("[].expirationDate").description(describeTimestamp("the *Hold Request* will expire")));
+            fieldWithPath("[].requestId").description(descId("*Hold Request*")),
+            fieldWithPath("[].itemId").description(descItemId("*Hold Request*")),
+            fieldWithPath("[].instanceId").description(descInstanceId("*Hold Request*")),
+            fieldWithPath("[].requestType").description(descType("*Hold Request*")),
+            fieldWithPath("[].itemTitle").description(descItemTitle("*Hold Request*")),
+            fieldWithPath("[].statusText").description(descField("*Hold Request*", "descriptive status")),
+            fieldWithPath("[].pickupServicePoint").description(descPickupServicePoint()),
+            fieldWithPath("[].queuePosition").description(descQueuePosition()),
+            fieldWithPath("[].expirationDate").description(descTimestamp("the *Hold Request* will expire")));
 
         expectGetResponse(getHoldsUrl(), once(), respondJsonOk(patronAccountPayload));
         expectOkapiLoginResponse(once(), withStatus(CREATED));
@@ -210,11 +210,11 @@ public class PatronControllerTest extends PatronControllerTestBase {
     @Test
     public void testCancelHoldRequestMockMVC() throws Exception {
         PathParametersSnippet pathParameters = pathParameters(
-            parameterWithName(UIN_FIELD).description(describeUIN()),
-            parameterWithName("requestId").description(describeId("*Hold Request*")));
+            parameterWithName(UIN_FIELD).description(descUIN()),
+            parameterWithName("requestId").description(descId("*Hold Request*")));
 
         RequestParametersSnippet requestParameters = requestParameters(
-            parameterWithName(CATALOG_FIELD).description(describeCatalogName(FOLIO_CATALOG)).optional());
+            parameterWithName(CATALOG_FIELD).description(descCatalogName(FOLIO_CATALOG)).optional());
 
         expectPostResponse(getCancelHoldRequestUrl(), once(),
             respondJsonCreated(patronAccountCancelHoldResponsePayload));
@@ -241,10 +241,10 @@ public class PatronControllerTest extends PatronControllerTestBase {
     @Test
     public void testBlockMockMVC() throws Exception {
         PathParametersSnippet pathParameters = pathParameters(
-            parameterWithName(UIN_FIELD).description(describeUIN()));
+            parameterWithName(UIN_FIELD).description(descUIN()));
 
         RequestParametersSnippet requestParameters = requestParameters(
-            parameterWithName(CATALOG_FIELD).description(describeCatalogName(FOLIO_CATALOG)).optional());
+            parameterWithName(CATALOG_FIELD).description(descCatalogName(FOLIO_CATALOG)).optional());
 
         expectOkapiLoginResponse(once(), withStatus(CREATED));
         expectGetResponse(getOkapiBLUsersByUinUrl(), once(), respondJsonOk(blUserResponsePayload));
