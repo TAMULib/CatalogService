@@ -20,7 +20,7 @@
       },
       "accrualDate": "2019-05-01T14:08:46.000+0000",
       "state": "Outstanding",
-      "reason": "Overdue (migrated-do not use)",
+      "reason": "charge",
       "feeFineId" : "d4d849f9-f953-4f7c-acf6-b16b65cb3bb4"
     },
     {
@@ -36,7 +36,7 @@
       },
       "accrualDate": "2019-08-20T13:41:41.000+0000",
       "state": "Outstanding",
-      "reason": "Overdue (migrated-do not use)",
+      "reason": "charge",
       "feeFineId" : "e2791487-9962-4e67-98dd-99f8bc89e3e4"
     }
   ],
