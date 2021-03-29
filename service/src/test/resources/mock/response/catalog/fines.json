@@ -4,7 +4,7 @@
     "itemId": "0b82a7d0-a681-39d9-8b11-5b09726722d9",
     "instanceId": "bd173687-8355-3018-b2bc-eb3bfd14c869",
     "amount": 1,
-    "fineType": "Overdue (migrated-do not use)",
+    "fineType": "charge",
     "fineDate": 1556719726000,
     "itemTitle": "Guardians of the galaxy / Marvel Studios ; co-producers, David J. Grant, Jonathan Schwartz ; executive producers, Nik Korda, Stan Lee, Victoria Alonso, Jeremy Latcham, Alan Fine, Louis D'Esposito ; produced by Kevin Feige ; written by James Gunn and Nicole Perlman ; directed by James Gunn."
   },
@@ -13,7 +13,7 @@
     "itemId": "13c4044e-9ecc-3c90-93df-4a58d6e0f597",
     "instanceId": "d42f4d83-a5ab-38f4-b396-1a43a471b86f",
     "amount": 1,
-    "fineType": "Overdue (migrated-do not use)",
+    "fineType": "charge",
     "fineDate": 1566308501000,
     "itemTitle": "Bill & Ted's excellent adventure / an Orion Pictures release ; Nelson Entertainment presents an Interscope Communications production ; in association with Soisson/Murphey Productions ;  written by Chris Matheson & Ed Solomon ; produced by Scott Kroopf, Michael S. Murphey, Joel Soisson ; directed by Stephen Herek."
   }
