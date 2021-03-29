@@ -1,10 +1,18 @@
 == Patron API
 A collection of endpoints for accessing Patron data.
 
+This API refers to `uin`, which in many cases is equivalent to `externalSystemId` in *FOLIO*.
+
 
 === Get Patron Block
 
-A `GET` to the `/patron/{uin}/block` endpoint which will return a boolean representing whether or not the requested Patron is blocked.
+A `GET` to the `/patron/{uin}/block` endpoint which will return a boolean representing whether or not the requested *Patron* is blocked.
+
+==== Path Parameters
+include::{snippets}/patron/block/path-parameters.adoc[]
+
+==== Request Parameters
+include::{snippets}/patron/block/request-parameters.adoc[]
 
 ==== Sample Request
 include::{snippets}/patron/block/http-request.adoc[]
@@ -18,7 +26,16 @@ include::{snippets}/patron/block/curl-request.adoc[]
 
 === Get Patron Requests
 
-A `GET` to the `/patron/{uin}/holds` endpoint which will return a list of Requests associated with the given Patron.
+A `GET` to the `/patron/{uin}/holds` endpoint which will return a list of *Hold Requests* associated with the given *Patron*.
+
+==== Path Parameters
+include::{snippets}/patron/holds/path-parameters.adoc[]
+
+==== Request Parameters
+include::{snippets}/patron/holds/request-parameters.adoc[]
+
+==== Response Fields
+include::{snippets}/patron/holds/response-fields.adoc[]
 
 ==== Sample Request
 include::{snippets}/patron/holds/http-request.adoc[]
@@ -32,7 +49,17 @@ include::{snippets}/patron/holds/curl-request.adoc[]
 
 === Get Patron Fines
 
-A `GET` to the `/patron/{uin}/fines` endpoint which will return a list of Fines associated with the given Patron.
+A `GET` to the `/patron/{uin}/fines` endpoint which will return a list of *Fees* or *Fines* associated with the given *Patron*.
+A *Fee* or a *Fine* may also be called a *Charge*.
+
+==== Path Parameters
+include::{snippets}/patron/fines/path-parameters.adoc[]
+
+==== Request Parameters
+include::{snippets}/patron/fines/request-parameters.adoc[]
+
+==== Response Fields
+include::{snippets}/patron/fines/response-fields.adoc[]
 
 ==== Sample Request
 include::{snippets}/patron/fines/http-request.adoc[]
@@ -46,7 +73,17 @@ include::{snippets}/patron/fines/curl-request.adoc[]
 
 === Get Patron Loans
 
-A `GET` to the `/patron/{uin}/loans` endpoint which will return a list of Loans associated with the given Patron.
+A `GET` to the `/patron/{uin}/loans` endpoint which will return a list of *Loans* associated with the given *Patron*.
+A *Loan* may also be called a *Loan Item* or a *Charged Item*.
+
+==== Path Parameters
+include::{snippets}/patron/loans/path-parameters.adoc[]
+
+==== Request Parameters
+include::{snippets}/patron/loans/request-parameters.adoc[]
+
+==== Response Fields
+include::{snippets}/patron/loans/response-fields.adoc[]
 
 ==== Sample Request
 include::{snippets}/patron/loans/http-request.adoc[]
@@ -60,7 +97,13 @@ include::{snippets}/patron/loans/curl-request.adoc[]
 
 === Cancel Patron Request
 
-A `POST` to the `/{uin}/holds/{requestId}/cancel` endpoint to cancel a Request associated with the given Patron.
+A `POST` to the `/{uin}/holds/{requestId}/cancel` endpoint to cancel a *Hold Request* associated with the given *Patron*.
+
+==== Path Parameters
+include::{snippets}/patron/holds/cancel/path-parameters.adoc[]
+
+==== Request Parameters
+include::{snippets}/patron/holds/cancel/request-parameters.adoc[]
 
 ==== Sample Request
 include::{snippets}/patron/holds/cancel/http-request.adoc[]
@@ -72,9 +115,20 @@ include::{snippets}/patron/holds/cancel/http-response.adoc[]
 include::{snippets}/patron/holds/cancel/curl-request.adoc[]
 
 
-=== Renew Patron Item
+=== Renew Patron Loan
 
-A `POST` to the `/{uin}/renew/{itemId}` endpoint to renew an Item associated with the given Patron.
+A `POST` to the `/{uin}/renew/{itemId}` endpoint to renew an *Loan* associated with the given *Patron*.
+A *Loan* may also be called a *Loan Item* or a *Charged Item*.
+This endpoint renews by the `itemId`, instead of the `loanId`.
+
+==== Path Parameters
+include::{snippets}/patron/renew/path-parameters.adoc[]
+
+==== Request Parameters
+include::{snippets}/patron/renew/request-parameters.adoc[]
+
+==== Response Fields
+include::{snippets}/patron/renew/response-fields.adoc[]
 
 ==== Sample Request
 include::{snippets}/patron/renew/http-request.adoc[]

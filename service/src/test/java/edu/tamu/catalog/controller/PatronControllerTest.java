@@ -23,17 +23,13 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.io.IOException;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -45,126 +41,34 @@ import org.springframework.restdocs.request.RequestParametersSnippet;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.client.ExpectedCount;
 import org.springframework.test.web.client.response.DefaultResponseCreator;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.web.client.RestTemplate;
-
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 
 import edu.tamu.catalog.config.CatalogServiceConfig;
 import edu.tamu.catalog.config.RestConfig;
-import edu.tamu.catalog.test.AbstractTestRestController;
-import edu.tamu.catalog.utility.TokenUtility;
 
 @ExtendWith(SpringExtension.class)
 @WebMvcTest(value = PatronController.class, secure = false)
 @AutoConfigureRestDocs(outputDir = "target/generated-snippets")
 @Import({ RestConfig.class, CatalogServiceConfig.class })
-public class PatronControllerTest extends AbstractTestRestController {
-
-    private static final String UIN = "1234567890";
-    private static final String SERVICE_POINTS_ID = "ebab9ccc-4ece-4f35-bc82-01f3325abed8";
-    private static final String REQUEST_ID = "8bbac557-d66f-4571-bbbf-47a107cc1589";
-    private static final String INSTANCE_ID1 = "2422160d-23c4-356b-ad1c-44d90fc1320b";
-    private static final String ITEM_ID = "40053ccb-fd0c-304b-9547-b2fc06f34d3e";
-    private static final String USER_ID = "93710b5b-aa9a-43be-af34-7dcb1f7b0669";
-
-    private static final int INSTANCES_TOTAL = 4;
-
-    private static final String FOLIO_CATALOG = "folio";
-    private static final String VOYAGER_CATALOG = "msl";
-
-    private static final String UIN_FIELD = "uin";
-    private static final String CATALOG_FIELD = "catalogName";
-
-    private static final String FINES_ENDPOINT = "fines";
-    private static final String LOANS_ENDPOINT = "loans";
-    private static final String RENEWAL_ENDPOINT = "renew";
-    private static final String HOLDS_ENDPOINT = "holds";
-    private static final String BLOCK_ENDPOINT = "block";
-
-    private static final String DOC_PREFIX = "patron/";
-    private static final String PATRON_MVC_PREFIX = "/patron/{uin}/";
-
-    private static final String HOLDS_CANCEL_MVC_PATH = PATRON_MVC_PREFIX + "holds/{requestId}/cancel";
-    private static final String RENEW_MVC_PATH = RENEWAL_ENDPOINT + "/{itemId}";
-
-    private static String patronAccountPayload;
-    private static String patronAccountDateParseErrorPayload;
-    private static String patronAccountRenewalPayload;
-    private static String patronAccountCancelHoldResponsePayload;
-    private static String holdRequestPayload;
-    private static String servicePointPayload;
-    private static String blUserResponsePayload;
-    private static String blUserBadUUIDErrorPayload;
-    private static String blUserDuplicateErrorPayload;
-    private static String blUserEmptyErrorPayload;
-    private static String automatedBlocksResponsePayload;
-    private static String instance1Payload;
-    private static String instancesPayload;
-
-    private static String finesCatalogPayload;
-    private static String loansCatalogPayload;
-    private static String loanRenewalCatalogPayload;
-    private static String requestsCatalogPayload;
-    private static String blockCatalogPayload;
-    private static String blockEmptyCatalogPayload;
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private RestTemplate restTemplate;
-
-    @BeforeAll
-    public static void setupStatic() throws IOException {
-        patronAccountPayload = loadPayload("mock/response/patron/account.json");
-        patronAccountDateParseErrorPayload = loadPayload("mock/response/patron/accountDateParseError.json");
-        patronAccountRenewalPayload = loadPayload("mock/response/patron/accountRenewableLoanItem.json");
-        patronAccountCancelHoldResponsePayload = loadPayload("mock/response/patron/accountCancelHoldResponse.json");
-        holdRequestPayload = loadPayload("mock/response/request/holdRequest.json");
-        servicePointPayload = loadPayload("mock/response/service-point/servicePoint.json");
-        blUserResponsePayload = loadPayload("mock/response/bl-users/user.json");
-        blUserBadUUIDErrorPayload = loadPayload("mock/response/bl-users/userBadUUIDError.json");
-        blUserDuplicateErrorPayload = loadPayload("mock/response/bl-users/userDuplicateError.json");
-        blUserEmptyErrorPayload = loadPayload("mock/response/bl-users/userEmptyError.json");
-        automatedBlocksResponsePayload = loadPayload("mock/response/patron-blocks/automatedBlocks.json");
-        instance1Payload = loadPayload("mock/response/instances/in1.json");
-        instancesPayload = loadPayload("mock/response/instances/instances.json");
-
-        finesCatalogPayload = loadPayload("mock/response/catalog/fines.json");
-        loansCatalogPayload = loadPayload("mock/response/catalog/loans.json");
-        loanRenewalCatalogPayload = loadPayload("mock/response/catalog/loanRenewal.json");
-        requestsCatalogPayload = loadPayload("mock/response/catalog/requests.json");
-        blockCatalogPayload = loadPayload("mock/response/catalog/block.txt");
-        blockEmptyCatalogPayload = loadPayload("mock/response/catalog/blockEmpty.txt");
-    }
-
-    @BeforeEach
-    public void setup() throws JsonParseException, JsonMappingException, IOException {
-        buildRestServer(restTemplate, true);
-        TokenUtility.clearAll();
-    }
+public class PatronControllerTest extends PatronControllerTestBase {
 
     @Test
     public void testFinesMockMVC() throws Exception {
         PathParametersSnippet pathParameters = pathParameters(
-            parameterWithName(UIN_FIELD).description("The patron UIN."));
+            parameterWithName(UIN_FIELD).description(describeUIN()));
 
         RequestParametersSnippet requestParameters = requestParameters(
-            parameterWithName(CATALOG_FIELD).description("The name of the catalog to use.").optional());
+            parameterWithName(CATALOG_FIELD).description(describeCatalogName(FOLIO_CATALOG)).optional());
 
         ResponseFieldsSnippet responseFields = responseFields(
-            fieldWithPath("[].fineId").description("The Fine UUID."),
-            fieldWithPath("[].itemId").description("The Item UUID."),
-            fieldWithPath("[].instanceId").description("The Instance UUID."),
-            fieldWithPath("[].amount").description("The title of the Item associated with the fine."),
-            fieldWithPath("[].fineType").description("The type of the Fine."),
-            fieldWithPath("[].fineDate")
-                .description("A timestamp in milliseconds from UNIX epoch representing the date the Fine was accrued."),
-            fieldWithPath("[].itemTitle").description("The title of the Item associated with the Fine."));
+            fieldWithPath("[].fineId").description(describeId("*Fee* or *Fine*")),
+            fieldWithPath("[].itemId").description(describeItemId("*Fee* or *Fine*")),
+            fieldWithPath("[].instanceId").description(describeInstanceId("*Fee* or *Fine*")),
+            fieldWithPath("[].amount").description(describeAmount(true)),
+            fieldWithPath("[].fineType").description(describeType("*Fee* or *Fine*")),
+            fieldWithPath("[].fineDate").description(describeTimestamp("the *Fee* or *Fine* was accrued")),
+            fieldWithPath("[].itemTitle").description(describeItemTitle("*Fee* or *Fine*")));
 
         performPatronGetWithMockMVC(getFinesUrl(), FINES_ENDPOINT, pathParameters,
             requestParameters, responseFields, finesCatalogPayload);
@@ -173,21 +77,21 @@ public class PatronControllerTest extends AbstractTestRestController {
     @Test
     public void testLoansMockMVC() throws Exception {
         PathParametersSnippet pathParameters = pathParameters(
-            parameterWithName(UIN_FIELD).description("The patron UIN."));
+            parameterWithName(UIN_FIELD).description(describeUIN()));
 
         RequestParametersSnippet requestParameters = requestParameters(
-            parameterWithName(CATALOG_FIELD).description("The name of the catalog to use.").optional());
+            parameterWithName(CATALOG_FIELD).description(describeCatalogName(FOLIO_CATALOG)).optional());
 
         ResponseFieldsSnippet responseFields = responseFields(
-            fieldWithPath("[].loanId").description("The Loan UUID."),
-            fieldWithPath("[].itemId").description("The Item UUID."),
-            fieldWithPath("[].instanceId").description("The Instance UUID."),
-            fieldWithPath("[].instanceHrid").description("The instance human-readable id."),
-            fieldWithPath("[].loanDate").description("The Loan date."),
-            fieldWithPath("[].loanDueDate").description("The Loan due date."),
-            fieldWithPath("[].overdue").description("Is the Loan overdue."),
-            fieldWithPath("[].title").description("The title of the Loan Item."),
-            fieldWithPath("[].author").description("The author of the Loan Item."));
+            fieldWithPath("[].loanId").description(describeId("*Loan*")),
+            fieldWithPath("[].itemId").description(describeItemId("*Loan*")),
+            fieldWithPath("[].instanceId").description(describeInstanceId("*Loan*")),
+            fieldWithPath("[].instanceHrid").description(describeInstanceHrid("*Loan*")),
+            fieldWithPath("[].loanDate").description(describeTimestamp("the *Loan* was created")),
+            fieldWithPath("[].loanDueDate").description(describeTimestamp("the *Loan* is due")),
+            fieldWithPath("[].overdue").description(describeBoolean("*Loan* is overdue")),
+            fieldWithPath("[].title").description(describeField("*Loan*", "title")),
+            fieldWithPath("[].author").description(describeField("*Loan*", "author")));
 
         expectGetResponse(getLoansUrl(), once(), respondJsonOk(patronAccountPayload));
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
@@ -217,22 +121,22 @@ public class PatronControllerTest extends AbstractTestRestController {
     @Test
     public void testLoanRenewalMockMVC() throws Exception {
         PathParametersSnippet pathParameters = pathParameters(
-            parameterWithName(UIN_FIELD).description("The patron UIN."),
-            parameterWithName("itemId").description("The UUID of the Loan Item."));
+            parameterWithName(UIN_FIELD).description(describeUIN()),
+            parameterWithName("itemId").description(describeItemId("*Loan*")));
 
         RequestParametersSnippet requestParameters = requestParameters(
-            parameterWithName(CATALOG_FIELD).description("The name of the catalog to use.").optional());
+            parameterWithName(CATALOG_FIELD).description(describeCatalogName(FOLIO_CATALOG)).optional());
 
         ResponseFieldsSnippet responseFields = responseFields(
-            fieldWithPath("loanId").description("The Loan UUID."),
-            fieldWithPath("itemId").description("The Item UUID."),
-            fieldWithPath("instanceId").description("The Instance UUID."),
-            fieldWithPath("instanceHrid").description("The instance human-readable id."),
-            fieldWithPath("loanDate").description("The Loan date."),
-            fieldWithPath("loanDueDate").description("The Loan due date."),
-            fieldWithPath("overdue").description("Is the Loan overdue."),
-            fieldWithPath("title").description("The title of the Loan Item."),
-            fieldWithPath("author").description("The author of the Loan Item."));
+            fieldWithPath("loanId").description(describeId("*Loan*")),
+            fieldWithPath("itemId").description(describeItemId("*Loan*")),
+            fieldWithPath("instanceId").description(describeInstanceId("*Loan*")),
+            fieldWithPath("instanceHrid").description(describeInstanceHrid("*Loan*")),
+            fieldWithPath("loanDate").description(describeTimestamp("the *Loan* was created")),
+            fieldWithPath("loanDueDate").description(describeTimestamp("the *Loan* is due")),
+            fieldWithPath("overdue").description(describeBoolean("*Loan* is overdue")),
+            fieldWithPath("title").description(describeField("*Loan*", "title")),
+            fieldWithPath("author").description(describeField("*Loan*", "author")));
 
         expectPostResponse(getLoanRenewalUrl(), once(), respondJsonOk(patronAccountRenewalPayload));
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
@@ -243,14 +147,17 @@ public class PatronControllerTest extends AbstractTestRestController {
                 .param(CATALOG_FIELD, FOLIO_CATALOG)
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML)
-                .content(loanRenewalCatalogPayload))
+                .content(loanRenewalCatalogPayload)
+            )
             .andExpect(status().isOk())
             .andDo(
                 document(
                     DOC_PREFIX + RENEWAL_ENDPOINT,
                     pathParameters,
                     requestParameters,
-                    responseFields));
+                    responseFields
+                )
+            );
 
         restServer.verify();
     }
@@ -258,22 +165,21 @@ public class PatronControllerTest extends AbstractTestRestController {
     @Test
     public void testHoldRequestsMockMVC() throws Exception {
         PathParametersSnippet pathParameters = pathParameters(
-            parameterWithName(UIN_FIELD).description("The patron UIN."));
+            parameterWithName(UIN_FIELD).description(describeUIN()));
 
         RequestParametersSnippet requestParameters = requestParameters(
-            parameterWithName(CATALOG_FIELD).description("The name of the catalog to use.").optional());
+            parameterWithName(CATALOG_FIELD).description(describeCatalogName(FOLIO_CATALOG)).optional());
 
         ResponseFieldsSnippet responseFields = responseFields(
-            fieldWithPath("[].requestId").description("The Hold Request UUID."),
-            fieldWithPath("[].itemId").description("The Item UUID."),
-            fieldWithPath("[].instanceId").description("The Instance UUID."),
-            fieldWithPath("[].requestType").description("The type of the Hold Request."),
-            fieldWithPath("[].itemTitle").description("The title of the Item associated with the Hold Request."),
-            fieldWithPath("[].statusText").description("A descriptive status of the Hold Request."),
-            fieldWithPath("[].pickupServicePoint").description("A title describing the pickup service point location."),
-            fieldWithPath("[].queuePosition").description("The position within the queue."),
-            fieldWithPath("[].expirationDate")
-                .description("A timestamp in milliseconds from UNIX epoch representing the date the hold request will expire."));
+            fieldWithPath("[].requestId").description(describeId("*Hold Request*")),
+            fieldWithPath("[].itemId").description(describeItemId("*Hold Request*")),
+            fieldWithPath("[].instanceId").description(describeInstanceId("*Hold Request*")),
+            fieldWithPath("[].requestType").description(describeType("*Hold Request*")),
+            fieldWithPath("[].itemTitle").description(describeItemTitle("*Hold Request*")),
+            fieldWithPath("[].statusText").description(describeField("*Hold Request*", "descriptive status")),
+            fieldWithPath("[].pickupServicePoint").description(describePickupServicePoint()),
+            fieldWithPath("[].queuePosition").description(describeQueuePosition()),
+            fieldWithPath("[].expirationDate").description(describeTimestamp("the *Hold Request* will expire")));
 
         expectGetResponse(getHoldsUrl(), once(), respondJsonOk(patronAccountPayload));
         expectOkapiLoginResponse(once(), withStatus(CREATED));
@@ -284,7 +190,8 @@ public class PatronControllerTest extends AbstractTestRestController {
             get(PATRON_MVC_PREFIX + HOLDS_ENDPOINT, UIN)
                 .param(CATALOG_FIELD, FOLIO_CATALOG)
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
-                .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML))
+                .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML)
+            )
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
             .andExpect(content().json(requestsCatalogPayload))
@@ -293,7 +200,9 @@ public class PatronControllerTest extends AbstractTestRestController {
                     DOC_PREFIX + HOLDS_ENDPOINT,
                     pathParameters,
                     requestParameters,
-                    responseFields));
+                    responseFields
+                )
+            );
 
         restServer.verify();
     }
@@ -301,11 +210,11 @@ public class PatronControllerTest extends AbstractTestRestController {
     @Test
     public void testCancelHoldRequestMockMVC() throws Exception {
         PathParametersSnippet pathParameters = pathParameters(
-            parameterWithName(UIN_FIELD).description("The patron UIN."),
-            parameterWithName("requestId").description("The Hold Request UUID."));
+            parameterWithName(UIN_FIELD).description(describeUIN()),
+            parameterWithName("requestId").description(describeId("*Hold Request*")));
 
         RequestParametersSnippet requestParameters = requestParameters(
-            parameterWithName(CATALOG_FIELD).description("The name of the catalog to use.").optional());
+            parameterWithName(CATALOG_FIELD).description(describeCatalogName(FOLIO_CATALOG)).optional());
 
         expectPostResponse(getCancelHoldRequestUrl(), once(),
             respondJsonCreated(patronAccountCancelHoldResponsePayload));
@@ -314,14 +223,17 @@ public class PatronControllerTest extends AbstractTestRestController {
             post(HOLDS_CANCEL_MVC_PATH, UIN, REQUEST_ID)
                 .param(CATALOG_FIELD, FOLIO_CATALOG)
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
-                .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML))
+                .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML)
+            )
             .andExpect(status().isNoContent())
             .andExpect(content().string(""))
             .andDo(
                 document(
                     DOC_PREFIX + "holds/cancel",
                     pathParameters,
-                    requestParameters));
+                    requestParameters
+                )
+            );
 
         restServer.verify();
     }
@@ -329,10 +241,10 @@ public class PatronControllerTest extends AbstractTestRestController {
     @Test
     public void testBlockMockMVC() throws Exception {
         PathParametersSnippet pathParameters = pathParameters(
-            parameterWithName(UIN_FIELD).description("The patron UIN."));
+            parameterWithName(UIN_FIELD).description(describeUIN()));
 
         RequestParametersSnippet requestParameters = requestParameters(
-            parameterWithName(CATALOG_FIELD).description("The name of the catalog to use.").optional());
+            parameterWithName(CATALOG_FIELD).description(describeCatalogName(FOLIO_CATALOG)).optional());
 
         expectOkapiLoginResponse(once(), withStatus(CREATED));
         expectGetResponse(getOkapiBLUsersByUinUrl(), once(), respondJsonOk(blUserResponsePayload));
@@ -343,7 +255,8 @@ public class PatronControllerTest extends AbstractTestRestController {
                 .param(CATALOG_FIELD, FOLIO_CATALOG)
                 .contentType(MediaType.TEXT_PLAIN)
                 .characterEncoding(CHARSET)
-                .accept(MediaType.TEXT_PLAIN_VALUE, MediaType.TEXT_HTML_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE))
+                .accept(MediaType.TEXT_PLAIN_VALUE, MediaType.TEXT_HTML_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE)
+            )
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.TEXT_PLAIN))
             .andExpect(content().string(blockCatalogPayload))
@@ -351,7 +264,9 @@ public class PatronControllerTest extends AbstractTestRestController {
                 document(
                     DOC_PREFIX + BLOCK_ENDPOINT,
                     pathParameters,
-                    requestParameters));
+                    requestParameters
+                )
+            );
     }
 
     @ParameterizedTest
@@ -452,7 +367,9 @@ public class PatronControllerTest extends AbstractTestRestController {
                     DOC_PREFIX + endpoint,
                     pathParameters,
                     requestParameters,
-                    responseFields));
+                    responseFields
+                )
+            );
 
         restServer.verify();
     }
@@ -614,59 +531,6 @@ public class PatronControllerTest extends AbstractTestRestController {
                 status().isInternalServerError()),
             Arguments.of(holdsCancelCatalog, getCancelHoldRequestUrl(), POST, never(), withStatus(OK),
                 status().isBadRequest()));
-    }
-
-    private static String getFinesUrl() {
-        return getAccountUrl(false, true, false);
-    }
-
-    private static String getLoansUrl() {
-        return getAccountUrl(true, false, false);
-    }
-
-    private static String getHoldsUrl() {
-        return getAccountUrl(false, false, true);
-    }
-
-    private static String getAccountUrl(boolean loans, boolean charges, boolean holds) {
-        return String.format("%spatron/account/%s?apikey=%s&includeLoans=%s&includeCharges=%s&includeHolds=%s",
-            BASE_PATH, UIN, API_KEY, Boolean.toString(loans), Boolean.toString(charges), Boolean.toString(holds));
-    }
-
-    private static String getOkapiServicePointsUrl() {
-        return getOkapiUrl(String.format("service-points/%s", SERVICE_POINTS_ID));
-    }
-
-    private static String getOkapiRequestsUrl() {
-        return getOkapiUrl(String.format("circulation/requests/%s", REQUEST_ID));
-    }
-
-    private static String getOkapiInstancesUrl(String instanceId) {
-        return getOkapiUrl(String.format("instance-storage/instances/%s", instanceId));
-    }
-
-    private static String getOkapiBatchInstancesUrl(int size) {
-        return getOkapiUrl(String.format("instance-storage/instances\\?limit=%s&query=id%%3D%%3D.*", size));
-    }
-
-    private static String getOkapiBLUsersByUinUrl() {
-        return getOkapiUrl(String.format("bl-users?query=(externalSystemId%%3D%%3D%%22%s%%22)&limit=2", UIN));
-    }
-
-    private static String getOkapiAutomatedBlocksUrl(String userId) {
-        return getOkapiUrl(String.format("automated-patron-blocks/%s", userId));
-    }
-
-    private static String getCancelHoldRequestUrl() {
-        return String.format("%spatron/account/%s/holds/%s/cancel?apikey=%s", BASE_PATH, UIN, REQUEST_ID, API_KEY);
-    }
-
-    private static String getLoanRenewalUrl() {
-        return String.format("%spatron/account/%s/item/%s/renew?apikey=%s", BASE_PATH, UIN, ITEM_ID, API_KEY);
-    }
-
-    private static String loadPayload(String path) throws IOException {
-        return loadResource(PatronControllerTest.class.getClassLoader().getResource(path));
     }
 
 }
