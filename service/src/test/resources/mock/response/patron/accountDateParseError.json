@@ -20,7 +20,7 @@
       },
       "accrualDate": "2019-05-01T14:08:46.000+0000",
       "state": "Outstanding",
-      "reason": "Overdue (migrated-do not use)"
+      "reason": "charge"
     },
     {
       "item": {
@@ -35,7 +35,7 @@
       },
       "accrualDate": "An Invalid Date",
       "state": "Outstanding",
-      "reason": "Overdue (migrated-do not use)"
+      "reason": "charge"
     }
   ],
   "holds": [
