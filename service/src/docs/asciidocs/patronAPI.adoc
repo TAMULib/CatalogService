@@ -1,7 +1,7 @@
 == Patron API
 A collection of endpoints for accessing Patron data.
 
-This API refers to `uin`, which in many cases is equivalent to `externalSystemId` in *FOLIO*.
+This API refers to `uin`, which in many cases is equivalent to `externalSystemId` in _FOLIO_.
 
 
 :sectnums:
