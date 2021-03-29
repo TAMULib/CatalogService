@@ -4,7 +4,9 @@ A collection of endpoints for accessing Patron data.
 This API refers to `uin`, which in many cases is equivalent to `externalSystemId` in *FOLIO*.
 
 
+:sectnums:
 === Get Patron Block
+:sectnums!:
 
 A `GET` to the `/patron/{uin}/block` endpoint which will return a boolean representing whether or not the requested *Patron* is blocked.
 
@@ -23,8 +25,9 @@ include::{snippets}/patron/block/http-response.adoc[]
 ==== Example Curl Request
 include::{snippets}/patron/block/curl-request.adoc[]
 
-
+:sectnums:
 === Get Patron Requests
+:sectnums!:
 
 A `GET` to the `/patron/{uin}/holds` endpoint which will return a list of *Hold Requests* associated with the given *Patron*.
 
@@ -47,7 +50,9 @@ include::{snippets}/patron/holds/http-response.adoc[]
 include::{snippets}/patron/holds/curl-request.adoc[]
 
 
+:sectnums:
 === Get Patron Fines
+:sectnums!:
 
 A `GET` to the `/patron/{uin}/fines` endpoint which will return a list of *Fees* or *Fines* associated with the given *Patron*.
 A *Fee* or a *Fine* may also be called a *Charge*.
@@ -71,7 +76,9 @@ include::{snippets}/patron/fines/http-response.adoc[]
 include::{snippets}/patron/fines/curl-request.adoc[]
 
 
+:sectnums:
 === Get Patron Loans
+:sectnums!:
 
 A `GET` to the `/patron/{uin}/loans` endpoint which will return a list of *Loans* associated with the given *Patron*.
 A *Loan* may also be called a *Loan Item* or a *Charged Item*.
@@ -95,7 +102,9 @@ include::{snippets}/patron/loans/http-response.adoc[]
 include::{snippets}/patron/loans/curl-request.adoc[]
 
 
+:sectnums:
 === Cancel Patron Request
+:sectnums!:
 
 A `POST` to the `/{uin}/holds/{requestId}/cancel` endpoint to cancel a *Hold Request* associated with the given *Patron*.
 
@@ -115,7 +124,9 @@ include::{snippets}/patron/holds/cancel/http-response.adoc[]
 include::{snippets}/patron/holds/cancel/curl-request.adoc[]
 
 
+:sectnums:
 === Renew Patron Loan
+:sectnums!:
 
 A `POST` to the `/{uin}/renew/{itemId}` endpoint to renew an *Loan* associated with the given *Patron*.
 A *Loan* may also be called a *Loan Item* or a *Charged Item*.

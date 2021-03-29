@@ -15,6 +15,7 @@
   <properties>
     <start-class>edu.tamu.catalog.WebServerInit</start-class>
     <snippetsDirectory>${project.build.directory}/generated-snippets</snippetsDirectory>
+    <apiVersion>2.2.0</apiVersion>
   </properties>
 
   <packaging>war</packaging>
@@ -168,7 +169,7 @@
               <doctype>book</doctype>
               <attributes>
                 <snippets>${snippetsDirectory}</snippets>
-                <project-version>${projectVersion}</project-version>
+                <project-version>${apiVersion}</project-version>
               </attributes>
               <sourceDirectory>src/docs/asciidocs</sourceDirectory>
               <outputDirectory>target/generated-docs</outputDirectory>
