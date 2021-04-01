@@ -10,4 +10,4 @@ A service for interfacing with Library Catalogs developed and maintained by [Tex
 - [API Specification](https://tamulib.github.io/APISpecs/specs/catalog-service/index.html)
 - [API Documentation](https://tamulib.github.io/CatalogService)
 
-Please feel free to file any issues concerning CatalogService to the issues section of the repository. Any questions concerning cap can be directed to [helpdesk@library.tamu.edu]()
+Please feel free to file any issues concerning CatalogService to the issues section of the repository. Any questions concerning CatalogService can be directed to [helpdesk@library.tamu.edu]()
