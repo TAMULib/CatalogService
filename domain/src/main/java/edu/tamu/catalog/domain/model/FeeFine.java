@@ -13,9 +13,13 @@ import lombok.NoArgsConstructor;
 @Data
 public class FeeFine {
 
-    private Double amount;
-
     private String fineId;
+
+    private String itemId;
+
+    private String instanceId;
+
+    private Double amount;
 
     private String fineType;
 

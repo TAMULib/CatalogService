@@ -13,6 +13,8 @@ import lombok.NoArgsConstructor;
 @Data
 public class HoldingsRecord {
 
+    private String recordId;
+
     private String marcRecordLeader;
 
     private String mfhd;
@@ -38,8 +40,6 @@ public class HoldingsRecord {
     private String edition;
 
     private String oclc;
-
-    private String recordId;
 
     private String callNumber;
 

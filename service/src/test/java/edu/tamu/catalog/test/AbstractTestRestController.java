@@ -7,12 +7,11 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import java.io.IOException;
+import java.net.URL;
 
 import org.apache.commons.io.IOUtils;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -22,9 +21,8 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.client.MockRestServiceServer.MockRestServiceServerBuilder;
 import org.springframework.test.web.client.response.DefaultResponseCreator;
 import org.springframework.web.client.RestTemplate;
+import org.hamcrest.text.MatchesPattern;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 
 public abstract class AbstractTestRestController {
@@ -38,6 +36,10 @@ public abstract class AbstractTestRestController {
     protected static final String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
     protected static final String API_KEY = "mock_api_key";
 
+    protected static final String CHARSET = "UTF-8";
+    protected static final String TEXT_PLAIN_UTF8_VALUE = MediaType.TEXT_PLAIN_VALUE
+        + ";charset=" + CHARSET;
+
     protected MockRestServiceServer restServer;
 
     protected void buildRestServer(RestTemplate restTemplate, boolean ignoreExpectOrder) {
@@ -47,18 +49,26 @@ public abstract class AbstractTestRestController {
     }
 
     protected void expectOkapiResponse(String path, HttpMethod method, ExpectedCount count, DefaultResponseCreator response) throws Exception  {
+        expectOkapiResponse(path, method, count, response, false);
+    }
+
+    protected void expectOkapiResponse(String path, HttpMethod method, ExpectedCount count, DefaultResponseCreator response, Boolean wildcard) throws Exception  {
         HttpHeaders headers = new HttpHeaders();
         headers.set(OKAPI_TENANT_HEADER, OKAPI_TENANT);
 
-        expectResponse(getOkapiUrl(path), method, count, response.headers(headers));
+        expectResponse(getOkapiUrl(path), method, count, response.headers(headers), wildcard);
     }
 
     protected void expectOkapiJsonResponse(String path, HttpMethod method, ExpectedCount count, DefaultResponseCreator response) throws Exception  {
+        expectOkapiJsonResponse(path, method, count, response, false);
+    }
+
+    protected void expectOkapiJsonResponse(String path, HttpMethod method, ExpectedCount count, DefaultResponseCreator response, Boolean wildcard) throws Exception  {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set(OKAPI_TENANT_HEADER, OKAPI_TENANT);
 
-        expectResponse(getOkapiUrl(path), method, count, response.headers(headers));
+        expectResponse(getOkapiUrl(path), method, count, response.headers(headers), wildcard);
     }
 
     protected void expectOkapiLoginResponse(ExpectedCount count, DefaultResponseCreator response) throws Exception  {
@@ -69,60 +79,67 @@ public abstract class AbstractTestRestController {
     }
 
     protected void expectGetResponse(String url, ExpectedCount count, DefaultResponseCreator response) throws Exception {
-        expectResponse(url, GET, count, response);
+        expectResponse(url, GET, count, response, false);
+    }
+
+    protected void expectGetResponse(String url, ExpectedCount count, DefaultResponseCreator response, Boolean wildcard) throws Exception {
+        expectResponse(url, GET, count, response, wildcard);
     }
 
     protected void expectPostResponse(String url, ExpectedCount count, DefaultResponseCreator response) throws Exception {
-        expectResponse(url, POST, count, response);
+        expectResponse(url, POST, count, response, false);
     }
 
-    protected void expectResponse(String url, HttpMethod method, ExpectedCount count, DefaultResponseCreator response) throws Exception {
-        restServer.expect(count, requestTo(url))
+    protected void expectPostResponse(String url, ExpectedCount count, DefaultResponseCreator response, Boolean wildcard) throws Exception {
+        expectResponse(url, POST, count, response, wildcard);
+    }
+
+    protected void expectResponse(String url, HttpMethod method, ExpectedCount count, DefaultResponseCreator response, Boolean wildcard) throws Exception {
+        restServer.expect(count, wildcard ? requestTo(MatchesPattern.matchesPattern(url)) : requestTo(url))
             .andExpect(method(method))
             .andRespond(response);
     }
 
-    protected DefaultResponseCreator respondJsonAuto(JsonNode node, HttpStatus status) throws Exception {
+    protected static DefaultResponseCreator respondJsonAuto(JsonNode node, HttpStatus status) throws Exception {
         if (status == CREATED) {
             return respondJsonCreated(node);
         }
 
-        return respondJsonSuccess(node);
+        return respondJsonOk(node);
     }
 
-    protected DefaultResponseCreator respondJsonOk(Resource resource) throws Exception {
-        return withStatus(OK).body(resource).contentType(MediaType.APPLICATION_JSON);
+    protected static DefaultResponseCreator respondJsonOk(String payload) throws Exception {
+        return withStatus(OK).body(payload).contentType(MediaType.APPLICATION_JSON_UTF8);
     }
 
-    protected DefaultResponseCreator respondJsonOk(JsonNode node) throws Exception {
-        return withStatus(OK).body(node.toString()).contentType(MediaType.APPLICATION_JSON);
+    protected static DefaultResponseCreator respondJsonOk(JsonNode node) throws Exception {
+        return withStatus(OK).body(node.toString()).contentType(MediaType.APPLICATION_JSON_UTF8);
     }
 
-    protected DefaultResponseCreator respondJsonCreated(Resource resource) throws Exception {
-        return withStatus(CREATED).body(resource).contentType(MediaType.APPLICATION_JSON);
+    protected static DefaultResponseCreator respondJsonCreated(String payload) throws Exception {
+        return withStatus(CREATED).body(payload).contentType(MediaType.APPLICATION_JSON_UTF8);
     }
 
-    protected DefaultResponseCreator respondJsonCreated(JsonNode node) throws Exception {
-        return withStatus(CREATED).body(node.toString()).contentType(MediaType.APPLICATION_JSON);
+    protected static DefaultResponseCreator respondJsonCreated(JsonNode node) throws Exception {
+        return withStatus(CREATED).body(node.toString()).contentType(MediaType.APPLICATION_JSON_UTF8);
     }
 
-    protected DefaultResponseCreator respondJsonSuccess(Resource resource) throws Exception {
-        return withSuccess(resource, MediaType.APPLICATION_JSON);
+    protected static DefaultResponseCreator respondTextSuccess(String payload) throws Exception {
+        final HttpHeaders headers = new HttpHeaders();
+        headers.set("Content-Type", TEXT_PLAIN_UTF8_VALUE);
+        return withStatus(OK).body(payload).headers(headers);
     }
 
-    protected DefaultResponseCreator respondJsonSuccess(JsonNode node) throws Exception {
-        return withSuccess(node.toString(), MediaType.APPLICATION_JSON);
-    }
-
-    protected String getOkapiLoginUrl() {
+    protected static String getOkapiLoginUrl() {
         return getOkapiUrl(OKAPI_LOGIN_PATH);
     }
 
-    protected String getOkapiUrl(String path) {
+    protected static String getOkapiUrl(String path) {
         return String.format("%s%s", OKAPI_BASE_PATH, path);
     }
 
-    protected String loadJsonResource(Resource resource) throws JsonParseException, JsonMappingException, IOException {
-        return IOUtils.toString(resource.getInputStream(), "UTF-8");
+    protected static String loadResource(URL url) throws IOException {
+        return IOUtils.toString(url.openStream(), CHARSET);
     }
+
 }

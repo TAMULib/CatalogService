@@ -23,22 +23,28 @@ import static edu.tamu.catalog.utility.Marc21Xml.RECORD_YEAR;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -69,7 +75,7 @@ import edu.tamu.catalog.model.FolioHoldCancellation;
 import edu.tamu.catalog.properties.CatalogServiceProperties;
 import edu.tamu.catalog.properties.Credentials;
 import edu.tamu.catalog.properties.FolioProperties;
-import edu.tamu.catalog.utility.FolioDatetime;
+import edu.tamu.catalog.utility.FolioDateTime;
 import edu.tamu.catalog.utility.Marc21Xml;
 import edu.tamu.catalog.utility.TokenUtility;
 
@@ -94,8 +100,13 @@ public class FolioCatalogService implements CatalogService {
     private static final String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
     private static final String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
 
+    private static final int MAX_INSTANCE_ID_BATCH_SIZE = 90;
+
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private FolioProperties properties;
 
@@ -127,7 +138,7 @@ public class FolioCatalogService implements CatalogService {
     }
 
     @Override
-    public List<FeeFine> getFeesFines(String uin) throws ParseException {
+    public List<FeeFine> getFeesFines(String uin) throws Exception {
         String path = "patron/account";
         String queryString = "apikey={apikey}&includeLoans=false&includeCharges=true&includeHolds=false";
         String url = String.format("%s/%s/%s?%s", properties.getBaseEdgeUrl(), path, uin, queryString);
@@ -148,6 +159,8 @@ public class FolioCatalogService implements CatalogService {
                 JsonNode charge = iter.next();
                 list.add(FeeFine.builder()
                     .fineId(getText(charge, "/feeFineId"))
+                    .itemId(getText(charge, "/item/itemId"))
+                    .instanceId(getText(charge, "/item/instanceId"))
                     .fineType(getText(charge, "/reason"))
                     .fineDate(getDate(charge, "/accrualDate"))
                     .itemTitle(getText(charge, "/item/title"))
@@ -160,7 +173,7 @@ public class FolioCatalogService implements CatalogService {
     }
 
     @Override
-    public List<LoanItem> getLoanItems(String uin) throws ParseException {
+    public List<LoanItem> getLoanItems(String uin) throws Exception {
         String path = "patron/account";
         String additional = "&includeLoans=true&includeCharges=false&includeHolds=false";
         String url = String.format("%s/%s/%s?apikey={apikey}%s", properties.getBaseEdgeUrl(), path, uin, additional);
@@ -176,13 +189,29 @@ public class FolioCatalogService implements CatalogService {
 
         if (loans.isContainerNode() && loans.isArray()) {
             Iterator<JsonNode> iter = loans.elements();
+            Map<String, JsonNode> instanceToloan = new HashMap<>();
 
             while (iter.hasNext()) {
                 JsonNode loan = iter.next();
-                LoanItem loanItem = buildLoanItem(loan);
-                if (Objects.nonNull(loanItem.getItemId())) {
-                    list.add(loanItem);
-                }
+                String instanceId = getText(loan, "/item/instanceId");
+                instanceToloan.put(instanceId, loan);
+            }
+
+            for (JsonNode instance : getInstances(instanceToloan.keySet())) {
+                String instanceId = getText(instance, "/id");
+                String instanceHrid = getText(instance, "/hrid");
+                JsonNode loan = instanceToloan.get(instanceId);
+                list.add(LoanItem.builder()
+                    .loanId(getText(loan, "/id"))
+                    .itemId(getText(loan, "/item/itemId"))
+                    .instanceId(instanceId)
+                    .instanceHrid(instanceHrid)
+                    .loanDate(getDate(loan, "/loanDate"))
+                    .loanDueDate(getDate(loan, "/dueDate"))
+                    .overdue(getBoolean(loan, "/overdue", false))
+                    .title(getText(loan, "/item/title"))
+                    .author(getText(loan, "/item/author"))
+                    .build());
             }
         }
         return list;
@@ -211,12 +240,13 @@ public class FolioCatalogService implements CatalogService {
                 String requestId = getText(hold, "/requestId");
                 String servicePointId = getText(hold, "/pickupLocationId");
                 list.add(HoldRequest.builder()
+                    .requestId(requestId)
                     .itemId(getText(hold, "/item/itemId"))
+                    .instanceId(getText(hold, "/item/instanceId"))
                     .itemTitle(getText(hold, "/item/title"))
                     .statusText(getText(hold, "/status"))
                     .queuePosition(getInt(hold, "/queuePosition"))
                     .expirationDate(getDate(hold, "/expirationDate"))
-                    .requestId(requestId)
                     .requestType(getRequestType(requestId))
                     .pickupServicePoint(getServicePointDisplayName(servicePointId))
                     .build());
@@ -226,8 +256,6 @@ public class FolioCatalogService implements CatalogService {
         return list;
     }
 
-    
-
     @Override
     public void cancelHoldRequest(String uin, String requestId) throws Exception {
         String path = "%s/patron/account/%s/holds/%s/cancel?apikey={apikey}";
@@ -236,30 +264,54 @@ public class FolioCatalogService implements CatalogService {
 
         logger.debug("Cancelling hold request via: {}", url);
 
+        // edge-patron uses "holdId" instead of "requestId" for the cancellation request body json.
         FolioHoldCancellation folioCancellation = new FolioHoldCancellation();
         folioCancellation.setHoldId(requestId);
         folioCancellation.setCancellationReasonId(properties.getCancelHoldReasonId());
-        folioCancellation.setCanceledDate(FolioDatetime.convert(new Date()));
+        folioCancellation.setCanceledDate(FolioDateTime.convert(new Date()));
 
         restTemplate.postForObject(url, folioCancellation, Object.class, apiKey);
     }
 
     @Override
-    public LoanItem renewItem(String uin, String itemId) throws ParseException {
+    public LoanItem renewItem(String uin, String itemId) throws Exception {
         String path = "/patron/account/";
         String itemPath = "/item/";
         String renewPath = "/renew";
         String url = String.format("%s%s%s%s%s%s?apikey={apikey}", properties.getBaseEdgeUrl(), path, uin, itemPath, itemId, renewPath);
         String apiKey = properties.getEdgeApiKey();
+        JsonNode loan = restTemplate.postForObject(url, null, JsonNode.class, apiKey);
 
-        return buildLoanItem(restTemplate.postForObject(url, null, JsonNode.class, apiKey));
+        return LoanItem.builder()
+            .loanId(getText(loan, "/id"))
+            .itemId(getText(loan, "/item/itemId"))
+            .instanceId(getText(loan, "/item/instanceId"))
+            .instanceHrid(getInstanceHrid(loan))
+            .loanDate(getDate(loan, "/loanDate"))
+            .loanDueDate(getDate(loan, "/dueDate"))
+            .overdue(getBoolean(loan, "/overdue", false))
+            .title(getText(loan, "/item/title"))
+            .author(getText(loan, "/item/author"))
+            .build();
     }
 
     @Override
     public Boolean getBlockStatus(String uin) throws Exception {
-        //for now, no FOLIO user will be blocked
-        //leave the exception throw so the interface is future stable
-        return false;
+        JsonNode user = getUserByUin(uin);
+
+        if (Objects.nonNull(user) && user.isObject()) {
+            Boolean block = getAutomatedBlockStatus(getText(user, "/id"));
+            if (Objects.nonNull(block)) {
+                return block;
+            }
+
+            HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+            throw new HttpClientErrorException(status,
+                String.format("%s: Unable to retrieve automated block status for user.", status.getReasonPhrase()));
+        }
+
+        HttpStatus status = HttpStatus.NOT_FOUND;
+        throw new HttpClientErrorException(status, String.format("%s: Unable to find user.", status.getReasonPhrase()));
     }
 
     /**
@@ -273,6 +325,28 @@ public class FolioCatalogService implements CatalogService {
     JsonNode okapiRequestJsonNode(String url, HttpMethod method, String message) {
         try {
             return okapiRequest(url, method, JsonNode.class).getBody();
+        }
+        catch (HttpClientErrorException e) {
+            throw new HttpClientErrorException(e.getStatusCode(),
+                String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
+        }
+        catch (HttpServerErrorException e) {
+            throw new HttpServerErrorException(e.getStatusCode(),
+                String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
+        }
+    }
+
+    /**
+     * Use OKAPI to retrieve the JsonNode, throwing a customized exception on client or server errors.
+     *
+     * @param <T> generic class for response body type.
+     * @param url String the URL to retrieve.
+     *
+     * @return response entity with response type as body.
+     */
+    JsonNode okapiRequestJsonNode(String url, HttpMethod method, String message, Object... uriVariables) {
+        try {
+            return okapiRequest(url, method, JsonNode.class, uriVariables).getBody();
         }
         catch (HttpClientErrorException e) {
             throw new HttpClientErrorException(e.getStatusCode(),
@@ -354,10 +428,10 @@ public class FolioCatalogService implements CatalogService {
         if (Objects.isNull(servicePointId)) {
             return null;
         }
-        String sercicePointUrl = String.format("%s/service-points/%s", properties.getBaseOkapiUrl(), servicePointId);
-        logger.debug("Asking for service-point from: {}", sercicePointUrl);
+        String servicePointUrl = String.format("%s/service-points/%s", properties.getBaseOkapiUrl(), servicePointId);
+        logger.debug("Asking for service-point from: {}", servicePointUrl);
         String message = String.format("service point with id \"%s\"", servicePointId);
-        JsonNode response = okapiRequestJsonNode(sercicePointUrl, HttpMethod.GET, message);
+        JsonNode response = okapiRequestJsonNode(servicePointUrl, HttpMethod.GET, message);
         if (response.isContainerNode()) {
             JsonNode discoveryDisplayName = response.at("/discoveryDisplayName");
             if (discoveryDisplayName.isValueNode()) {
@@ -366,6 +440,78 @@ public class FolioCatalogService implements CatalogService {
         }
 
         return  null;
+    }
+
+    /**
+     * Get FOLIO User by the user's UIN via OKAPI.
+     *
+     * @param uin The user's UIN.
+     * @return request type
+     */
+    private JsonNode getUserByUin(String uin) {
+        if (Objects.isNull(uin)) {
+            return null;
+        }
+
+        String path = "%s/bl-users?query=(externalSystemId==\"{uin}\")&limit=2";
+        String url = String.format(path, properties.getBaseOkapiUrl(), uin);
+        String message = "user using external system id";
+
+        logger.debug("Asking for User from: {}", url);
+
+        JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, message, uin);
+
+        if (Objects.nonNull(response) && response.isObject()) {
+            JsonNode users = response.at("/compositeUsers");
+
+            if (Objects.nonNull(users) && users.isArray()) {
+                if (Objects.nonNull(users.get(1))) {
+                    throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Found multiple users with the same external system id");
+                }
+
+                JsonNode user = users.get(0);
+                if (Objects.nonNull(user) && user.isObject()) {
+                    return user.at("/users");
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get FOLIO automated block status via OKAPI.
+     *
+     * @param userId The user's UIN.
+     * @return automated block status
+     */
+    private Boolean getAutomatedBlockStatus(String userId) {
+        if (Objects.isNull(userId)) {
+            return null;
+        }
+
+        String path = "%s/automated-patron-blocks/%s";
+        String url = String.format(path, properties.getBaseOkapiUrl(), userId);
+        String message = String.format("automated block status for the user id");
+
+        logger.debug("Asking for Automated Block Status from: {}", url);
+
+        JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, message);
+
+        if (Objects.nonNull(response) && response.isObject()) {
+            JsonNode blocks = response.at("/automatedPatronBlocks");
+
+            if (Objects.nonNull(blocks)) {
+                if (blocks.isArray() && Objects.nonNull(blocks.get(0))) {
+                    return true;
+                }
+
+                return false;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -591,22 +737,51 @@ public class FolioCatalogService implements CatalogService {
         catalogItems.put(barcode, itemData);
     }
 
-    /**
-     * Build the loan item, based on the current information we can get from folio.
-     *
-     * @param loanJson JsonNode
-     */
-    private LoanItem buildLoanItem(JsonNode loan) throws ParseException {
-        return LoanItem.builder()
-            .loanId(getText(loan, "/id"))
-            .loanDate(getDate(loan, "/loanDate"))
-            .loanDueDate(getDate(loan, "/dueDate"))
-            .overdue(getBoolean(loan, "/overdue", false))
-            .itemId(getText(loan, "/item/itemId"))
-            .instanceId(getText(loan, "/item/instanceId"))
-            .title(getText(loan, "/item/title"))
-            .author(getText(loan, "/item/author"))
-            .build();
+    private JsonNode getInstances(Set<String> instanceIds) throws Exception {
+        ArrayNode instances = objectMapper.createArrayNode();
+        AtomicInteger counter = new AtomicInteger();
+        Collection<List<String>> instanceIdsPartitions = instanceIds.stream()
+            .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / MAX_INSTANCE_ID_BATCH_SIZE))
+            .values();
+        for (List<String> instanceIdsBatch : instanceIdsPartitions) {
+            instances.addAll((ArrayNode) fetchInstances(new HashSet<String>(instanceIdsBatch)));
+        }
+
+       return instances;
+    }
+
+    private JsonNode fetchInstances(Set<String> instanceIdsBatch) throws Exception {
+        String baseOkapiUrl = properties.getBaseOkapiUrl();
+        Integer limit = instanceIdsBatch.size();
+        String ids = String.join(" OR ", instanceIdsBatch);
+        String url = "{baseOkapiUrl}/instance-storage/instances?limit={limit}&query=id==({ids})";
+        ResponseEntity<JsonNode> response = okapiRequest(url, HttpMethod.GET, JsonNode.class, baseOkapiUrl, limit, ids);
+        if (response.hasBody()) {
+            JsonNode instancesNode = response.getBody().get("instances");
+            if (instancesNode.isContainerNode() && instancesNode.isArray()) {
+                return instancesNode;
+            }
+        }
+        return objectMapper.createObjectNode();
+    }
+
+    private String getInstanceHrid(JsonNode loan) throws Exception {
+        // This approach is not the most efficient way and may incur network performance problems for large numbers of instances.
+        String instanceId = getText(loan, "/item/instanceId");
+        String url = String.format("%s/instance-storage/instances/%s", properties.getBaseOkapiUrl(), instanceId);
+        String message = String.format("user with instanceId \"%s\"", instanceId);
+
+        logger.debug("Asking for instance from: {}", url);
+
+        JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, message);
+        if (response.isObject()) {
+            JsonNode hrid = response.at("/hrid");
+            if (hrid.isValueNode()) {
+                return hrid.asText();
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -615,11 +790,11 @@ public class FolioCatalogService implements CatalogService {
      * @param input JsonNode
      * @param jsonPtrExpr String
      * @return date time value
-     * @throws ParseException
+     * @throws Exception
      */
-    private Date getDate(JsonNode input, String jsonPtrExpr) throws ParseException {
+    private Date getDate(JsonNode input, String jsonPtrExpr) throws Exception {
         JsonNode property = input.at(jsonPtrExpr);
-        return property.isValueNode() ? FolioDatetime.parse(property.asText()) : null;
+        return property.isValueNode() ? FolioDateTime.parse(property.asText()) : null;
     }
 
     /**

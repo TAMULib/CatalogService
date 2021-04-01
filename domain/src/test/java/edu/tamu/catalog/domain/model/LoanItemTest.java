@@ -1,18 +1,18 @@
 package edu.tamu.catalog.domain.model;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Date;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 public class LoanItemTest {
 
     @Test
@@ -20,7 +20,7 @@ public class LoanItemTest {
         final Date now = new Date();
         final Date due = Date.from(now.toInstant().plusSeconds(100));
 
-        final LoanItem loanItem = new LoanItem("loanId", "itemId", "instanceId", now, due, false, "title", "author");
+        final LoanItem loanItem = new LoanItem("loanId", "itemId", "instanceId", "instanceHrid", now, due, false, "title", "author");
 
         assertNotNull(loanItem);
         assertNotNull(loanItem.getLoanDate());
@@ -29,6 +29,7 @@ public class LoanItemTest {
         assertEquals("loanId", loanItem.getLoanId());
         assertEquals("itemId", loanItem.getItemId());
         assertEquals("instanceId", loanItem.getInstanceId());
+        assertEquals("instanceHrid", loanItem.getInstanceHrid());
         assertEquals(now.toString(), loanItem.getLoanDate().toString());
         assertEquals(due.toString(), loanItem.getLoanDueDate().toString());
         assertEquals(false, loanItem.isOverdue());
@@ -45,6 +46,7 @@ public class LoanItemTest {
         assertNull(loanItem.getLoanId());
         assertNull(loanItem.getItemId());
         assertNull(loanItem.getInstanceId());
+        assertNull(loanItem.getInstanceHrid());
         assertNull(loanItem.getLoanDate());
         assertNull(loanItem.getLoanDueDate());
         assertFalse(loanItem.isOverdue());
@@ -60,6 +62,7 @@ public class LoanItemTest {
             .loanId("loanId")
             .itemId("itemId")
             .instanceId("instanceId")
+            .instanceHrid("instanceHrid")
             .loanDate(now)
             .loanDueDate(due)
             .overdue(false)
@@ -74,6 +77,7 @@ public class LoanItemTest {
         assertEquals("loanId", loanItem.getLoanId());
         assertEquals("itemId", loanItem.getItemId());
         assertEquals("instanceId", loanItem.getInstanceId());
+        assertEquals("instanceHrid", loanItem.getInstanceHrid());
         assertEquals(now.toString(), loanItem.getLoanDate().toString());
         assertEquals(due.toString(), loanItem.getLoanDueDate().toString());
         assertEquals(false, loanItem.isOverdue());
@@ -88,11 +92,12 @@ public class LoanItemTest {
         final Date later = Date.from(due.toInstant().plusSeconds(100));
         final Date dueLater = Date.from(later.toInstant().plusSeconds(100));
 
-        final LoanItem loanItem = new LoanItem("loanId", "itemId", "instanceId", now, due, false, "title", "author");
+        final LoanItem loanItem = new LoanItem("loanId", "itemId", "instanceId", "instanceHrid", now, due, false, "title", "author");
 
         loanItem.setLoanId("updatedLoanId");
         loanItem.setItemId("updatedItemId");
         loanItem.setInstanceId("updatedInstanceId");
+        loanItem.setInstanceHrid("updatedInstanceHrid");
         loanItem.setLoanDate(later);
         loanItem.setLoanDueDate(dueLater);
         loanItem.setOverdue(true);
@@ -106,6 +111,7 @@ public class LoanItemTest {
         assertEquals("updatedLoanId", loanItem.getLoanId());
         assertEquals("updatedItemId", loanItem.getItemId());
         assertEquals("updatedInstanceId", loanItem.getInstanceId());
+        assertEquals("updatedInstanceHrid", loanItem.getInstanceHrid());
         assertEquals(later.toString(), loanItem.getLoanDate().toString());
         assertEquals(dueLater.toString(), loanItem.getLoanDueDate().toString());
         assertEquals(true, loanItem.isOverdue());
@@ -118,8 +124,8 @@ public class LoanItemTest {
         final Date now = new Date();
         final Date due = Date.from(now.toInstant().plusSeconds(100));
 
-        final LoanItem loanItem1 = new LoanItem("loanId", "itemId", "instanceId", now, due, false, "title", "author");
-        final LoanItem loanItem2 = new LoanItem("loanId", "itemId", "instanceId", now, due, false, "title", "author");
+        final LoanItem loanItem1 = new LoanItem("loanId", "itemId", "instanceId", "instanceHrid", now, due, false, "title", "author");
+        final LoanItem loanItem2 = new LoanItem("loanId", "itemId", "instanceId", "instanceHrid", now, due, false, "title", "author");
         final LoanItem loanItem3 = new LoanItem();
 
         assertTrue(loanItem1.equals(loanItem2));

@@ -1,9 +1,8 @@
 package edu.tamu.catalog.utility;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,27 +11,29 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import edu.tamu.catalog.utility.Marc21Xml;
-
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 public class Marc21XmlTest {
 
     @Value("classpath:mock/response/holdings/basic.xml")
@@ -51,7 +52,7 @@ public class Marc21XmlTest {
 
     private DocumentBuilder dBuilder;
 
-    @Before
+    @BeforeEach
     public void setup() throws ParserConfigurationException, SAXException, IOException {
         recordValues = new HashMap<>();
         recordBackupValues = new HashMap<>();
@@ -66,177 +67,64 @@ public class Marc21XmlTest {
         voyagerDocument.getDocumentElement().normalize();
     }
 
-    @Test
-    public void testAddControlFieldRecordAddsRecord() {
-        Marc21Xml.addControlFieldRecord(firstNamedNodeBasic("hasTag001"), recordValues);
-        assertEquals("Did not populate recordValues", 1, recordValues.size());
+    @ParameterizedTest
+    @MethodSource("argumentsAddControlFieldRecord")
+    public void testAddControlFieldRecord(String field, int size, String msg) {
+        Marc21Xml.addControlFieldRecord(firstNamedNodeBasic(field), recordValues);
+        assertEquals(size, recordValues.size(), msg + " for field " + field);
     }
 
-    @Test
-    public void testAddControlFieldRecordNoRecordAdded() {
-        Marc21Xml.addControlFieldRecord(firstNamedNodeBasic("hasTag"), recordValues);
-        assertEquals("Did populate recordValues", 0, recordValues.size());
-
-        Marc21Xml.addControlFieldRecord(firstNamedNodeBasic("hasNoChildNodes"), recordValues);
-        assertEquals("Did populate recordValues", 0, recordValues.size());
+    @ParameterizedTest
+    @MethodSource("argumentsAddDataFieldRecord")
+    public void testAddDataFieldRecord(String field, int size, int sizeBackup, String msg, String msgBackup) {
+        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic(field), recordValues, recordBackupValues);
+        assertEquals(size, recordValues.size(), msg + " for field " + field);
+        assertEquals(sizeBackup, recordBackupValues.size(), msgBackup);
     }
 
-    @Test
-    public void testAddDataFieldRecordAddsRecord022() {
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord022a"), recordValues, recordBackupValues);
-        assertEquals("Did not populate recordValues", 2, recordValues.size());
-        assertEquals("Did populate recordBackupValues", 0, recordBackupValues.size());
-
-        recordValues.clear();
-        recordBackupValues.clear();
-
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord022b"), recordValues, recordBackupValues);
-        assertEquals("Did not populate recordValues", 1, recordValues.size());
-        assertEquals("Did populate recordBackupValues", 0, recordBackupValues.size());
+    @ParameterizedTest
+    @MethodSource("argumentsAddDataFieldRecord245")
+    public void testAddDataFieldRecordAddsRecord245(String field, boolean exists, String msg) {
+        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic(field), recordValues, recordBackupValues);
+        assertEquals(1, recordValues.size(), "Did not populate recordValues");
+        assertEquals(0, recordBackupValues.size(), "Did populate recordBackupValues");
+        assertEquals(exists, recordValues.get(Marc21Xml.RECORD_TITLE).contains("record 245 two"), msg);
     }
 
-    @Test
-    public void testAddDataFieldRecordAddsRecord020() {
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord020a"), recordValues, recordBackupValues);
-        assertEquals("Did not populate recordValues", 2, recordValues.size());
-        assertEquals("Did populate recordBackupValues", 0, recordBackupValues.size());
+    @ParameterizedTest
+    @MethodSource("argumentsAddDataFieldRecordBackupExists")
+    public void testAddDataFieldRecordAddsRecordBackupExists(String field) {
+        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic(field), recordValues, recordBackupValues);
+        assertEquals(0, recordValues.size(), "Did populate recordValues for field " + field);
+        assertEquals(1, recordBackupValues.size(), "Did not populate recordBackupValues for field " + field);
 
-        recordValues.clear();
-        recordBackupValues.clear();
-
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord020b"), recordValues, recordBackupValues);
-        assertEquals("Did not populate recordValues", 1, recordValues.size());
-        assertEquals("Did populate recordBackupValues", 0, recordBackupValues.size());
+        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic(field), recordValues, recordBackupValues);
+        assertEquals(0, recordValues.size(), "Did populate recordValues for field " + field);
+        assertEquals(1, recordBackupValues.size(), "Did populate recordBackupValues when author already exists for field " + field);
     }
 
-    @Test
-    public void testAddDataFieldRecordAddsRecord245() {
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord245one"), recordValues, recordBackupValues);
-        assertEquals("Did not populate recordValues", 1, recordValues.size());
-        assertEquals("Did populate recordBackupValues", 0, recordBackupValues.size());
-        assertFalse("Should not contain second child", recordValues.get(Marc21Xml.RECORD_TITLE).contains("record 245 two"));
-
-        recordValues.clear();
-        recordBackupValues.clear();
-
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord245two"), recordValues, recordBackupValues);
-        assertEquals("Did not populate recordValues", 1, recordValues.size());
-        assertEquals("Did populate recordBackupValues", 0, recordBackupValues.size());
-        assertTrue("Should contain second child", recordValues.get(Marc21Xml.RECORD_TITLE).contains("record 245 two"));
-    }
-
-    @Test
-    public void testAddDataFieldRecordAddsRecord100() {
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord100"), recordValues, recordBackupValues);
-        assertEquals("Did not populate recordValues", 1, recordValues.size());
-        assertEquals("Did populate recordBackupValues", 0, recordBackupValues.size());
-    }
-
-    @Test
-    public void testAddDataFieldRecordAddsRecord110() {
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord110"), recordValues, recordBackupValues);
-        assertEquals("Did populate recordValues", 0, recordValues.size());
-        assertEquals("Did not populate recordBackupValues", 1, recordBackupValues.size());
-    }
-
-    @Test
-    public void testAddDataFieldRecordAddsRecord111() {
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord111"), recordValues, recordBackupValues);
-        assertEquals("Did populate recordValues", 0, recordValues.size());
-        assertEquals("Did not populate recordBackupValues", 1, recordBackupValues.size());
-
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord111"), recordValues, recordBackupValues);
-        assertEquals("Did populate recordValues", 0, recordValues.size());
-        assertEquals("Did populate recordBackupValues when author already exists", 1, recordBackupValues.size());
-    }
-
-    @Test
-    public void testAddDataFieldRecordAddsRecord130() {
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord130"), recordValues, recordBackupValues);
-        assertEquals("Did populate recordValues", 0, recordValues.size());
-        assertEquals("Did not populate recordBackupValues", 1, recordBackupValues.size());
-
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord130"), recordValues, recordBackupValues);
-        assertEquals("Did populate recordValues", 0, recordValues.size());
-        assertEquals("Did populate recordBackupValues when author already exists", 1, recordBackupValues.size());
-    }
-
-    @Test
-    public void testAddDataFieldRecordAddsRecord264() {
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord264"), recordValues, recordBackupValues);
-        assertEquals("Did not populate recordValues", 3, recordValues.size());
-        assertEquals("Did populate recordBackupValues", 0, recordBackupValues.size());
-
-        recordValues.clear();
-        recordValues.put(Marc21Xml.RECORD_YEAR, null);
+    @ParameterizedTest
+    @MethodSource("argumentsAddDataFieldRecord264")
+    public void testAddDataFieldRecordAddsRecord264(String year) {
+        recordValues.put(Marc21Xml.RECORD_YEAR, year);
 
         Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord264"), recordValues, recordBackupValues);
-        assertEquals("Did not populate recordValues", 3, recordValues.size());
-        assertEquals("Did populate recordBackupValues", 0, recordBackupValues.size());
-
-        recordValues.clear();
-        recordValues.put(Marc21Xml.RECORD_YEAR, "");
-
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord264"), recordValues, recordBackupValues);
-        assertEquals("Did not populate recordValues", 3, recordValues.size());
-        assertEquals("Did populate recordBackupValues", 0, recordBackupValues.size());
-
-        recordValues.clear();
-        recordValues.put(Marc21Xml.RECORD_YEAR, "stub");
-
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord264"), recordValues, recordBackupValues);
-        assertEquals("Did not populate recordValues", 3, recordValues.size());
-        assertEquals("Did populate recordBackupValues", 0, recordBackupValues.size());
+        assertEquals(3, recordValues.size(), "Did not populate recordValues for year " + year);
+        assertEquals(0, recordBackupValues.size(), "Did populate recordBackupValues for year " + year);
     }
 
-    @Test
-    public void testAddDataFieldRecordAddsRecord260() {
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord260"), recordValues, recordBackupValues);
-        assertEquals("Did populate recordValues", 0, recordValues.size());
-        assertEquals("Did not populate recordBackupValues", 3, recordBackupValues.size());
-    }
+    @ParameterizedTest
+    @MethodSource("argumentsAddDataFieldRecordValuesAddsRecord")
+    public void testApplyBackupRecordValuesAddsRecord(boolean addRecord, String key, String value) {
+        recordBackupValues.put(key, value);
 
-    @Test
-    public void testAddDataFieldRecordAddsRecord250() {
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord250"), recordValues, recordBackupValues);
-        assertEquals("Did populate recordValues", 1, recordValues.size());
-        assertEquals("Did not populate recordBackupValues", 0, recordBackupValues.size());
-    }
-
-    @Test
-    public void testAddDataFieldRecordAddsRecord035() {
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord035a"), recordValues, recordBackupValues);
-        assertEquals("Did populate recordValues", 1, recordValues.size());
-        assertEquals("Did not populate recordBackupValues", 0, recordBackupValues.size());
-
-        recordValues.clear();
-
-        Marc21Xml.addDataFieldRecord(firstNamedNodeBasic("hasRecord035b"), recordValues, recordBackupValues);
-        assertEquals("Did not populate recordValues", 0, recordValues.size());
-        assertEquals("Did not populate recordBackupValues", 0, recordBackupValues.size());
-    }
-
-    @Test
-    public void testApplyBackupRecordValuesAddsRecord() {
-        recordBackupValues.put("foo", "bar");
+        if (addRecord) {
+            recordValues.put(key, value);
+        }
 
         Marc21Xml.applyBackupRecordValues(recordValues, recordBackupValues);
-        assertEquals("Did populate recordValues", 1, recordValues.size());
-        assertEquals("Did not change recordBackupValues", 1, recordBackupValues.size());
-
-        recordValues.clear();
-        recordValues.put("foo", "");
-
-        Marc21Xml.applyBackupRecordValues(recordValues, recordBackupValues);
-        assertEquals("Did populate recordValues", 1, recordValues.size());
-        assertEquals("Did not change recordBackupValues", 1, recordBackupValues.size());
-
-        recordValues.clear();
-        recordValues.put("foo", null);
-
-        Marc21Xml.applyBackupRecordValues(recordValues, recordBackupValues);
-        assertEquals("Did populate recordValues", 1, recordValues.size());
-        assertEquals("Did not change recordBackupValues", 1, recordBackupValues.size());
+        assertEquals(1, recordValues.size(), "Did populate recordValues");
+        assertEquals(1, recordBackupValues.size(), "Did not change recordBackupValues");
     }
 
     @Test
@@ -245,34 +133,34 @@ public class Marc21XmlTest {
         recordBackupValues.put("foo", "bar");
 
         Marc21Xml.applyBackupRecordValues(recordValues, recordBackupValues);
-        assertEquals("Did not change recordValues", 1, recordValues.size());
-        assertEquals("Did not change recordBackupValues", 1, recordBackupValues.size());
+        assertEquals(1, recordValues.size(), "Did not change recordValues");
+        assertEquals(1, recordBackupValues.size(), "Did not change recordBackupValues");
     }
 
     @Test
     public void testbuildCoreHoldingWhenEmpty() {
         Map<String, String> coreHolding = Marc21Xml.buildCoreHolding(firstNamedNodeBasic("hasNoChildNodes"));
-        assertEquals("Populated coreHolding", 4, coreHolding.size());
+        assertEquals(4, coreHolding.size(), "Populated coreHolding");
 
-        assertTrue("Does not have key " + Marc21Xml.RECORD_MFHD, coreHolding.containsKey(Marc21Xml.RECORD_MFHD));
-        assertTrue("Does not have key " + Marc21Xml.RECORD_FALLBACK_LOCATION_CODE, coreHolding.containsKey(Marc21Xml.RECORD_FALLBACK_LOCATION_CODE));
-        assertTrue("Does not have key " + Marc21Xml.RECORD_CALL_NUMBER, coreHolding.containsKey(Marc21Xml.RECORD_CALL_NUMBER));
-        assertTrue("Does not have key " + Marc21Xml.RECORD_VALID_LARGE_VOLUME, coreHolding.containsKey(Marc21Xml.RECORD_VALID_LARGE_VOLUME));
+        assertTrue(coreHolding.containsKey(Marc21Xml.RECORD_MFHD), "Does not have key " + Marc21Xml.RECORD_MFHD);
+        assertTrue(coreHolding.containsKey(Marc21Xml.RECORD_FALLBACK_LOCATION_CODE), "Does not have key " + Marc21Xml.RECORD_FALLBACK_LOCATION_CODE);
+        assertTrue(coreHolding.containsKey(Marc21Xml.RECORD_CALL_NUMBER), "Does not have key " + Marc21Xml.RECORD_CALL_NUMBER);
+        assertTrue(coreHolding.containsKey(Marc21Xml.RECORD_VALID_LARGE_VOLUME), "Does not have key " + Marc21Xml.RECORD_VALID_LARGE_VOLUME);
 
-        assertTrue("Key " + Marc21Xml.RECORD_MFHD + " should be empty", StringUtils.isEmpty(coreHolding.get(Marc21Xml.RECORD_MFHD)));
+        assertTrue(StringUtils.isEmpty(coreHolding.get(Marc21Xml.RECORD_MFHD)), "Key " + Marc21Xml.RECORD_MFHD + " should be empty");
     }
 
     @Test
     public void testbuildCoreHolding() {
         Map<String, String> coreHolding = Marc21Xml.buildCoreHolding(getNamedNodeVoyager("holdings", 0));
-        assertEquals("Populated coreHolding", 4, coreHolding.size());
+        assertEquals(4, coreHolding.size(), "Populated coreHolding");
 
-        assertTrue("Does not have key " + Marc21Xml.RECORD_MFHD, coreHolding.containsKey(Marc21Xml.RECORD_MFHD));
-        assertTrue("Does not have key " + Marc21Xml.RECORD_FALLBACK_LOCATION_CODE, coreHolding.containsKey(Marc21Xml.RECORD_FALLBACK_LOCATION_CODE));
-        assertTrue("Does not have key " + Marc21Xml.RECORD_CALL_NUMBER, coreHolding.containsKey(Marc21Xml.RECORD_CALL_NUMBER));
-        assertTrue("Does not have key " + Marc21Xml.RECORD_VALID_LARGE_VOLUME, coreHolding.containsKey(Marc21Xml.RECORD_VALID_LARGE_VOLUME));
+        assertTrue(coreHolding.containsKey(Marc21Xml.RECORD_MFHD), "Does not have key " + Marc21Xml.RECORD_MFHD);
+        assertTrue(coreHolding.containsKey(Marc21Xml.RECORD_FALLBACK_LOCATION_CODE), "Does not have key " + Marc21Xml.RECORD_FALLBACK_LOCATION_CODE);
+        assertTrue(coreHolding.containsKey(Marc21Xml.RECORD_CALL_NUMBER), "Does not have key " + Marc21Xml.RECORD_CALL_NUMBER);
+        assertTrue(coreHolding.containsKey(Marc21Xml.RECORD_VALID_LARGE_VOLUME), "Does not have key " + Marc21Xml.RECORD_VALID_LARGE_VOLUME);
 
-        assertTrue("Key " + Marc21Xml.RECORD_MFHD + " should be empty", StringUtils.isEmpty(coreHolding.get(Marc21Xml.RECORD_MFHD)));
+        assertTrue(StringUtils.isEmpty(coreHolding.get(Marc21Xml.RECORD_MFHD)), "Key " + Marc21Xml.RECORD_MFHD + " should be empty");
 
         // TODO: this test needs to be more complete and correct.
     }
@@ -281,7 +169,7 @@ public class Marc21XmlTest {
     /*@Test
     public void testbuildCoreItem() {
         Map<String, String> coreItem = Marc21Xml.buildCoreItem(getNamedNodeVoyager("item", 0));
-        assertEquals("Populated coreItem", 20, coreItem.size());
+        assertEquals(20, coreItem.size(), "Populated coreItem");
 
         // TODO: this test needs to be more complete and correct.
     }*/
@@ -290,21 +178,21 @@ public class Marc21XmlTest {
     public void testGetFirstNamedChildNode() {
         Node parentNode = firstNamedNodeBasic("hasNamedChildren");
         Node childNode = Marc21Xml.getFirstNamedChildNode(parentNode, "first");
-        assertTrue("Did not get the correct first child node.", childNode.getTextContent().equals("first"));
+        assertTrue(childNode.getTextContent().equals("first"), "Did not get the correct first child node.");
     }
 
     @Test
     public void testGetFirstNamedChildNodeWithMissingName() {
         Node parentNode = firstNamedNodeBasic("hasNamedChildren");
         Node childNode = Marc21Xml.getFirstNamedChildNode(parentNode, "doesntexist");
-        assertNull("A child node should not have been found.", childNode);
+        assertNull(childNode, "A child node should not have been found.");
     }
 
     @Test
     public void testGetFirstNamedChildNodeWithoutChildNodes() {
         Node parentNode = firstNamedNodeBasic("hasNoChildNodes");
         Node childNode = Marc21Xml.getFirstNamedChildNode(parentNode, "doesntexist");
-        assertNull("A child node should not have been found.", childNode);
+        assertNull(childNode, "A child node should not have been found.");
     }
 
     private Node firstNamedNodeBasic(String name) {
@@ -340,4 +228,65 @@ public class Marc21XmlTest {
 
         return bufferedReader.lines().collect(Collectors.joining(System.lineSeparator()));
     }
+
+    private static Stream<? extends Arguments> argumentsAddControlFieldRecord() {
+        return Stream.of(
+          Arguments.of("hasTag001", 1, "Did not populate recordValues."),
+          Arguments.of("hasTag", 0, "Did populate recordValues."),
+          Arguments.of("hasNoChildNodes", 0, "Did populate recordValues.")
+        );
+    }
+
+    private static Stream<? extends Arguments> argumentsAddDataFieldRecord() {
+        final String record = "Did populate recordValues.";
+        final String notRecord = "Did not populate recordValues.";
+        final String backup = "Did populate recordBackupValues.";
+        final String notBackup = "Did not populate recordBackupValues.";
+
+        return Stream.of(
+          Arguments.of("hasRecord022a", 2, 0, notRecord, backup),
+          Arguments.of("hasRecord022b", 1, 0, notRecord, backup),
+          Arguments.of("hasRecord020a", 2, 0, notRecord, backup),
+          Arguments.of("hasRecord020b", 1, 0, notRecord, backup),
+          Arguments.of("hasRecord100", 1, 0, notRecord, backup),
+          Arguments.of("hasRecord110", 0, 1, record, notBackup),
+          Arguments.of("hasRecord264", 3, 0, notRecord, backup),
+          Arguments.of("hasRecord260", 0, 3, record, notBackup),
+          Arguments.of("hasRecord250", 1, 0, notRecord, backup),
+          Arguments.of("hasRecord035a", 1, 0, notRecord, backup),
+          Arguments.of("hasRecord035b", 0, 0, record, backup)
+        );
+    }
+
+    private static Stream<? extends Arguments> argumentsAddDataFieldRecord245() {
+        return Stream.of(
+          Arguments.of("hasRecord245one", false, "Should not contain second child."),
+          Arguments.of("hasRecord245two", true, "Should contain second child.")
+        );
+    }
+
+    private static Stream<? extends Arguments> argumentsAddDataFieldRecordBackupExists() {
+        return Stream.of(
+          Arguments.of("hasRecord111"),
+          Arguments.of("hasRecord130")
+        );
+    }
+
+    private static Stream<? extends Arguments> argumentsAddDataFieldRecord264() {
+        return Stream.of(
+          Arguments.of("2020"),
+          Arguments.of((String) null),
+          Arguments.of(""),
+          Arguments.of("stub")
+        );
+    }
+
+    private static Stream<? extends Arguments> argumentsAddDataFieldRecordValuesAddsRecord() {
+        return Stream.of(
+          Arguments.of(false, (String) null, (String) null),
+          Arguments.of(true, "foo", (String) null),
+          Arguments.of(true, "foo", "")
+        );
+    }
+
 }

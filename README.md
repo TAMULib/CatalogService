@@ -2,4 +2,12 @@
 [![Coverage Status](https://coveralls.io/repos/github/TAMULib/CatalogService/badge.svg)](https://coveralls.io/github/TAMULib/CatalogService)
 
 # CatalogService
-A service for interfacing with Library Catalogs
+A service for interfacing with Library Catalogs developed and maintained by [Texas A&M University Libraries](http://library.tamu.edu).
+
+## Developer Documentation
+
+- [Contributors Documentation](https://github.com/TAMULib/CatalogService/blob/master/CONTRIBUTING.md)
+- [API Specification](https://tamulib.github.io/APISpecs/specs/catalog-service/index.html)
+- [API Documentation](https://tamulib.github.io/CatalogService)
+
+Please feel free to file any issues concerning CatalogService to the issues section of the repository. Any questions concerning CatalogService can be directed to [helpdesk@library.tamu.edu]()
