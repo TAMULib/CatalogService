@@ -299,19 +299,15 @@ public class FolioCatalogService implements CatalogService {
     public Boolean getBlockStatus(String uin) throws Exception {
         JsonNode user = getUserByUin(uin);
 
-        if (Objects.nonNull(user) && user.isObject()) {
-            Boolean block = getAutomatedBlockStatus(getText(user, "/id"));
-            if (Objects.nonNull(block)) {
-                return block;
-            }
+        String userId = getText(user, "/id");
+        if (StringUtils.isNotEmpty(userId)) {
 
-            HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
-            throw new HttpClientErrorException(status,
-                String.format("%s: Unable to retrieve automated block status for user.", status.getReasonPhrase()));
+            return getAutomatedBlockStatus(userId) || getManualBlockStatus(userId);
         }
 
-        HttpStatus status = HttpStatus.NOT_FOUND;
-        throw new HttpClientErrorException(status, String.format("%s: Unable to find user.", status.getReasonPhrase()));
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpClientErrorException(status,
+            String.format("%s: Unable to retrieve automated block status for user.", status.getReasonPhrase()));
     }
 
     /**
@@ -324,7 +320,10 @@ public class FolioCatalogService implements CatalogService {
      */
     JsonNode okapiRequestJsonNode(String url, HttpMethod method, String message) {
         try {
-            return okapiRequest(url, method, JsonNode.class).getBody();
+            ResponseEntity<JsonNode> response = okapiRequest(url, method, JsonNode.class);
+            if (Objects.nonNull(response) && response.getBody().isContainerNode()) {
+                return response.getBody();
+            }
         }
         catch (HttpClientErrorException e) {
             throw new HttpClientErrorException(e.getStatusCode(),
@@ -334,6 +333,9 @@ public class FolioCatalogService implements CatalogService {
             throw new HttpServerErrorException(e.getStatusCode(),
                 String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
         }
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpServerErrorException(status,
+            String.format("%s: Catalog service failed to find %s.", status.getReasonPhrase(), message));
     }
 
     /**
@@ -346,7 +348,10 @@ public class FolioCatalogService implements CatalogService {
      */
     JsonNode okapiRequestJsonNode(String url, HttpMethod method, String message, Object... uriVariables) {
         try {
-            return okapiRequest(url, method, JsonNode.class, uriVariables).getBody();
+            ResponseEntity<JsonNode> response = okapiRequest(url, method, JsonNode.class, uriVariables);
+            if (Objects.nonNull(response) && response.getBody().isContainerNode()) {
+                return response.getBody();
+            }
         }
         catch (HttpClientErrorException e) {
             throw new HttpClientErrorException(e.getStatusCode(),
@@ -356,6 +361,9 @@ public class FolioCatalogService implements CatalogService {
             throw new HttpServerErrorException(e.getStatusCode(),
                 String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
         }
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpServerErrorException(status,
+            String.format("%s: Catalog service failed to find %s.", status.getReasonPhrase(), message));
     }
 
     /**
@@ -408,11 +416,9 @@ public class FolioCatalogService implements CatalogService {
         logger.debug("Asking for hold request from: {}", requestUrl);
         String message = String.format("hold request with id \"%s\"", requestId);
         JsonNode response = okapiRequestJsonNode(requestUrl, HttpMethod.GET, message);
-        if (response.isContainerNode()) {
-            JsonNode requestType = response.at("/requestType");
-            if (requestType.isValueNode()) {
-                return requestType.asText();
-            }
+        JsonNode requestType = response.at("/requestType");
+        if (requestType.isValueNode()) {
+            return requestType.asText();
         }
 
         return  null;
@@ -432,11 +438,9 @@ public class FolioCatalogService implements CatalogService {
         logger.debug("Asking for service-point from: {}", servicePointUrl);
         String message = String.format("service point with id \"%s\"", servicePointId);
         JsonNode response = okapiRequestJsonNode(servicePointUrl, HttpMethod.GET, message);
-        if (response.isContainerNode()) {
-            JsonNode discoveryDisplayName = response.at("/discoveryDisplayName");
-            if (discoveryDisplayName.isValueNode()) {
-                return discoveryDisplayName.asText();
-            }
+        JsonNode discoveryDisplayName = response.at("/discoveryDisplayName");
+        if (discoveryDisplayName.isValueNode()) {
+            return discoveryDisplayName.asText();
         }
 
         return  null;
@@ -449,10 +453,6 @@ public class FolioCatalogService implements CatalogService {
      * @return request type
      */
     private JsonNode getUserByUin(String uin) {
-        if (Objects.isNull(uin)) {
-            return null;
-        }
-
         String path = "%s/bl-users?query=(externalSystemId==\"{uin}\")&limit=2";
         String url = String.format(path, properties.getBaseOkapiUrl(), uin);
         String message = "user using external system id";
@@ -460,37 +460,36 @@ public class FolioCatalogService implements CatalogService {
         logger.debug("Asking for User from: {}", url);
 
         JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, message, uin);
+        JsonNode users = response.at("/compositeUsers");
 
-        if (Objects.nonNull(response) && response.isObject()) {
-            JsonNode users = response.at("/compositeUsers");
+        if (users.isArray()) {
+            int numOfUsers = ((ArrayNode) users).size();
 
-            if (Objects.nonNull(users) && users.isArray()) {
-                if (Objects.nonNull(users.get(1))) {
-                    throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Found multiple users with the same external system id");
-                }
-
-                JsonNode user = users.get(0);
-                if (Objects.nonNull(user) && user.isObject()) {
-                    return user.at("/users");
-                }
+            if (numOfUsers == 1) {
+                return users.get(0).at("/users");
+            } else if (numOfUsers == 0) {
+                HttpStatus status = HttpStatus.NOT_FOUND;
+                throw new HttpClientErrorException(status, String.format("%s: Unable to find user.", status.getReasonPhrase()));
+            } else if (numOfUsers > 1) {
+                throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Found multiple users with the same external system id");
             }
         }
 
-        return null;
+        throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR,
+            "Unable to get user by external system id");
     }
 
     /**
      * Get FOLIO automated block status via OKAPI.
      *
+     * This method does not take into consideration the type of block.
+     * A block can be for any combination of borrowing, renewals, and requests.
+     *
      * @param userId The user's UIN.
      * @return automated block status
      */
-    private Boolean getAutomatedBlockStatus(String userId) {
-        if (Objects.isNull(userId)) {
-            return null;
-        }
-
+    private boolean getAutomatedBlockStatus(String userId) {
         String path = "%s/automated-patron-blocks/%s";
         String url = String.format(path, properties.getBaseOkapiUrl(), userId);
         String message = String.format("automated block status for the user id");
@@ -499,19 +498,32 @@ public class FolioCatalogService implements CatalogService {
 
         JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, message);
 
-        if (Objects.nonNull(response) && response.isObject()) {
-            JsonNode blocks = response.at("/automatedPatronBlocks");
+        JsonNode blocks = response.at("/automatedPatronBlocks");
 
-            if (Objects.nonNull(blocks)) {
-                if (blocks.isArray() && Objects.nonNull(blocks.get(0))) {
-                    return true;
-                }
+        return blocks.isArray() && ((ArrayNode) blocks).size() > 0;
+    }
 
-                return false;
-            }
-        }
+    /**
+     * Get FOLIO manual block status via OKAPI.
+     * 
+     * This method does not take into consideration the type of block.
+     * A block can be for any combination of borrowing, renewals, and requests.
+     *
+     * @param userId The user's UIN.
+     * @return manual block status
+     */
+    private boolean getManualBlockStatus(String userId) {
+        String path = "%s/manualblocks?query=userId==%s";
+        String url = String.format(path, properties.getBaseOkapiUrl(), userId);
+        String message = String.format("automated block status for the user id");
 
-        return null;
+        logger.debug("Asking for Manual Block Status from: {}", url);
+
+        JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, message);
+
+        JsonNode blocks = response.at("/manualblocks");
+
+        return blocks.isArray() && ((ArrayNode) blocks).size() > 0;
     }
 
     /**
@@ -774,11 +786,9 @@ public class FolioCatalogService implements CatalogService {
         logger.debug("Asking for instance from: {}", url);
 
         JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, message);
-        if (response.isObject()) {
-            JsonNode hrid = response.at("/hrid");
-            if (hrid.isValueNode()) {
-                return hrid.asText();
-            }
+        JsonNode hrid = response.at("/hrid");
+        if (hrid.isValueNode()) {
+            return hrid.asText();
         }
 
         return null;
