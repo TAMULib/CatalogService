@@ -444,11 +444,11 @@ public class PatronControllerTest extends PatronControllerTestBase {
             Arguments.of(block, between(0, 1), once(), once(), respondJsonOk(blUserBadUUIDErrorPayload),
                 withStatus(BAD_REQUEST), "Bad%20UUID", status().isBadRequest()),
             Arguments.of(block, between(0, 1), once(), never(), respondJsonOk(blockEmptyCatalogPayload),
-                withNoContent(), USER_ID, status().isNotFound()),
+                withNoContent(), USER_ID, status().isInternalServerError()),
             Arguments.of(block, between(0, 1), once(), between(0, 1), respondJsonOk(blUserDuplicateErrorPayload),
                 respondJsonOk(automatedBlocksResponsePayload), USER_ID, status().isInternalServerError()),
             Arguments.of(block, between(0, 1), once(), between(0, 1), respondJsonOk(blUserEmptyErrorPayload),
-                respondJsonOk(automatedBlocksResponsePayload), USER_ID, status().isNotFound()));
+                respondJsonOk(automatedBlocksResponsePayload), USER_ID, status().isInternalServerError()));
     }
 
     private static Stream<? extends Arguments> argumentsLoansResponses() throws Exception {
