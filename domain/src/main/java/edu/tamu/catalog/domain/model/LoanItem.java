@@ -21,6 +21,8 @@ public class LoanItem {
 
     private String instanceHrid;
 
+    private String itemType;
+
     private Date loanDate;
 
     private Date loanDueDate;
@@ -30,5 +32,11 @@ public class LoanItem {
     private String title;
 
     private String author;
+
+    private String location;
+
+    private String locationCode;
+
+    private Boolean canRenew;
 
 }
