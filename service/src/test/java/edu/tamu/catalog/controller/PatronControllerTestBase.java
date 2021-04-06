@@ -162,7 +162,7 @@ public class PatronControllerTestBase extends AbstractTestRestController {
     }
 
     protected static String getCancelHoldRequestUrl() {
-        return String.format("%spatron/account/%s/holds/%s/cancel?apikey=%s", BASE_PATH, UIN, REQUEST_ID, API_KEY);
+        return String.format("%spatron/account/%s/hold/%s/cancel?apikey=%s", BASE_PATH, UIN, REQUEST_ID, API_KEY);
     }
 
     protected static String getLoanRenewalUrl() {

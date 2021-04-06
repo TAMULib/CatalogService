@@ -290,7 +290,7 @@ public class FolioCatalogService implements CatalogService {
 
     @Override
     public void cancelHoldRequest(String uin, String requestId) throws Exception {
-        String path = String.format("patron/account/%s/holds/%s/cancel", uin, requestId);
+        String path = String.format("patron/account/%s/hold/%s/cancel", uin, requestId);
         String queryString = "apikey={apikey}";
         String url = String.format("%s/%s?%s", properties.getBaseEdgeUrl(), path, queryString);
         String apiKey = properties.getEdgeApiKey();
