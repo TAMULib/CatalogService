@@ -295,7 +295,7 @@ public class FolioCatalogService implements CatalogService {
         String url = String.format("%s/%s?%s", properties.getBaseEdgeUrl(), path, queryString);
         String apiKey = properties.getEdgeApiKey();
 
-        logger.info("Cancelling hold request via: {}", url);
+        logger.debug("Cancelling hold request via: {}", url);
 
         // edge-patron uses "holdId" instead of "requestId" for the cancellation request body json.
         FolioHoldCancellation folioCancellation = new FolioHoldCancellation();
