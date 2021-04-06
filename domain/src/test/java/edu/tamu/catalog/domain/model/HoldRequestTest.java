@@ -20,7 +20,7 @@ public class HoldRequestTest {
         final Date now = new Date();
         final Integer one = 1;
 
-        final HoldRequest holdRequest = new HoldRequest("requestId", "itemId", "instanceId", "requestType", "itemTitle", "statusText", "pickupServicePoint", one, now);
+        final HoldRequest holdRequest = new HoldRequest("requestId", "itemId", "instanceId", "requestType", "itemTitle", "statusText", "pickupServicePoint", one, now, now);
 
         assertNotNull(holdRequest);
         assertNotNull(holdRequest.getExpirationDate());
@@ -33,6 +33,7 @@ public class HoldRequestTest {
         assertEquals("statusText", holdRequest.getStatusText());
         assertEquals("pickupServicePoint", holdRequest.getPickupServicePoint());
         assertEquals(one, holdRequest.getQueuePosition());
+        assertEquals(now.toString(), holdRequest.getRequestDate().toString());
         assertEquals(now.toString(), holdRequest.getExpirationDate().toString());
     }
 
@@ -50,6 +51,7 @@ public class HoldRequestTest {
         assertNull(holdRequest.getStatusText());
         assertNull(holdRequest.getPickupServicePoint());
         assertNull(holdRequest.getQueuePosition());
+        assertNull(holdRequest.getRequestDate());
         assertNull(holdRequest.getExpirationDate());
     }
 
@@ -66,6 +68,7 @@ public class HoldRequestTest {
             .statusText("statusText")
             .pickupServicePoint("pickupServicePoint")
             .queuePosition(one)
+            .requestDate(now)
             .expirationDate(now)
             .build();
 
@@ -80,6 +83,7 @@ public class HoldRequestTest {
         assertEquals("statusText", holdRequest.getStatusText());
         assertEquals("pickupServicePoint", holdRequest.getPickupServicePoint());
         assertEquals(one, holdRequest.getQueuePosition());
+        assertEquals(now.toString(), holdRequest.getRequestDate().toString());
         assertEquals(now.toString(), holdRequest.getExpirationDate().toString());
     }
 
@@ -90,7 +94,7 @@ public class HoldRequestTest {
         final Integer one = 1;
         final Integer two = 2;
 
-        final HoldRequest holdRequest = new HoldRequest("requestId", "itemId", "instanceId", "requestType", "itemTitle", "statusText", "pickupServicePoint", one, now);
+        final HoldRequest holdRequest = new HoldRequest("requestId", "itemId", "instanceId", "requestType", "itemTitle", "statusText", "pickupServicePoint", one, now, now);
 
         holdRequest.setRequestId("updatedRequestId");
         holdRequest.setItemId("updatedItemId");
@@ -100,6 +104,7 @@ public class HoldRequestTest {
         holdRequest.setStatusText("updatedStatusText");
         holdRequest.setPickupServicePoint("updatedPickupServicePoint");
         holdRequest.setQueuePosition(two);
+        holdRequest.setRequestDate(later);
         holdRequest.setExpirationDate(later);
 
         assertNotNull(holdRequest);
@@ -113,6 +118,7 @@ public class HoldRequestTest {
         assertEquals("updatedStatusText", holdRequest.getStatusText());
         assertEquals("updatedPickupServicePoint", holdRequest.getPickupServicePoint());
         assertEquals(two, holdRequest.getQueuePosition());
+        assertEquals(later.toString(), holdRequest.getRequestDate().toString());
         assertEquals(later.toString(), holdRequest.getExpirationDate().toString());
     }
 
@@ -121,8 +127,8 @@ public class HoldRequestTest {
         final Date now = new Date();
         final Integer one = 1;
 
-        final HoldRequest holdRequest1 = new HoldRequest("requestId", "itemId", "instanceId", "requestType", "itemTitle", "statusText", "pickupServicePoint", one, now);
-        final HoldRequest holdRequest2 = new HoldRequest("requestId", "itemId", "instanceId", "requestType", "itemTitle", "statusText", "pickupServicePoint", one, now);
+        final HoldRequest holdRequest1 = new HoldRequest("requestId", "itemId", "instanceId", "requestType", "itemTitle", "statusText", "pickupServicePoint", one, now, now);
+        final HoldRequest holdRequest2 = new HoldRequest("requestId", "itemId", "instanceId", "requestType", "itemTitle", "statusText", "pickupServicePoint", one, now, now);
         final HoldRequest holdRequest3 = new HoldRequest();
 
         assertTrue(holdRequest1.equals(holdRequest2));

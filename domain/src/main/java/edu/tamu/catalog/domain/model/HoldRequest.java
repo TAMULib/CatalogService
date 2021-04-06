@@ -29,6 +29,8 @@ public class HoldRequest {
 
     private Integer queuePosition;
 
+    private Date requestDate;
+
     private Date expirationDate;
 
 }
