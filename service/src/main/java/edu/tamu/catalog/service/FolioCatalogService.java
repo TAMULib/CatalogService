@@ -202,46 +202,47 @@ public class FolioCatalogService implements CatalogService {
             }
 
             Map<String, JsonNode> instanceIdToInstance = new HashMap<>();
+            Map<String, JsonNode> itemIdToItem = new HashMap<>();
 
             for (JsonNode instance : getInstances(instanceIdToLoan.keySet())) {
                 String instanceId = getText(instance, "/id");
                 instanceIdToInstance.put(instanceId, instance);
             }
 
-            // Map<String, JsonNode> itemIdToItem = new HashMap<>();
-
-            // for (JsonNode item : getItems(itemIdToLoan.keySet())) {
-            //     String itemId = getText(item, "/id");
-            //     itemIdToItem.put(itemId, item);
-            // }
+            for (JsonNode item : getItems(itemIdToLoan.keySet())) {
+                String itemId = getText(item, "/id");
+                itemIdToItem.put(itemId, item);
+            }
 
             for (JsonNode loan : instanceIdToLoan.values()) {
                 String instanceId = getText(loan, "/item/instanceId");
                 String itemId = getText(loan, "/item/itemId");
 
                 JsonNode instance = instanceIdToInstance.get(instanceId);
+                JsonNode item = itemIdToItem.get(itemId);
 
-                System.out.println("\n\n" + instance + "\n\n");
+                String locationId = getText(item, "/effectiveLocation/id");
 
-                // JsonNode item = itemIdToItem.get(itemId);
-
-                // System.out.println("\n\n" + item + "\n\n");
-
-                list.add(LoanItem.builder()
+                LoanItem.LoanItemBuilder builder = LoanItem.builder()
                     .loanId(getText(loan, "/id"))
                     .itemId(itemId)
-                    // TODO: get item type
                     .instanceId(instanceId)
                     .instanceHrid(getText(instance, "/hrid"))
+                    .itemType(getText(item, "/materialType/name"))
                     .loanDate(getDate(loan, "/loanDate"))
                     .loanDueDate(getDate(loan, "/dueDate"))
                     .overdue(getBoolean(loan, "/overdue", false))
                     .title(getText(loan, "/item/title"))
                     .author(getText(loan, "/item/author"))
-                    // TODO: get location
-                    // TODO: get location code
-                    .canRenew(true)
-                    .build());
+                    .canRenew(true);
+
+                if (StringUtils.isNotEmpty(locationId)) {
+                    JsonNode location = getLocation(locationId);
+                    builder.location(getText(location, "/name"))
+                        .locationCode(getText(location, "/code"));
+                }
+
+                list.add(builder.build());
             }
         }
         return list;
@@ -314,25 +315,33 @@ public class FolioCatalogService implements CatalogService {
 
         JsonNode loan = restTemplate.postForObject(url, null, JsonNode.class, apiKey);
 
-        // JsonNode item = getItem(itemId);
+        JsonNode item = getItem(itemId);
 
         String instanceId = getText(loan, "/item/instanceId");
+        String instanceHrid = getInstanceHrid(instanceId);
 
-        return LoanItem.builder()
+        LoanItem.LoanItemBuilder builder = LoanItem.builder()
             .loanId(getText(loan, "/id"))
             .itemId(itemId)
-            // TODO: get item type
             .instanceId(instanceId)
-            .instanceHrid(getInstanceHrid(instanceId))
+            .instanceHrid(instanceHrid)
+            .itemType(getText(item, "/materialType/name"))
             .loanDate(getDate(loan, "/loanDate"))
             .loanDueDate(getDate(loan, "/dueDate"))
             .overdue(getBoolean(loan, "/overdue", false))
             .title(getText(loan, "/item/title"))
             .author(getText(loan, "/item/author"))
-            // TODO: get location
-            // TODO: get location code
-            .canRenew(true)
-            .build();
+            .canRenew(true);
+
+        String locationId = getText(item, "/effectiveLocation/id");
+
+        if (StringUtils.isNotEmpty(locationId)) {
+            JsonNode location = getLocation(locationId);
+            builder.location(getText(location, "/name"))
+                .locationCode(getText(location, "/code"));
+        }
+
+        return builder.build();
     }
 
     @Override
@@ -452,11 +461,8 @@ public class FolioCatalogService implements CatalogService {
         if (Objects.isNull(requestId)) {
             return null;
         }
-        String requestUrl = String.format("%s/circulation/requests/%s", properties.getBaseOkapiUrl(), requestId);
-        logger.debug("Asking for hold request from: {}", requestUrl);
-        String message = String.format("hold request with id \"%s\"", requestId);
-        JsonNode response = okapiRequestJsonNode(requestUrl, HttpMethod.GET, message);
-        JsonNode requestType = response.at("/requestType");
+        JsonNode request = getRequest(requestId);
+        JsonNode requestType = request.at("/requestType");
         if (requestType.isValueNode()) {
             return requestType.asText();
         }
@@ -474,17 +480,14 @@ public class FolioCatalogService implements CatalogService {
         if (Objects.isNull(servicePointId)) {
             return null;
         }
-        JsonNode response = getServicePoint(servicePointId);
-        JsonNode discoveryDisplayName = response.at("/discoveryDisplayName");
+        JsonNode servicePoint = getServicePoint(servicePointId);
+        JsonNode discoveryDisplayName = servicePoint.at("/discoveryDisplayName");
         if (discoveryDisplayName.isValueNode()) {
             return discoveryDisplayName.asText();
         }
 
-
         return  null;
     }
-
-    
 
     /**
      * Get FOLIO User by the user's UIN via OKAPI.
@@ -801,6 +804,13 @@ public class FolioCatalogService implements CatalogService {
         catalogItems.put(barcode, itemData);
     }
 
+    /**
+     * Get instance hrid by instance id.
+     *
+     * @param instanceId
+     * @return instance hrid or null
+     * @throws Exception
+     */
     private String getInstanceHrid(String instanceId) throws Exception {
         JsonNode instance = getInstance(instanceId);
         JsonNode hrid = instance.at("/hrid");
@@ -824,6 +834,13 @@ public class FolioCatalogService implements CatalogService {
        return instances;
     }
 
+    /**
+     * Fetch batch of instances.
+     *
+     * @param instanceIdsBatch Set<String>
+     * @return array of instances
+     * @throws Exception
+     */
     private JsonNode fetchInstances(Set<String> instanceIdsBatch) throws Exception {
         String baseOkapiUrl = properties.getBaseOkapiUrl();
         Integer limit = instanceIdsBatch.size();
@@ -853,6 +870,13 @@ public class FolioCatalogService implements CatalogService {
        return items;
     }
 
+    /**
+     * Fetch batch of items.
+     *
+     * @param itemIdsBatch Set<String>
+     * @return array of items
+     * @throws Exception
+     */
     private JsonNode fetchItems(Set<String> itemIdsBatch) throws Exception {
         String baseOkapiUrl = properties.getBaseOkapiUrl();
         Integer limit = itemIdsBatch.size();
@@ -869,6 +893,12 @@ public class FolioCatalogService implements CatalogService {
         return objectMapper.createObjectNode();
     }
 
+    /**
+     * Get and cache instance by id.
+     *
+     * @param instanceId String
+     * @return instance
+     */
     @Cacheable(value = "instanceCache", unless = "#result.isMissingNode()")
     private JsonNode getInstance(String instanceId) throws Exception {
         String url = String.format("%s/instance-storage/instances/%s", properties.getBaseOkapiUrl(), instanceId);
@@ -884,6 +914,12 @@ public class FolioCatalogService implements CatalogService {
         return objectMapper.createObjectNode();
     }
 
+    /**
+     * Get and cache item by id.
+     *
+     * @param itemId String
+     * @return item
+     */
     @Cacheable(value = "itemCache", unless = "#result.isMissingNode()")
     private JsonNode getItem(String itemId) throws Exception {
         String url = String.format("%s/inventory/items/%s", properties.getBaseOkapiUrl(), itemId);
@@ -899,6 +935,12 @@ public class FolioCatalogService implements CatalogService {
         return objectMapper.createObjectNode();
     }
 
+    /**
+     * Get and cache request by id.
+     *
+     * @param requestId String
+     * @return request
+     */
     @Cacheable(value = "requestCache", unless = "#result.isMissingNode()")
     private JsonNode getRequest(String requestId) {
         String url = String.format("%s/circulation/requests/%s", properties.getBaseOkapiUrl(), requestId);
@@ -914,6 +956,12 @@ public class FolioCatalogService implements CatalogService {
         return objectMapper.createObjectNode();
     }
 
+    /**
+     * Get and cache location by id.
+     *
+     * @param locationId String
+     * @return location
+     */
     @Cacheable(value = "locationCache", unless = "#result.isMissingNode()")
     private JsonNode getLocation(String locationId) {
         String url = String.format("%s/locations/%s", properties.getBaseOkapiUrl(), locationId);
@@ -929,6 +977,12 @@ public class FolioCatalogService implements CatalogService {
         return objectMapper.createObjectNode();
     }
 
+    /**
+     * Get and cache service point by id.
+     *
+     * @param servicePointId String
+     * @return service point
+     */
     @Cacheable(value = "servicePointCache", unless = "#result.isMissingNode()")
     private JsonNode getServicePoint(String servicePointId) {
         String url = String.format("%s/service-points/%s", properties.getBaseOkapiUrl(), servicePointId);

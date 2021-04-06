@@ -1,0 +1,21 @@
+{
+  "id": "1d1ca55a-86a1-489b-a645-2d52742c196a",
+  "name": "Evans stk",
+  "code": "stk",
+  "discoveryDisplayName": "Evans Library Stacks",
+  "isActive": true,
+  "institutionId": "786bccb0-1795-4896-9452-a6e5bd5f28ac",
+  "campusId": "addb918a-5b84-48a2-81d2-0a086948c347",
+  "libraryId": "e19f62b7-5e0d-490f-b469-80a2b0940e74",
+  "primaryServicePoint": "3b80cfdf-438b-48c1-aadc-57965a0d7680",
+  "servicePointIds": [
+    "3b80cfdf-438b-48c1-aadc-57965a0d7680"
+  ],
+  "servicePoints": [],
+  "metadata": {
+    "createdDate": "2021-02-26T15:22:25.295+00:00",
+    "createdByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498",
+    "updatedDate": "2021-02-26T15:22:25.295+00:00",
+    "updatedByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498"
+  }
+}

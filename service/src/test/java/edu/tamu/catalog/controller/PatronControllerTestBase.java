@@ -2,14 +2,14 @@ package edu.tamu.catalog.controller;
 
 import java.io.IOException;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.RestTemplate;
-
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 
 import edu.tamu.catalog.test.AbstractTestRestController;
 import edu.tamu.catalog.utility.TokenUtility;
@@ -18,12 +18,14 @@ public class PatronControllerTestBase extends AbstractTestRestController {
 
     protected static final String UIN = "1234567890";
     protected static final String SERVICE_POINTS_ID = "ebab9ccc-4ece-4f35-bc82-01f3325abed8";
+    protected static final String LOCATION_ID = "1d1ca55a-86a1-489b-a645-2d52742c196a";
     protected static final String REQUEST_ID = "8bbac557-d66f-4571-bbbf-47a107cc1589";
-    protected static final String INSTANCE_ID1 = "2422160d-23c4-356b-ad1c-44d90fc1320b";
+    protected static final String INSTANCE_ID = "2422160d-23c4-356b-ad1c-44d90fc1320b";
     protected static final String ITEM_ID = "40053ccb-fd0c-304b-9547-b2fc06f34d3e";
     protected static final String USER_ID = "93710b5b-aa9a-43be-af34-7dcb1f7b0669";
 
     protected static final int INSTANCES_TOTAL = 4;
+    protected static final int ITEMS_TOTAL = 4;
 
     protected static final String FOLIO_CATALOG = "folio";
     protected static final String VOYAGER_CATALOG = "msl";
@@ -49,13 +51,16 @@ public class PatronControllerTestBase extends AbstractTestRestController {
     protected static String patronAccountCancelHoldResponsePayload;
     protected static String holdRequestPayload;
     protected static String servicePointPayload;
+    protected static String locationPayload;
     protected static String blUserResponsePayload;
     protected static String blUserBadUUIDErrorPayload;
     protected static String blUserDuplicateErrorPayload;
     protected static String blUserEmptyErrorPayload;
     protected static String automatedBlocksResponsePayload;
-    protected static String instance1Payload;
+    protected static String instancePayload;
     protected static String instancesPayload;
+    protected static String itemPayload;
+    protected static String itemsPayload;
 
     protected static String finesCatalogPayload;
     protected static String loansCatalogPayload;
@@ -76,15 +81,18 @@ public class PatronControllerTestBase extends AbstractTestRestController {
         patronAccountDateParseErrorPayload = loadPayload("mock/response/patron/accountDateParseError.json");
         patronAccountRenewalPayload = loadPayload("mock/response/patron/accountRenewableLoanItem.json");
         patronAccountCancelHoldResponsePayload = loadPayload("mock/response/patron/accountCancelHoldResponse.json");
-        holdRequestPayload = loadPayload("mock/response/request/holdRequest.json");
-        servicePointPayload = loadPayload("mock/response/service-point/servicePoint.json");
-        blUserResponsePayload = loadPayload("mock/response/bl-users/user.json");
-        blUserBadUUIDErrorPayload = loadPayload("mock/response/bl-users/userBadUUIDError.json");
-        blUserDuplicateErrorPayload = loadPayload("mock/response/bl-users/userDuplicateError.json");
-        blUserEmptyErrorPayload = loadPayload("mock/response/bl-users/userEmptyError.json");
+        holdRequestPayload = loadPayload("mock/response/requests/holdRequest.json");
+        servicePointPayload = loadPayload("mock/response/service-points/servicePoint.json");
+        blUserResponsePayload = loadPayload("mock/response/users/user.json");
+        blUserBadUUIDErrorPayload = loadPayload("mock/response/users/userBadUUIDError.json");
+        blUserDuplicateErrorPayload = loadPayload("mock/response/users/userDuplicateError.json");
+        blUserEmptyErrorPayload = loadPayload("mock/response/users/userEmptyError.json");
         automatedBlocksResponsePayload = loadPayload("mock/response/patron-blocks/automatedBlocks.json");
-        instance1Payload = loadPayload("mock/response/instances/in1.json");
+        instancePayload = loadPayload("mock/response/instances/in1.json");
         instancesPayload = loadPayload("mock/response/instances/instances.json");
+        itemPayload = loadPayload("mock/response/items/it1.json");
+        itemsPayload = loadPayload("mock/response/items/items.json");
+        locationPayload = loadPayload("mock/response/locations/location.json");
 
         finesCatalogPayload = loadPayload("mock/response/catalog/fines.json");
         loansCatalogPayload = loadPayload("mock/response/catalog/loans.json");
@@ -121,6 +129,10 @@ public class PatronControllerTestBase extends AbstractTestRestController {
         return getOkapiUrl(String.format("service-points/%s", SERVICE_POINTS_ID));
     }
 
+    protected static String getOkapiLocationsUrl() {
+        return getOkapiUrl(String.format("locations/%s", LOCATION_ID));
+    }
+
     protected static String getOkapiRequestsUrl() {
         return getOkapiUrl(String.format("circulation/requests/%s", REQUEST_ID));
     }
@@ -129,8 +141,16 @@ public class PatronControllerTestBase extends AbstractTestRestController {
         return getOkapiUrl(String.format("instance-storage/instances/%s", instanceId));
     }
 
+    protected static String getOkapiItemsUrl(String itemId) {
+        return getOkapiUrl(String.format("inventory/items/%s", itemId));
+    }
+
     protected static String getOkapiBatchInstancesUrl(int size) {
         return getOkapiUrl(String.format("instance-storage/instances\\?limit=%s&query=id%%3D%%3D.*", size));
+    }
+
+    protected static String getOkapiBatchItemsUrl(int size) {
+        return getOkapiUrl(String.format("inventory/items\\?limit=%s&query=id%%3D%%3D.*", size));
     }
 
     protected static String getOkapiBLUsersByUinUrl() {

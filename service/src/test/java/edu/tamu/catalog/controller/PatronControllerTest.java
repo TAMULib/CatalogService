@@ -100,6 +100,8 @@ public class PatronControllerTest extends PatronControllerTestBase {
         expectGetResponse(getLoansUrl(), once(), respondJsonOk(patronAccountPayload));
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
         expectGetResponse(getOkapiBatchInstancesUrl(INSTANCES_TOTAL), once(), respondJsonOk(instancesPayload), true);
+        expectGetResponse(getOkapiBatchItemsUrl(ITEMS_TOTAL), once(), respondJsonOk(itemsPayload), true);
+        expectGetResponse(getOkapiLocationsUrl(), between(0, 4), respondJsonOk(locationPayload));
 
         mockMvc.perform(
             get(PATRON_MVC_PREFIX + LOANS_ENDPOINT, UIN)
@@ -148,7 +150,9 @@ public class PatronControllerTest extends PatronControllerTestBase {
 
         expectPostResponse(getLoanRenewalUrl(), once(), respondJsonOk(patronAccountRenewalPayload));
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
-        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID1), between(0, 1), respondJsonOk(instance1Payload));
+        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID), between(0, 1), respondJsonOk(instancePayload));
+        expectGetResponse(getOkapiItemsUrl(ITEM_ID), between(0, 1), respondJsonOk(itemPayload));
+        expectGetResponse(getOkapiLocationsUrl(), between(0, 1), respondJsonOk(locationPayload));
 
         mockMvc.perform(
             post(PATRON_MVC_PREFIX + RENEW_MVC_PATH, UIN, ITEM_ID)
@@ -299,7 +303,10 @@ public class PatronControllerTest extends PatronControllerTestBase {
         expectResponse(url, method, count, response, false);
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
         expectGetResponse(getOkapiBatchInstancesUrl(1), between(0, 1), respondJsonOk(instancesPayload), true);
+        expectGetResponse(getOkapiBatchItemsUrl(1), between(0, 1), respondJsonOk(itemsPayload), true);
         expectGetResponse(getOkapiBatchInstancesUrl(INSTANCES_TOTAL), between(0, 1), respondJsonOk(instancesPayload), true);
+        expectGetResponse(getOkapiBatchItemsUrl(ITEMS_TOTAL), between(0, 1), respondJsonOk(itemsPayload), true);
+        expectGetResponse(getOkapiLocationsUrl(), between(0, 4), respondJsonOk(locationPayload));
 
         mockMvc.perform(builder)
             .andExpect(result);
@@ -315,6 +322,7 @@ public class PatronControllerTest extends PatronControllerTestBase {
         expectResponse(url, method, count, response, false);
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
         expectGetResponse(getOkapiBatchInstancesUrl(1), between(0, 4), respondJsonOk(instancesPayload), true);
+        expectGetResponse(getOkapiBatchItemsUrl(1), between(0, 4), respondJsonOk(itemsPayload), true);
 
         mockMvc.perform(builder)
             .andExpect(result);
