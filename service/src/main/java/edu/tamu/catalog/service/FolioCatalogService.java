@@ -321,7 +321,6 @@ public class FolioCatalogService implements CatalogService {
         try {
             loan = restTemplate.postForObject(url, null, JsonNode.class, apiKey);
         } catch (RestClientResponseException e) {
-            e.printStackTrace();
             if (e.getRawStatusCode() == 422) {
                 JsonNode error = objectMapper.readTree(e.getResponseBodyAsString());
                 JsonNode errorMessage = error.at("/errorMessage");
