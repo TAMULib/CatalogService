@@ -72,6 +72,7 @@ import edu.tamu.catalog.domain.model.FeeFine;
 import edu.tamu.catalog.domain.model.HoldRequest;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
+import edu.tamu.catalog.exception.RenewFailureException;
 import edu.tamu.catalog.model.FolioHoldCancellation;
 import edu.tamu.catalog.properties.CatalogServiceProperties;
 import edu.tamu.catalog.properties.Credentials;
@@ -81,6 +82,8 @@ import edu.tamu.catalog.utility.Marc21Xml;
 import edu.tamu.catalog.utility.TokenUtility;
 
 public class FolioCatalogService implements CatalogService {
+
+    private static final String RENEWAL_WOULD_NOT_CHANGE_THE_DUE_DATE = "renewal would not change the due date";
 
     private static final Logger logger = LoggerFactory.getLogger(FolioCatalogService.class);
 
@@ -313,10 +316,24 @@ public class FolioCatalogService implements CatalogService {
         String url = String.format("%s/%s?%s", properties.getBaseEdgeUrl(), path, queryString);
         String apiKey = properties.getEdgeApiKey();
 
-        JsonNode loan = restTemplate.postForObject(url, null, JsonNode.class, apiKey);
+        JsonNode loan;
+
+        try {
+            loan = restTemplate.postForObject(url, null, JsonNode.class, apiKey);
+        } catch (RestClientResponseException e) {
+            e.printStackTrace();
+            if (e.getRawStatusCode() == 422) {
+                JsonNode error = objectMapper.readTree(e.getResponseBodyAsString());
+                JsonNode errorMessage = error.at("/errorMessage");
+                if (errorMessage.isValueNode() && errorMessage.textValue().equals(RENEWAL_WOULD_NOT_CHANGE_THE_DUE_DATE)) {
+                    throw new RenewFailureException(errorMessage.textValue());
+                }
+            }
+            throw e;
+        }
 
         JsonNode item = getItem(itemId);
-
+    
         String instanceId = getText(loan, "/item/instanceId");
         String instanceHrid = getInstanceHrid(instanceId);
 
