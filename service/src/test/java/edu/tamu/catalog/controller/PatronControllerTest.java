@@ -166,6 +166,7 @@ public class PatronControllerTest extends PatronControllerTestBase {
                 .content(loanRenewalCatalogPayload)
             )
             .andExpect(status().isOk())
+            .andExpect(content().json(loanRenewalCatalogPayload))
             .andDo(
                 document(
                     DOC_PREFIX + RENEWAL_ENDPOINT,
