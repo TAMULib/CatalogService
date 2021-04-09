@@ -1,25 +1,25 @@
 {
   "items": [
     {
-      "id": "70ce328b-491f-369d-a3fd-52efb7060685",
+      "id": "f5a63a6f-4b1d-3a75-8fba-668efffae4ad",
       "status": {
-        "name": "Available",
-        "date": "2020-12-08T10:30:52.000+00:00"
+        "name": "Checked out",
+        "date": "2021-04-09T01:56:49.881+00:00"
       },
-      "title": "Daring greatly : how the courage to be vulnerable transforms the way we live, love, parent, and lead / Brené Brown.",
-      "callNumber": "BF575.A85 B76 2012",
-      "hrid": "it00003752948",
+      "title": "Spam nation : the inside story of organized cybercrime--from global epidemic to your front door / Brian Krebs.",
+      "callNumber": "HV6773.2 .K74 2014",
+      "hrid": "it00003752753",
       "contributorNames": [
         {
-          "name": "Brown, Brené"
+          "name": "Krebs, Brian,"
         }
       ],
       "formerIds": [
-        "4395357"
+        "4395154"
       ],
       "discoverySuppress": false,
-      "holdingsRecordId": "87732127-5686-3299-8c01-67c2ee21689c",
-      "barcode": "A14843094658",
+      "holdingsRecordId": "da4ba6a0-4b7c-38cf-9d42-dae57c50ceb8",
+      "barcode": "A14843049165",
       "notes": [],
       "circulationNotes": [],
       "numberOfPieces": "1",
@@ -30,7 +30,7 @@
       "electronicAccess": [],
       "statisticalCodeIds": [
         "38c86b2b-8156-4b7e-943e-460e15ea0dc0",
-        "71b2451d-408f-4ac7-ad28-e5e774efd06a"
+        "6363d3b7-aef1-4470-8934-8df96498d27b"
       ],
       "purchaseOrderLineIdentifier": null,
       "materialType": {
@@ -42,16 +42,138 @@
         "name": "normal"
       },
       "metadata": {
-        "createdDate": "2021-02-26T20:15:51.562+00:00",
+        "createdDate": "2021-04-09T00:43:45.997+00:00",
         "createdByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498",
-        "updatedDate": "2021-02-26T20:15:51.562+00:00",
+        "updatedDate": "2021-04-09T01:56:49.875+00:00",
         "updatedByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498"
       },
       "links": {
-        "self": "http://folio-okapi-q3.library.tamu.edu/inventory/items/70ce328b-491f-369d-a3fd-52efb7060685"
+        "self": "http://folio-okapi-q3.library.tamu.edu/inventory/items/f5a63a6f-4b1d-3a75-8fba-668efffae4ad"
       },
       "effectiveCallNumberComponents": {
-        "callNumber": "BF575.A85 B76 2012",
+        "callNumber": "HV6773.2 .K74 2014",
+        "prefix": null,
+        "suffix": null,
+        "typeId": "95467209-6d7b-468b-94df-0f5d7ad2747d"
+      },
+      "effectiveLocation": {
+        "id": "1d1ca55a-86a1-489b-a645-2d52742c196a",
+        "name": "Evans stk"
+      }
+    },
+    {
+      "id": "400f84bc-5400-3987-b87e-14940bd57334",
+      "status": {
+        "name": "Checked out",
+        "date": "2021-04-09T01:59:53.972+00:00"
+      },
+      "title": "Military economics : the interaction of power and money / Ron Smith.",
+      "callNumber": "HD9743.A2 S65 2009",
+      "hrid": "it00003338924",
+      "contributorNames": [
+        {
+          "name": "Smith, Ron, 1946 September 2-"
+        }
+      ],
+      "formerIds": [
+        "3955152"
+      ],
+      "discoverySuppress": false,
+      "holdingsRecordId": "4c726d8e-fb41-3d13-aefc-2352bbca9aad",
+      "barcode": "A14840044635",
+      "notes": [],
+      "circulationNotes": [],
+      "numberOfPieces": "1",
+      "tags": {
+        "tagList": []
+      },
+      "yearCaption": [],
+      "electronicAccess": [],
+      "statisticalCodeIds": [
+        "38c86b2b-8156-4b7e-943e-460e15ea0dc0",
+        "6363d3b7-aef1-4470-8934-8df96498d27b"
+      ],
+      "purchaseOrderLineIdentifier": null,
+      "materialType": {
+        "id": "fe050219-8aa1-460d-b40e-930271137175",
+        "name": "unmediated -- volume"
+      },
+      "permanentLoanType": {
+        "id": "5d907602-badb-403f-86fa-35af4c86dc30",
+        "name": "normal"
+      },
+      "metadata": {
+        "createdDate": "2021-04-09T00:43:58.093+00:00",
+        "createdByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498",
+        "updatedDate": "2021-04-09T01:59:53.964+00:00",
+        "updatedByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498"
+      },
+      "links": {
+        "self": "http://folio-okapi-q3.library.tamu.edu/inventory/items/400f84bc-5400-3987-b87e-14940bd57334"
+      },
+      "effectiveCallNumberComponents": {
+        "callNumber": "HD9743.A2 S65 2009",
+        "prefix": null,
+        "suffix": null,
+        "typeId": "95467209-6d7b-468b-94df-0f5d7ad2747d"
+      },
+      "effectiveLocation": {
+        "id": "1d1ca55a-86a1-489b-a645-2d52742c196a",
+        "name": "Evans stk"
+      }
+    },
+    {
+      "id": "04dbd368-5952-3779-9bcd-563cd2c53746",
+      "status": {
+        "name": "Checked out",
+        "date": "2021-04-09T02:01:13.246+00:00"
+      },
+      "title": "Rising strong / Brené Brown.",
+      "callNumber": "BF637.S4 B8118 2015",
+      "hrid": "it00003769813",
+      "contributorNames": [
+        {
+          "name": "Brown, Brené,"
+        }
+      ],
+      "formerIds": [
+        "4412932"
+      ],
+      "discoverySuppress": false,
+      "holdingsRecordId": "6ec77f3c-0ff6-39aa-8aa3-9b55879f4c65",
+      "barcode": "A14843147886",
+      "notes": [],
+      "circulationNotes": [],
+      "numberOfPieces": "1",
+      "tags": {
+        "tagList": []
+      },
+      "yearCaption": [],
+      "electronicAccess": [],
+      "statisticalCodeIds": [
+        "38c86b2b-8156-4b7e-943e-460e15ea0dc0",
+        "6363d3b7-aef1-4470-8934-8df96498d27b"
+      ],
+      "purchaseOrderLineIdentifier": null,
+      "materialType": {
+        "id": "fe050219-8aa1-460d-b40e-930271137175",
+        "name": "unmediated -- volume"
+      },
+      "permanentLoanType": {
+        "id": "5d907602-badb-403f-86fa-35af4c86dc30",
+        "name": "normal"
+      },
+      "metadata": {
+        "createdDate": "2021-04-09T00:52:36.210+00:00",
+        "createdByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498",
+        "updatedDate": "2021-04-09T02:01:13.240+00:00",
+        "updatedByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498"
+      },
+      "links": {
+        "self": "http://folio-okapi-q3.library.tamu.edu/inventory/items/04dbd368-5952-3779-9bcd-563cd2c53746"
+      },
+      "effectiveCallNumberComponents": {
+        "callNumber": "BF637.S4 B8118 2015",
         "prefix": null,
         "suffix": null,
         "typeId": "95467209-6d7b-468b-94df-0f5d7ad2747d"
@@ -65,7 +187,7 @@
       "id": "a4c4ec98-f7ae-365c-8597-dc151c173c65",
       "status": {
         "name": "Checked out",
-        "date": "2021-02-27T02:19:50.999+00:00"
+        "date": "2021-04-09T02:01:22.643+00:00"
       },
       "title": "Philosophy of logic / [by] W. V. Quine.",
       "callNumber": "BC51 .Q5",
@@ -103,9 +225,9 @@
         "name": "normal"
       },
       "metadata": {
-        "createdDate": "2021-02-26T18:20:24.655+00:00",
+        "createdDate": "2021-04-08T22:45:19.591+00:00",
         "createdByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498",
-        "updatedDate": "2021-02-27T02:19:50.997+00:00",
+        "updatedDate": "2021-04-09T02:01:22.637+00:00",
         "updatedByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498"
       },
       "links": {
@@ -113,128 +235,6 @@
       },
       "effectiveCallNumberComponents": {
         "callNumber": "BC51 .Q5",
-        "prefix": null,
-        "suffix": null,
-        "typeId": "95467209-6d7b-468b-94df-0f5d7ad2747d"
-      },
-      "effectiveLocation": {
-        "id": "1d1ca55a-86a1-489b-a645-2d52742c196a",
-        "name": "Evans stk"
-      }
-    },
-    {
-      "id": "40053ccb-fd0c-304b-9547-b2fc06f34d3e",
-      "status": {
-        "name": "Checked out",
-        "date": "2021-02-27T02:22:09.076+00:00"
-      },
-      "title": "An ontology of consciousness / by Ralph Ellis.",
-      "callNumber": "BD450 .E398 1986",
-      "hrid": "it00000903248",
-      "contributorNames": [
-        {
-          "name": "Ellis, Ralph D"
-        }
-      ],
-      "formerIds": [
-        "936922"
-      ],
-      "discoverySuppress": false,
-      "holdingsRecordId": "82a6d30d-7e75-31a0-8e8c-6ea0e9bc0d99",
-      "barcode": "A14810142631",
-      "notes": [],
-      "circulationNotes": [],
-      "numberOfPieces": "1",
-      "tags": {
-        "tagList": []
-      },
-      "yearCaption": [],
-      "electronicAccess": [],
-      "statisticalCodeIds": [
-        "38c86b2b-8156-4b7e-943e-460e15ea0dc0",
-        "6363d3b7-aef1-4470-8934-8df96498d27b"
-      ],
-      "purchaseOrderLineIdentifier": null,
-      "materialType": {
-        "id": "fe050219-8aa1-460d-b40e-930271137175",
-        "name": "unmediated -- volume"
-      },
-      "permanentLoanType": {
-        "id": "5d907602-badb-403f-86fa-35af4c86dc30",
-        "name": "normal"
-      },
-      "metadata": {
-        "createdDate": "2021-02-26T18:30:58.892+00:00",
-        "createdByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498",
-        "updatedDate": "2021-02-27T02:22:09.073+00:00",
-        "updatedByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498"
-      },
-      "links": {
-        "self": "http://folio-okapi-q3.library.tamu.edu/inventory/items/40053ccb-fd0c-304b-9547-b2fc06f34d3e"
-      },
-      "effectiveCallNumberComponents": {
-        "callNumber": "BD450 .E398 1986",
-        "prefix": null,
-        "suffix": null,
-        "typeId": "95467209-6d7b-468b-94df-0f5d7ad2747d"
-      },
-      "effectiveLocation": {
-        "id": "1d1ca55a-86a1-489b-a645-2d52742c196a",
-        "name": "Evans stk"
-      }
-    },
-    {
-      "id": "100290f6-b955-3df7-8991-70afd4d049d1",
-      "status": {
-        "name": "Checked out",
-        "date": "2021-02-27T03:06:10.773+00:00"
-      },
-      "title": "Spam nation : the inside story of organized cybercrime--from global epidemic to your front door / Brian Krebs.",
-      "callNumber": "HV6773.2 .K74 2014",
-      "hrid": "it00003735921",
-      "contributorNames": [
-        {
-          "name": "Krebs, Brian,"
-        }
-      ],
-      "formerIds": [
-        "4377444"
-      ],
-      "discoverySuppress": false,
-      "holdingsRecordId": "e1f8611a-3afa-3338-a00b-a05c76e28dc6",
-      "barcode": "A14842764368",
-      "notes": [],
-      "circulationNotes": [],
-      "numberOfPieces": "1",
-      "tags": {
-        "tagList": []
-      },
-      "yearCaption": [],
-      "electronicAccess": [],
-      "statisticalCodeIds": [
-        "38c86b2b-8156-4b7e-943e-460e15ea0dc0",
-        "6363d3b7-aef1-4470-8934-8df96498d27b"
-      ],
-      "purchaseOrderLineIdentifier": null,
-      "materialType": {
-        "id": "fe050219-8aa1-460d-b40e-930271137175",
-        "name": "unmediated -- volume"
-      },
-      "permanentLoanType": {
-        "id": "5d907602-badb-403f-86fa-35af4c86dc30",
-        "name": "normal"
-      },
-      "metadata": {
-        "createdDate": "2021-02-26T20:49:55.636+00:00",
-        "createdByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498",
-        "updatedDate": "2021-02-27T03:06:10.773+00:00",
-        "updatedByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498"
-      },
-      "links": {
-        "self": "http://folio-okapi-q3.library.tamu.edu/inventory/items/100290f6-b955-3df7-8991-70afd4d049d1"
-      },
-      "effectiveCallNumberComponents": {
-        "callNumber": "HV6773.2 .K74 2014",
         "prefix": null,
         "suffix": null,
         "typeId": "95467209-6d7b-468b-94df-0f5d7ad2747d"

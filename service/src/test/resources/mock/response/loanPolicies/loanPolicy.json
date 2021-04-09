@@ -1,0 +1,41 @@
+{
+  "loanPolicies": [
+    {
+      "id": "168d255c-7f8e-4b53-a775-ae344f8ae48e",
+      "name": "day_367_renew_indefinite_recall_y",
+      "loanable": true,
+      "loansPolicy": {
+        "profileId": "Rolling",
+        "period": {
+          "duration": 367,
+          "intervalId": "Days"
+        },
+        "closedLibraryDueDateManagementId": "END_OF_THE_NEXT_OPEN_DAY"
+      },
+      "renewable": true,
+      "renewalsPolicy": {
+        "unlimited": true,
+        "renewFromId": "SYSTEM_DATE"
+      },
+      "requestManagement": {
+        "recalls": {
+          "minimumGuaranteedLoanPeriod": {
+            "duration": 14,
+            "intervalId": "Days"
+          },
+          "recallReturnInterval": {
+            "duration": 14,
+            "intervalId": "Days"
+          }
+        }
+      },
+      "metadata": {
+        "createdDate": "2021-04-08T18:54:32.735+00:00",
+        "createdByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498",
+        "updatedDate": "2021-04-08T18:54:32.735+00:00",
+        "updatedByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498"
+      }
+    }
+  ],
+  "totalRecords": 1
+}

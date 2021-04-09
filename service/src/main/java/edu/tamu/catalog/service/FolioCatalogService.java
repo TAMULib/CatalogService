@@ -338,10 +338,10 @@ public class FolioCatalogService implements CatalogService {
         String url = String.format("%s/%s?%s", properties.getBaseEdgeUrl(), path, queryString);
         String apiKey = properties.getEdgeApiKey();
 
-        JsonNode loan;
+        JsonNode partialLoan;
 
         try {
-            loan = restTemplate.postForObject(url, null, JsonNode.class, apiKey);
+            partialLoan = restTemplate.postForObject(url, null, JsonNode.class, apiKey);
         } catch (RestClientResponseException e) {
             if (e.getRawStatusCode() == 422) {
                 JsonNode error = objectMapper.readTree(e.getResponseBodyAsString());
@@ -354,22 +354,30 @@ public class FolioCatalogService implements CatalogService {
         }
 
         JsonNode item = getItem(itemId);
+
+        String loanId = getText(partialLoan, "/id");
     
-        String instanceId = getText(loan, "/item/instanceId");
+        String instanceId = getText(partialLoan, "/item/instanceId");
         String instanceHrid = getInstanceHrid(instanceId);
 
+        JsonNode loan = getLoan(loanId);
+
+        String loanPolicyName = getText(loan, "/loanPolicy/name");
+
+        JsonNode loanPolicy = getLoanPolicy(loanPolicyName);
+
         LoanItem.LoanItemBuilder builder = LoanItem.builder()
-            .loanId(getText(loan, "/id"))
+            .loanId(loanId)
             .itemId(itemId)
             .instanceId(instanceId)
             .instanceHrid(instanceHrid)
             .itemType(getText(item, "/permanentLoanType/name"))
-            .loanDate(getDate(loan, "/loanDate"))
-            .loanDueDate(getDate(loan, "/dueDate"))
-            .overdue(getBoolean(loan, "/overdue", false))
-            .title(getText(loan, "/item/title"))
-            .author(getText(loan, "/item/author"))
-            .canRenew(true);
+            .loanDate(getDate(partialLoan, "/loanDate"))
+            .loanDueDate(getDate(partialLoan, "/dueDate"))
+            .overdue(getBoolean(partialLoan, "/overdue", false))
+            .title(getText(partialLoan, "/item/title"))
+            .author(getText(partialLoan, "/item/author"))
+            .canRenew(getBoolean(loanPolicy, "/renewable"));
 
         String locationId = getText(item, "/effectiveLocation/id");
 
@@ -1002,6 +1010,26 @@ public class FolioCatalogService implements CatalogService {
         JsonNode item = okapiRequestJsonNode(url, HttpMethod.GET, message);
         if (item.isContainerNode()) {
             return item;
+        }
+
+        return objectMapper.createObjectNode();
+    }
+
+    /**
+     * Get loan by id.
+     *
+     * @param loanId String
+     * @return loan
+     */
+    private JsonNode getLoan(String loanId) {
+        String url = String.format("%s/circulation/loans/%s", properties.getBaseOkapiUrl(), loanId);
+        String message = String.format("loan with id \"%s\"", loanId);
+
+        logger.debug("Asking for loan from: {}", url);
+
+        JsonNode loan = okapiRequestJsonNode(url, HttpMethod.GET, message);
+        if (loan.isContainerNode()) {
+            return loan;
         }
 
         return objectMapper.createObjectNode();
