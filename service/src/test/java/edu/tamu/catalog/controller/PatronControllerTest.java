@@ -101,7 +101,9 @@ public class PatronControllerTest extends PatronControllerTestBase {
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
         expectGetResponse(getOkapiBatchInstancesUrl(INSTANCES_TOTAL), once(), respondJsonOk(instancesPayload), true);
         expectGetResponse(getOkapiBatchItemsUrl(ITEMS_TOTAL), once(), respondJsonOk(itemsPayload), true);
+        expectGetResponse(getOkapiBatchLoansUrl(LOANS_TOTAL), once(), respondJsonOk(loansPayload), true);
         expectGetResponse(getOkapiLocationsUrl(), between(0, 4), respondJsonOk(locationPayload));
+        expectGetResponse(getOkapiLoanPoliciesUrl(), between(0, 4), respondJsonOk(loanPolicyPayload));
 
         mockMvc.perform(
             get(PATRON_MVC_PREFIX + LOANS_ENDPOINT, UIN)
@@ -152,7 +154,9 @@ public class PatronControllerTest extends PatronControllerTestBase {
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
         expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID), between(0, 1), respondJsonOk(instancePayload));
         expectGetResponse(getOkapiItemsUrl(ITEM_ID), between(0, 1), respondJsonOk(itemPayload));
+        expectGetResponse(getOkapiLoansUrl(LOAN_ID), between(0, 1), respondJsonOk(loanPayload));
         expectGetResponse(getOkapiLocationsUrl(), between(0, 1), respondJsonOk(locationPayload));
+        expectGetResponse(getOkapiLoanPoliciesUrl(), between(0, 1), respondJsonOk(loanPolicyPayload));
 
         mockMvc.perform(
             post(PATRON_MVC_PREFIX + RENEW_MVC_PATH, UIN, ITEM_ID)
@@ -162,6 +166,7 @@ public class PatronControllerTest extends PatronControllerTestBase {
                 .content(loanRenewalCatalogPayload)
             )
             .andExpect(status().isOk())
+            .andExpect(content().json(loanRenewalCatalogPayload))
             .andDo(
                 document(
                     DOC_PREFIX + RENEWAL_ENDPOINT,
@@ -304,9 +309,11 @@ public class PatronControllerTest extends PatronControllerTestBase {
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
         expectGetResponse(getOkapiBatchInstancesUrl(1), between(0, 1), respondJsonOk(instancesPayload), true);
         expectGetResponse(getOkapiBatchItemsUrl(1), between(0, 1), respondJsonOk(itemsPayload), true);
-        expectGetResponse(getOkapiBatchInstancesUrl(INSTANCES_TOTAL), between(0, 1), respondJsonOk(instancesPayload), true);
-        expectGetResponse(getOkapiBatchItemsUrl(ITEMS_TOTAL), between(0, 1), respondJsonOk(itemsPayload), true);
+        expectGetResponse(getOkapiBatchInstancesUrl(1), between(0, 1), respondJsonOk(instancesPayload), true);
+        expectGetResponse(getOkapiBatchItemsUrl(1), between(0, 1), respondJsonOk(itemsPayload), true);
+        expectGetResponse(getOkapiBatchLoansUrl(1), between(0, 1), respondJsonOk(loansPayload), true);
         expectGetResponse(getOkapiLocationsUrl(), between(0, 4), respondJsonOk(locationPayload));
+        expectGetResponse(getOkapiLoanPoliciesUrl(), between(0, 4), respondJsonOk(loanPolicyPayload));
 
         mockMvc.perform(builder)
             .andExpect(result);

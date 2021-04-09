@@ -1,23 +1,23 @@
 {
-  "id": "40053ccb-fd0c-304b-9547-b2fc06f34d3e",
+  "id": "f5a63a6f-4b1d-3a75-8fba-668efffae4ad",
   "status": {
     "name": "Checked out",
-    "date": "2021-02-27T02:22:09.076+00:00"
+    "date": "2021-04-09T01:56:49.881+00:00"
   },
-  "title": "An ontology of consciousness / by Ralph Ellis.",
-  "callNumber": "BD450 .E398 1986",
-  "hrid": "it00000903248",
+  "title": "Spam nation : the inside story of organized cybercrime--from global epidemic to your front door / Brian Krebs.",
+  "callNumber": "HV6773.2 .K74 2014",
+  "hrid": "it00003752753",
   "contributorNames": [
     {
-      "name": "Ellis, Ralph D"
+      "name": "Krebs, Brian,"
     }
   ],
   "formerIds": [
-    "936922"
+    "4395154"
   ],
   "discoverySuppress": false,
-  "holdingsRecordId": "82a6d30d-7e75-31a0-8e8c-6ea0e9bc0d99",
-  "barcode": "A14810142631",
+  "holdingsRecordId": "da4ba6a0-4b7c-38cf-9d42-dae57c50ceb8",
+  "barcode": "A14843049165",
   "notes": [],
   "circulationNotes": [],
   "numberOfPieces": "1",
@@ -40,16 +40,16 @@
     "name": "normal"
   },
   "metadata": {
-    "createdDate": "2021-02-26T18:30:58.892+00:00",
+    "createdDate": "2021-04-09T00:43:45.997+00:00",
     "createdByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498",
-    "updatedDate": "2021-02-27T02:22:09.073+00:00",
+    "updatedDate": "2021-04-09T01:56:49.875+00:00",
     "updatedByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498"
   },
   "links": {
-    "self": "http://folio-okapi-q3.library.tamu.edu/inventory/items/40053ccb-fd0c-304b-9547-b2fc06f34d3e"
+    "self": "http://folio-okapi-q3.library.tamu.edu/inventory/items/f5a63a6f-4b1d-3a75-8fba-668efffae4ad"
   },
   "effectiveCallNumberComponents": {
-    "callNumber": "BD450 .E398 1986",
+    "callNumber": "HV6773.2 .K74 2014",
     "prefix": null,
     "suffix": null,
     "typeId": "95467209-6d7b-468b-94df-0f5d7ad2747d"

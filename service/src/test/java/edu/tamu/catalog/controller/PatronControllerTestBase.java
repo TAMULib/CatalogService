@@ -20,12 +20,16 @@ public class PatronControllerTestBase extends AbstractTestRestController {
     protected static final String SERVICE_POINTS_ID = "ebab9ccc-4ece-4f35-bc82-01f3325abed8";
     protected static final String LOCATION_ID = "1d1ca55a-86a1-489b-a645-2d52742c196a";
     protected static final String REQUEST_ID = "8bbac557-d66f-4571-bbbf-47a107cc1589";
-    protected static final String INSTANCE_ID = "2422160d-23c4-356b-ad1c-44d90fc1320b";
-    protected static final String ITEM_ID = "40053ccb-fd0c-304b-9547-b2fc06f34d3e";
+    protected static final String INSTANCE_ID = "829fecd3-67c3-3ca2-b9d4-281227690e0f";
+    protected static final String ITEM_ID = "f5a63a6f-4b1d-3a75-8fba-668efffae4ad";
+    protected static final String LOAN_ID = "adbe373f-89ec-44e9-8840-f6906adc7adf";
     protected static final String USER_ID = "93710b5b-aa9a-43be-af34-7dcb1f7b0669";
+
+    protected static final String LOAN_POLICY_NAME = "day_367_renew_indefinite_recall_y";
 
     protected static final int INSTANCES_TOTAL = 4;
     protected static final int ITEMS_TOTAL = 4;
+    protected static final int LOANS_TOTAL = 4;
 
     protected static final String FOLIO_CATALOG = "folio";
     protected static final String VOYAGER_CATALOG = "msl";
@@ -52,6 +56,7 @@ public class PatronControllerTestBase extends AbstractTestRestController {
     protected static String holdRequestPayload;
     protected static String servicePointPayload;
     protected static String locationPayload;
+    protected static String loanPolicyPayload;
     protected static String blUserResponsePayload;
     protected static String blUserBadUUIDErrorPayload;
     protected static String blUserDuplicateErrorPayload;
@@ -61,6 +66,8 @@ public class PatronControllerTestBase extends AbstractTestRestController {
     protected static String instancesPayload;
     protected static String itemPayload;
     protected static String itemsPayload;
+    protected static String loanPayload;
+    protected static String loansPayload;
 
     protected static String finesCatalogPayload;
     protected static String loansCatalogPayload;
@@ -88,11 +95,14 @@ public class PatronControllerTestBase extends AbstractTestRestController {
         blUserDuplicateErrorPayload = loadPayload("mock/response/users/userDuplicateError.json");
         blUserEmptyErrorPayload = loadPayload("mock/response/users/userEmptyError.json");
         automatedBlocksResponsePayload = loadPayload("mock/response/patron-blocks/automatedBlocks.json");
-        instancePayload = loadPayload("mock/response/instances/in1.json");
+        instancePayload = loadPayload("mock/response/instances/instance.json");
         instancesPayload = loadPayload("mock/response/instances/instances.json");
-        itemPayload = loadPayload("mock/response/items/it1.json");
+        itemPayload = loadPayload("mock/response/items/item.json");
         itemsPayload = loadPayload("mock/response/items/items.json");
+        loanPayload = loadPayload("mock/response/loans/loan.json");
+        loansPayload = loadPayload("mock/response/loans/loans.json");
         locationPayload = loadPayload("mock/response/locations/location.json");
+        loanPolicyPayload = loadPayload("mock/response/loanPolicies/loanPolicy.json");
 
         finesCatalogPayload = loadPayload("mock/response/catalog/fines.json");
         loansCatalogPayload = loadPayload("mock/response/catalog/loans.json");
@@ -133,6 +143,10 @@ public class PatronControllerTestBase extends AbstractTestRestController {
         return getOkapiUrl(String.format("locations/%s", LOCATION_ID));
     }
 
+    protected static String getOkapiLoanPoliciesUrl() {
+        return getOkapiUrl(String.format("loan-policy-storage/loan-policies?query=name%%3D%%3D%s", LOAN_POLICY_NAME));
+    }
+
     protected static String getOkapiRequestsUrl() {
         return getOkapiUrl(String.format("circulation/requests/%s", REQUEST_ID));
     }
@@ -145,12 +159,20 @@ public class PatronControllerTestBase extends AbstractTestRestController {
         return getOkapiUrl(String.format("inventory/items/%s", itemId));
     }
 
+    protected static String getOkapiLoansUrl(String loanId) {
+        return getOkapiUrl(String.format("circulation/loans/%s", loanId));
+    }
+
     protected static String getOkapiBatchInstancesUrl(int size) {
         return getOkapiUrl(String.format("instance-storage/instances\\?limit=%s&query=id%%3D%%3D.*", size));
     }
 
     protected static String getOkapiBatchItemsUrl(int size) {
         return getOkapiUrl(String.format("inventory/items\\?limit=%s&query=id%%3D%%3D.*", size));
+    }
+
+    protected static String getOkapiBatchLoansUrl(int size) {
+        return getOkapiUrl(String.format("circulation/loans\\?limit=%s&query=id%%3D%%3D.*", size));
     }
 
     protected static String getOkapiBLUsersByUinUrl() {
