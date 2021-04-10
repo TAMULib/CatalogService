@@ -88,9 +88,7 @@ public class FolioCatalogService implements CatalogService {
     private static final Logger logger = LoggerFactory.getLogger(FolioCatalogService.class);
 
     private static final Map<String, JsonNode> LOCATION_CACHE = new ConcurrentHashMap<>();
-
     private static final Map<String, JsonNode> SERVICE_POINT_CACHE = new ConcurrentHashMap<>();
-
     private static final Map<String, JsonNode> LOAN_POLICY_CACHE = new ConcurrentHashMap<>();
 
     private static final String VERB_GET_RECORD = "GetRecord";
@@ -433,14 +431,15 @@ public class FolioCatalogService implements CatalogService {
             String.format("%s: Catalog service failed to find %s.", status.getReasonPhrase(), message));
     }
 
-    /**
-     * Use OKAPI to retrieve the JsonNode, throwing a customized exception on client or server errors.
-     *
-     * @param <T> generic class for response body type.
-     * @param url String the URL to retrieve.
-     *
-     * @return response entity with response type as body.
-     */
+     /**
+      * Use OKAPI to retrieve the JsonNode, throwing a customized exception on client or server errors.
+      *
+      * @param url String the URL to retrieve
+      * @param method HttpMethod
+      * @param message exception response message
+      * @param uriVariables interpolation variables
+      * @return response entity with response type as body.
+      */
     JsonNode okapiRequestJsonNode(String url, HttpMethod method, String message, Object... uriVariables) {
         try {
             ResponseEntity<JsonNode> response = okapiRequest(url, method, JsonNode.class, uriVariables);
@@ -867,6 +866,13 @@ public class FolioCatalogService implements CatalogService {
         return null;
     }
 
+    /**
+     * Get loans from a set of ids.
+     * 
+     * @param loanIds
+     * @return ArrayNode of loans
+     * @throws Exception
+     */
     private JsonNode getLoans(Set<String> loanIds) throws Exception {
         ArrayNode loans = objectMapper.createArrayNode();
         AtomicInteger counter = new AtomicInteger();
@@ -884,7 +890,7 @@ public class FolioCatalogService implements CatalogService {
      * Fetch batch of loans.
      *
      * @param loanIdsPartitions Set<String>
-     * @return array of loans
+     * @return ArrayNode of loans
      * @throws Exception
      */
     private JsonNode fetchLoans(Set<String> loanIdsPartitions) throws Exception {
@@ -903,6 +909,13 @@ public class FolioCatalogService implements CatalogService {
         return objectMapper.createObjectNode();
     }
 
+    /**
+     * Get instances from a set of ids.
+     * 
+     * @param instanceIds
+     * @return ArrayNode of instances
+     * @throws Exception
+     */
     private JsonNode getInstances(Set<String> instanceIds) throws Exception {
         ArrayNode instances = objectMapper.createArrayNode();
         AtomicInteger counter = new AtomicInteger();
@@ -920,7 +933,7 @@ public class FolioCatalogService implements CatalogService {
      * Fetch batch of instances.
      *
      * @param instanceIdsBatch Set<String>
-     * @return array of instances
+     * @return ArrayNode of instances
      * @throws Exception
      */
     private JsonNode fetchInstances(Set<String> instanceIdsBatch) throws Exception {
@@ -939,6 +952,13 @@ public class FolioCatalogService implements CatalogService {
         return objectMapper.createObjectNode();
     }
 
+    /**
+     * Get items from a set of ids.
+     * 
+     * @param itemIds
+     * @return ArrayNode of items
+     * @throws Exception
+     */
     private JsonNode getItems(Set<String> itemIds) throws Exception {
         ArrayNode items = objectMapper.createArrayNode();
         AtomicInteger counter = new AtomicInteger();
@@ -956,7 +976,7 @@ public class FolioCatalogService implements CatalogService {
      * Fetch batch of items.
      *
      * @param itemIdsBatch Set<String>
-     * @return array of items
+     * @return ArrayNode of items
      * @throws Exception
      */
     private JsonNode fetchItems(Set<String> itemIdsBatch) throws Exception {
