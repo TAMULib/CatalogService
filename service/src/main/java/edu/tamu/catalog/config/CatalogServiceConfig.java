@@ -39,14 +39,14 @@ public class CatalogServiceConfig {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Value("${app.catalogs.path:classpath:/catalogs}")
-    private String catalogsPath;
+    @Value("${app.catalogs.path.uri:classpath:/catalogs}")
+    private String catalogsPathUri;
 
     @Bean
     public List<CatalogService> createCatalogServices() throws IOException {
         List<CatalogService> catalogServices = new ArrayList<>();
 
-        for (Resource resource : loadResources(StringUtils.removeEnd(catalogsPath, "/") + "/*.json")) {
+        for (Resource resource : loadResources(StringUtils.removeEnd(catalogsPathUri, "/") + "/*.json")) {
             JsonNode propertiesNode = objectMapper.readTree(resource.getInputStream());
             JsonNode typeNode = propertiesNode.get(TYPE_FIELD);
             if (typeNode.isValueNode()) {
