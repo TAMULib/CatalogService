@@ -45,7 +45,7 @@ public class CatalogServiceConfig {
     @Bean
     public List<CatalogService> createCatalogServices() throws IOException {
         List<CatalogService> catalogServices = new ArrayList<>();
-        
+
         for (Resource resource : loadResources(StringUtils.removeEnd(catalogsPath, "/") + "/*.json")) {
             JsonNode propertiesNode = objectMapper.readTree(resource.getInputStream());
             JsonNode typeNode = propertiesNode.get(TYPE_FIELD);
