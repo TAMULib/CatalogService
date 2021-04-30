@@ -13,8 +13,6 @@ import lombok.NoArgsConstructor;
 @Data
 public class HoldingsRecord {
 
-    private String recordId;
-
     private String marcRecordLeader;
 
     private String mfhd;
@@ -41,6 +39,8 @@ public class HoldingsRecord {
 
     private String oclc;
 
+    private String recordId;
+
     private String callNumber;
 
     private boolean largeVolume;
@@ -50,7 +50,7 @@ public class HoldingsRecord {
     public HoldingsRecord(String marcRecordLeader, String mfhd, String issn, String isbn, String title, String author,
             String publisher, String place, String year, String genre, String edition, String fallBackLocationCode, String oclc, String recordId, String callNumber,
             Map<String, Map<String, String>> catalogItems) {
-        this(marcRecordLeader, mfhd, issn, isbn, title, author, publisher, place, year, genre, edition, fallBackLocationCode, oclc, recordId, callNumber, false, catalogItems);
+        this(marcRecordLeader, mfhd, issn, isbn, title, author, publisher, place, year, genre, fallBackLocationCode, edition, oclc, recordId, callNumber, false, catalogItems);
     }
 
     public boolean isMultiVolume() {

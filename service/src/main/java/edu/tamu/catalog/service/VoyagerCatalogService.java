@@ -164,15 +164,13 @@ public class VoyagerCatalogService implements CatalogService {
                     }
                 }
 
-                catalogHoldings.add(new HoldingsRecord(recordValues.get(RECORD_MARC_RECORD_LEADER),
-                    holdingValues.get(RECORD_MFHD), recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN),
-                    recordValues.get(RECORD_TITLE), recordValues.get(RECORD_AUTHOR),
-                    recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
-                    recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
-                    holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC),
-                    recordValues.get(RECORD_RECORD_ID), holdingValues.get(RECORD_CALL_NUMBER), validLargeVolume,
-                    new HashMap<String, Map<String, String>>(catalogItems)));
-
+                catalogHoldings.add(new HoldingsRecord(recordValues.get(RECORD_MARC_RECORD_LEADER), holdingValues.get(RECORD_MFHD),
+                        recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
+                        recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
+                        recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE),
+                        holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_EDITION), recordValues.get(RECORD_OCLC),
+                        recordValues.get(RECORD_RECORD_ID), holdingValues.get(RECORD_CALL_NUMBER), validLargeVolume,
+                        new HashMap<String, Map<String, String>>(catalogItems)));
                 catalogItems.clear();
             }
             return catalogHoldings;

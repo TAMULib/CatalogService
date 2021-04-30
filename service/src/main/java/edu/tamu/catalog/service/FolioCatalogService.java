@@ -634,9 +634,9 @@ public class FolioCatalogService implements CatalogService {
         NodeList marcList = marcRecord.getChildNodes();
         int marcListCount = marcList.getLength();
 
+
         for (int i = 0; i < marcList.getLength(); i++) {
             Node node = marcList.item(i);
-
             if (nodeNameMatches(node.getNodeName(), NODE_LEADER)) {
                 Marc21Xml.addMapValue(recordValues, NODE_MARC_RECORD_LEADER, node.getTextContent());
                 break;
@@ -666,6 +666,7 @@ public class FolioCatalogService implements CatalogService {
         // different nesting structure in the XML.
         Map<String, String> holdingValues = Marc21Xml.buildCoreHolding(NODE_PREFIX, marcRecord);
 
+        logger.debug("Record ID: {}", recordValues.get(RECORD_RECORD_ID));
         logger.debug("Marc record leader: {}", recordValues.get(RECORD_MARC_RECORD_LEADER));
         logger.debug("MFHD: {}", holdingValues.get(RECORD_MFHD));
         logger.debug("ISBN: {}", recordValues.get(RECORD_ISBN));
@@ -695,8 +696,8 @@ public class FolioCatalogService implements CatalogService {
         return new HoldingsRecord(recordValues.get(RECORD_MARC_RECORD_LEADER), holdingValues.get(RECORD_MFHD),
             recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
             recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
-            recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
-            holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC),
+            recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE),
+            holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_EDITION), recordValues.get(RECORD_OCLC),
             recordValues.get(RECORD_RECORD_ID), holdingValues.get(RECORD_CALL_NUMBER), validLargeVolume,
             new HashMap<String, Map<String, String>>(catalogItems));
     }
@@ -731,6 +732,8 @@ public class FolioCatalogService implements CatalogService {
         for (int i = 0; i < nodes.getLength(); i++) {
             if (Marc21Xml.attributeCodeMatches(nodes.item(i), "c")) {
                 itemData.put("location", nodes.item(i).getTextContent());
+            } else if (Marc21Xml.attributeCodeMatches(nodes.item(i), "k")) {
+                itemData.put("enumeration", nodes.item(i).getTextContent());
             }
         }
 
@@ -786,7 +789,7 @@ public class FolioCatalogService implements CatalogService {
 
     /**
      * Get parsed data time from JsonNode at path expression. Return null if value not found.
-     * 
+     *
      * @param input JsonNode
      * @param jsonPtrExpr String
      * @return date time value
