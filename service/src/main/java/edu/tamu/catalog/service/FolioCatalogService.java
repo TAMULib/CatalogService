@@ -523,7 +523,7 @@ public class FolioCatalogService implements CatalogService {
      * @return list of holdings records
      */
     private List<HoldingsRecord> requestHoldings(String instanceId, String holdingId) {
-        List<HoldingsRecord> holdings = new ArrayList<>();
+        List<HoldingsRecord> finalHoldings = new ArrayList<>();
 
         try {
             String apiKey = properties.getEdgeApiKey();
@@ -564,6 +564,8 @@ public class FolioCatalogService implements CatalogService {
 
             NodeList verbNodes = doc.getElementsByTagName(VERB_GET_RECORD);
 
+            List<HoldingsRecord> marcHoldings = new ArrayList<>();
+
             if (verbNodes.getLength() > 0) {
 
                 // there should only be a single getRecord element, only get the first one even if more than one exist.
@@ -575,11 +577,11 @@ public class FolioCatalogService implements CatalogService {
 
                     if (recordHoldings.size() > 0) {
                         if (holdingId == null) {
-                            holdings.addAll(recordHoldings);
+                            marcHoldings.addAll(recordHoldings);
                         } else {
                             for (int j = 0; j < recordHoldings.size(); j++) {
                                 if (recordHoldings.get(j).getMfhd().equalsIgnoreCase(holdingId)) {
-                                    holdings.add(recordHoldings.get(j));
+                                    marcHoldings.add(recordHoldings.get(j));
                                     break;
                                 }
                             }
@@ -587,12 +589,67 @@ public class FolioCatalogService implements CatalogService {
                     }
                 }
             }
+
+            //get locations
+            url = String.format("%s/locations?limit=500", properties.getBaseOkapiUrl());
+            JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, "a message");
+            if (response.isObject()) {
+                Map<String,String> locationMap = new HashMap<String,String>();
+                response.at("/locations").forEach(i -> {
+                    locationMap.put(i.at("/id").asText(),i.at("/code").asText());
+                });
+
+  /*
+              url = String.format("%s/instance-storage/instances", properties.getBaseOkapiUrl());
+              String query = String.format("(id==\"%s\")",instanceId);
+              url += String.format("?query={query}");
+
+              response = okapiRequestJsonNode(url, HttpMethod.GET, "a message", query);
+              if (response.isObject()) {
+                  logger.debug("count: "+response.at("/totalRecords").asText());
+                  response.at("/instances").forEach(i -> {
+                      logger.debug("ihrid: "+i.at("/hrid").asText());
+                  });
+                  logger.debug("");
+                  response.fieldNames().forEachRemaining(f -> {
+                      logger.debug("field: "+f);
+                  });
+
+  */
+
+              //get all holdings for instance
+              url = String.format("%s/holdings-storage/holdings", properties.getBaseOkapiUrl());
+              String query = String.format("(instanceId==\"%s\" NOT discoverySuppress==true)", instanceId);
+              url += String.format("?query={query}&offset={offset}&limit={limit}");
+              String message = "what";
+
+              logger.debug("Asking for holdings from: {}", url);
+              String offset = "0";
+              String limit = "1000";
+              response = okapiRequestJsonNode(url, HttpMethod.GET, message, query, offset, limit);
+              if (response.isObject()) {
+                  response.at("/holdingsRecords").forEach(holding -> {
+                      String hrid = holding.at("/hrid").asText();
+                      String fallbackLocationCode = locationMap.get(holding.at("/permanentLocationId").asText());
+
+                      //combine marc based holding data and direct okapi data
+                      HoldingsRecord recordValues = marcHoldings.get(0);
+                      finalHoldings.add(new HoldingsRecord(recordValues.getMarcRecordLeader(), hrid,
+                          recordValues.getIssn(), recordValues.getIsbn(), recordValues.getTitle(),
+                          recordValues.getAuthor(), recordValues.getPublisher(), recordValues.getPlace(),
+                          recordValues.getYear(), recordValues.getGenre(),
+                          fallbackLocationCode, recordValues.getEdition(), recordValues.getOclc(),
+                          recordValues.getRecordId(), recordValues.getCallNumber(), recordValues.isLargeVolume(),
+                          recordValues.getCatalogItems()));
+                  });
+              }
+          }
         } catch (DOMException | IOException | ParserConfigurationException | SAXException e) {
             // TODO consider throwing all of these so that caller can handle more appropriately.
             e.printStackTrace();
         }
 
-        return holdings;
+        return finalHoldings;
     }
 
     /**
@@ -666,6 +723,7 @@ public class FolioCatalogService implements CatalogService {
         // different nesting structure in the XML.
         Map<String, String> holdingValues = Marc21Xml.buildCoreHolding(NODE_PREFIX, marcRecord);
 
+
         logger.debug("Record ID: {}", recordValues.get(RECORD_RECORD_ID));
         logger.debug("Marc record leader: {}", recordValues.get(RECORD_MARC_RECORD_LEADER));
         logger.debug("MFHD: {}", holdingValues.get(RECORD_MFHD));
@@ -730,8 +788,8 @@ public class FolioCatalogService implements CatalogService {
         itemData.put("itemBarcode", barcode);
 
         for (int i = 0; i < nodes.getLength(); i++) {
-            if (Marc21Xml.attributeCodeMatches(nodes.item(i), "c")) {
-                itemData.put("location", nodes.item(i).getTextContent());
+            if (Marc21Xml.attributeCodeMatches(nodes.item(i), "d")) {
+                itemData.put("locationName", nodes.item(i).getTextContent());
             } else if (Marc21Xml.attributeCodeMatches(nodes.item(i), "k")) {
                 itemData.put("enumeration", nodes.item(i).getTextContent());
             }
