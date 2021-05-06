@@ -589,67 +589,83 @@ public class FolioCatalogService implements CatalogService {
                     }
                 }
             }
+            Map<String,String> locationMap = getOkapiLocations();
 
-            //get locations
-            url = String.format("%s/locations?limit=500", properties.getBaseOkapiUrl());
-            JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, "a message");
-            if (response.isObject()) {
-                Map<String,String> locationMap = new HashMap<String,String>();
-                response.at("/locations").forEach(i -> {
-                    locationMap.put(i.at("/id").asText(),i.at("/code").asText());
-                });
+            JsonNode okapiHoldings = getOkapiHoldings(instanceId);
+            okapiHoldings.forEach(holding -> {
+                String hrid = holding.at("/hrid").asText();
+                String fallbackLocationCode = locationMap.get(holding.at("/permanentLocationId").asText());
 
-  /*
-              url = String.format("%s/instance-storage/instances", properties.getBaseOkapiUrl());
-              String query = String.format("(id==\"%s\")",instanceId);
-              url += String.format("?query={query}");
+                //get items for holding from okapi
+                Map<String, Map<String,String>> okapiItems = getOkapiItems(holding.at("/id").asText(), locationMap);
 
-              response = okapiRequestJsonNode(url, HttpMethod.GET, "a message", query);
-              if (response.isObject()) {
-                  logger.debug("count: "+response.at("/totalRecords").asText());
-                  response.at("/instances").forEach(i -> {
-                      logger.debug("ihrid: "+i.at("/hrid").asText());
-                  });
-                  logger.debug("");
-                  response.fieldNames().forEachRemaining(f -> {
-                      logger.debug("field: "+f);
-                  });
-
-  */
-
-              //get all holdings for instance
-              url = String.format("%s/holdings-storage/holdings", properties.getBaseOkapiUrl());
-              String query = String.format("(instanceId==\"%s\" NOT discoverySuppress==true)", instanceId);
-              url += String.format("?query={query}&offset={offset}&limit={limit}");
-              String message = "what";
-
-              logger.debug("Asking for holdings from: {}", url);
-              String offset = "0";
-              String limit = "1000";
-              response = okapiRequestJsonNode(url, HttpMethod.GET, message, query, offset, limit);
-              if (response.isObject()) {
-                  response.at("/holdingsRecords").forEach(holding -> {
-                      String hrid = holding.at("/hrid").asText();
-                      String fallbackLocationCode = locationMap.get(holding.at("/permanentLocationId").asText());
-
-                      //combine marc based holding data and direct okapi data
-                      HoldingsRecord recordValues = marcHoldings.get(0);
-                      finalHoldings.add(new HoldingsRecord(recordValues.getMarcRecordLeader(), hrid,
-                          recordValues.getIssn(), recordValues.getIsbn(), recordValues.getTitle(),
-                          recordValues.getAuthor(), recordValues.getPublisher(), recordValues.getPlace(),
-                          recordValues.getYear(), recordValues.getGenre(),
-                          fallbackLocationCode, recordValues.getEdition(), recordValues.getOclc(),
-                          recordValues.getRecordId(), recordValues.getCallNumber(), recordValues.isLargeVolume(),
-                          recordValues.getCatalogItems()));
-                  });
-              }
-          }
+                //combine marc based holding data and direct okapi data
+                HoldingsRecord recordValues = marcHoldings.get(0);
+                finalHoldings.add(new HoldingsRecord(recordValues.getMarcRecordLeader(), hrid,
+                    recordValues.getIssn(), recordValues.getIsbn(), recordValues.getTitle(),
+                    recordValues.getAuthor(), recordValues.getPublisher(), recordValues.getPlace(),
+                    recordValues.getYear(), recordValues.getGenre(),
+                    fallbackLocationCode, recordValues.getEdition(), recordValues.getOclc(),
+                    recordValues.getRecordId(), recordValues.getCallNumber(), recordValues.isLargeVolume(),
+                    (okapiItems.size() > 0) ? okapiItems:recordValues.getCatalogItems()));
+            });
         } catch (DOMException | IOException | ParserConfigurationException | SAXException e) {
             // TODO consider throwing all of these so that caller can handle more appropriately.
             e.printStackTrace();
         }
 
         return finalHoldings;
+    }
+
+    private Map<String,String> getOkapiLocations() {
+        String url = String.format("%s/locations?limit=500", properties.getBaseOkapiUrl());
+        JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, "locations from okapi");
+        if (response.isObject()) {
+            Map<String,String> locationMap = new HashMap<String,String>();
+            response.at("/locations").forEach(i -> {
+                locationMap.put(i.at("/id").asText(),i.at("/code").asText());
+            });
+            return locationMap;
+        }
+        return null;
+    }
+
+    private JsonNode getOkapiHoldings(String instanceId) {
+        String url = String.format("%s/holdings-storage/holdings", properties.getBaseOkapiUrl());
+        String query = String.format("(instanceId==\"%s\" NOT discoverySuppress==true)", instanceId);
+        url += String.format("?query={query}&offset={offset}&limit={limit}");
+        String message = String.format("holdings from okapi with instanceId \"%s\"", instanceId);
+        String offset = "0";
+        String limit = "1000";
+        JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, message, query, offset, limit);
+        if (response.isObject()) {
+            return response.at("/holdingsRecords");
+        }
+        return null;
+    }
+
+    private Map<String, Map<String, String>> getOkapiItems(String holdingsRecordId, Map<String,String> locationMap) {
+        String itemsUrl = String.format("%s/item-storage/items", properties.getBaseOkapiUrl());
+        String itemsQuery = String.format("(holdingsRecordId==\"%s\" NOT discoverySuppress==true)", holdingsRecordId);
+        itemsUrl += String.format("?query={itemsQuery}&offset={itemsOffset}&limit={itemsLimit}");
+        String itemsMessage = String.format("items from okapi with holdingsRecordId \"%s\"", holdingsRecordId);
+
+        String itemsOffset = "0";
+        String itemsLimit = "1000";
+
+        JsonNode itemsResponse = okapiRequestJsonNode(itemsUrl, HttpMethod.GET, itemsMessage, itemsQuery, itemsOffset, itemsLimit);
+        Map<String, Map<String, String>> okapiItems = new HashMap<String, Map<String, String>>();
+        if (itemsResponse.isObject()) {
+            itemsResponse.at("/items").forEach(i -> {
+                Map<String, String> itemData = new HashMap<String, String>();
+                itemData.put("hrid", i.at("/hrid").asText());
+                itemData.put("barcode", i.at("/barcode").asText());
+                itemData.put("locationCode", locationMap.get(i.at("/effectiveLocationId").asText()));
+                itemData.put("enumeration", i.at("/enumeration").asText());
+                okapiItems.put(i.at("/hrid").asText(), itemData);
+            });
+        }
+        return okapiItems;
     }
 
     /**
