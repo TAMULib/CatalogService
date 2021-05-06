@@ -537,7 +537,7 @@ public class FolioCatalogService implements CatalogService {
 
             String url = String.format("%s/%s?%s", properties.getBaseEdgeUrl(), oaiPath, queryString);
 
-            logger.debug("Asking for holdings from: {}", url);
+            logger.debug("Asking for edge holdings from: {}", url);
 
             String result = restTemplate.getForObject(url, String.class);
 
@@ -619,6 +619,7 @@ public class FolioCatalogService implements CatalogService {
 
     private Map<String,String> getOkapiLocations() {
         String url = String.format("%s/locations?limit=500", properties.getBaseOkapiUrl());
+        logger.debug("Asking for locations from: {}", url);
         JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, "locations from okapi");
         if (response.isObject()) {
             Map<String,String> locationMap = new HashMap<String,String>();
@@ -637,6 +638,7 @@ public class FolioCatalogService implements CatalogService {
         String message = String.format("holdings from okapi with instanceId \"%s\"", instanceId);
         String offset = "0";
         String limit = "1000";
+        logger.debug("Asking for okapi holdings from: {}", url);
         JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, message, query, offset, limit);
         if (response.isObject()) {
             return response.at("/holdingsRecords");
@@ -653,6 +655,7 @@ public class FolioCatalogService implements CatalogService {
         String itemsOffset = "0";
         String itemsLimit = "1000";
 
+        logger.debug("Asking for items from: {}", itemsUrl);
         JsonNode itemsResponse = okapiRequestJsonNode(itemsUrl, HttpMethod.GET, itemsMessage, itemsQuery, itemsOffset, itemsLimit);
         Map<String, Map<String, String>> okapiItems = new HashMap<String, Map<String, String>>();
         if (itemsResponse.isObject()) {
