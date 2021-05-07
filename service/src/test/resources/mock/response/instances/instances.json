@@ -1,120 +1,425 @@
 {
   "instances": [
     {
-      "id": "2422160d-23c4-356b-ad1c-44d90fc1320b",
-      "hrid": "in1",
-      "source": "Local: MARC",
-      "title": "ADVANCING LIBRARY EDUCATION: TECHNOLOGICAL INNOVATION AND INSTRUCTIONAL DESIGN",
-      "contributors": [
-        {
-          "name": "Sigal, Ari",
-          "contributorNameTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2a",
-          "primary": true
-        }
-      ],
-      "identifiers": [
-        {
-          "identifierTypeId": "2e48e713-17f3-4c13-a9f8-23845bb210af",
-          "value": "9781466636897"
-        },
-        {
-          "identifierTypeId": "6051f95c-028e-4c6a-8a9e-ee689dd51453",
-          "value": "1"
-        }
-      ],
-      "instanceTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2c",
-      "tags" : {
-        "tagList" : [
-          "important"
-        ]
-      }
-    },
-    {
-      "id": "829fecd3-67c3-3ca2-b9d4-281227690e0f",
-      "hrid": "in2",
-      "source": "Local: MARC",
-      "title": "ADVANCING LIBRARY EDUCATION: TECHNOLOGICAL INNOVATION AND INSTRUCTIONAL DESIGN",
-      "contributors": [
-        {
-          "name": "Sigal, Ari",
-          "contributorNameTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2a",
-          "primary": true
-        }
-      ],
-      "identifiers": [
-        {
-          "identifierTypeId": "2e48e713-17f3-4c13-a9f8-23845bb210af",
-          "value": "9781466636897"
-        },
-        {
-          "identifierTypeId": "6051f95c-028e-4c6a-8a9e-ee689dd51453",
-          "value": "1"
-        }
-      ],
-      "instanceTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2c",
-      "tags" : {
-        "tagList" : [
-          "important"
-        ]
-      }
-    },
-    {
-      "id": "b8ea27b8-5280-3023-bbf8-9113849120a1",
-      "hrid": "in3",
-      "source": "Local: MARC",
-      "title": "ADVANCING LIBRARY EDUCATION: TECHNOLOGICAL INNOVATION AND INSTRUCTIONAL DESIGN",
-      "contributors": [
-        {
-          "name": "Sigal, Ari",
-          "contributorNameTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2a",
-          "primary": true
-        }
-      ],
-      "identifiers": [
-        {
-          "identifierTypeId": "2e48e713-17f3-4c13-a9f8-23845bb210af",
-          "value": "9781466636897"
-        },
-        {
-          "identifierTypeId": "6051f95c-028e-4c6a-8a9e-ee689dd51453",
-          "value": "1"
-        }
-      ],
-      "instanceTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2c",
-      "tags" : {
-        "tagList" : [
-          "important"
-        ]
-      }
-    },
-    {
+      "@context": "http://folio-okapi-q3.library.tamu.edu/inventory/instances/context",
       "id": "a0480d3f-181e-3abd-a091-288e1cfc05ab",
-      "hrid": "in4",
-      "source": "Local: MARC",
-      "title": "ADVANCING LIBRARY EDUCATION: TECHNOLOGICAL INNOVATION AND INSTRUCTIONAL DESIGN",
-      "contributors": [
-        {
-          "name": "Sigal, Ari",
-          "contributorNameTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2a",
-          "primary": true
-        }
+      "hrid": "in00000295952",
+      "source": "MARC",
+      "title": "Philosophy of logic / [by] W. V. Quine.",
+      "indexTitle": "Philosophy of logic /",
+      "alternativeTitles": [],
+      "editions": [],
+      "series": [
+        "Prentice-Hall foundations of philosophy series."
       ],
       "identifiers": [
         {
-          "identifierTypeId": "2e48e713-17f3-4c13-a9f8-23845bb210af",
-          "value": "9781466636897"
+          "identifierTypeId": "76b5963b-ccce-4715-b453-1a7354f4f597",
+          "value": "340298"
         },
         {
-          "identifierTypeId": "6051f95c-028e-4c6a-8a9e-ee689dd51453",
-          "value": "1"
+          "identifierTypeId": "c858e4f2-2b6b-4385-842b-60732ee14abb",
+          "value": "73110265"
+        },
+        {
+          "identifierTypeId": "8261054f-be78-422d-bd51-4ed9f33c3422",
+          "value": "013663625X (pbk.)"
+        },
+        {
+          "identifierTypeId": "439bfbae-75bc-4f74-9fc7-b2a2d47ce3ef",
+          "value": "(OCoLC)00112913"
         }
       ],
-      "instanceTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2c",
-      "tags" : {
-        "tagList" : [
-          "important"
-        ]
+      "contributors": [
+        {
+          "contributorNameTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2a",
+          "name": "Quine, W. V. (Willard Van Orman)",
+          "contributorTypeId": null,
+          "contributorTypeText": null,
+          "primary": true
+        }
+      ],
+      "subjects": [
+        "Logic",
+        "Philosophy"
+      ],
+      "classifications": [],
+      "publication": [
+        {
+          "publisher": "Prentice-Hall",
+          "place": "Englewood Cliffs, N.J.",
+          "dateOfPublication": "[1970]",
+          "role": "Publication"
+        }
+      ],
+      "publicationFrequency": [],
+      "publicationRange": [],
+      "electronicAccess": [],
+      "instanceTypeId": "6312d172-f0cf-40f6-b27d-9fa8feaf332f",
+      "instanceFormatIds": [
+        "8d511d33-5e85-4c5d-9bce-6e3c9cd0c324"
+      ],
+      "physicalDescriptions": [
+        "xiii, 109 pages ; 23 cm."
+      ],
+      "languages": [
+        "eng"
+      ],
+      "notes": [
+        {
+          "instanceNoteTypeId": "86b6e817-e1bc-42fb-bab0-70e7547de6c1",
+          "note": "Bibliography: pages 103-104",
+          "staffOnly": false
+        }
+      ],
+      "modeOfIssuanceId": "9d18a02f-5897-4c31-9106-c9abb5c7ae8b",
+      "discoverySuppress": false,
+      "statisticalCodeIds": [],
+      "statusId": "c8d51dc6-2f84-4220-8aef-3c4894d53b93",
+      "metadata": {
+        "createdDate": "2021-04-08T19:46:40.308+00:00",
+        "createdByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498",
+        "updatedDate": "2021-04-08T19:46:40.308+00:00",
+        "updatedByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498"
+      },
+      "tags": {
+        "tagList": []
+      },
+      "natureOfContentTermIds": [],
+      "links": {
+        "self": "http://folio-okapi-q3.library.tamu.edu/inventory/instances/a0480d3f-181e-3abd-a091-288e1cfc05ab"
+      }
+    },
+    {
+      "@context": "http://folio-okapi-q3.library.tamu.edu/inventory/instances/context",
+      "id": "829fecd3-67c3-3ca2-b9d4-281227690e0f",
+      "hrid": "in00003466399",
+      "source": "MARC",
+      "title": "Spam nation : the inside story of organized cybercrime--from global epidemic to your front door / Brian Krebs.",
+      "indexTitle": "Spam nation : the inside story of organized cybercrime--from global epidemic to your front door /",
+      "alternativeTitles": [],
+      "editions": [],
+      "series": [],
+      "identifiers": [
+        {
+          "identifierTypeId": "76b5963b-ccce-4715-b453-1a7354f4f597",
+          "value": "4813642"
+        },
+        {
+          "identifierTypeId": "c858e4f2-2b6b-4385-842b-60732ee14abb",
+          "value": "2014023007"
+        },
+        {
+          "identifierTypeId": "8261054f-be78-422d-bd51-4ed9f33c3422",
+          "value": "9781402295614 (hbk.)"
+        },
+        {
+          "identifierTypeId": "8261054f-be78-422d-bd51-4ed9f33c3422",
+          "value": "1402295618 (hbk.)"
+        },
+        {
+          "identifierTypeId": "439bfbae-75bc-4f74-9fc7-b2a2d47ce3ef",
+          "value": "(OCoLC)ocn883207087"
+        }
+      ],
+      "contributors": [
+        {
+          "contributorNameTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2a",
+          "name": "Krebs, Brian,",
+          "contributorTypeId": null,
+          "contributorTypeText": "author.",
+          "primary": true
+        }
+      ],
+      "subjects": [
+        "Computer crimes--United States",
+        "Internet fraud--United States",
+        "Spam (Electronic mail)",
+        "Phishing",
+        "Organized crime--United States"
+      ],
+      "classifications": [],
+      "publication": [
+        {
+          "publisher": "Sourcebooks",
+          "place": "Naperville, Illinois",
+          "dateOfPublication": "[2014]",
+          "role": "Publication"
+        },
+        {
+          "publisher": null,
+          "place": null,
+          "dateOfPublication": "©2014",
+          "role": null
+        }
+      ],
+      "publicationFrequency": [],
+      "publicationRange": [],
+      "electronicAccess": [],
+      "instanceTypeId": "6312d172-f0cf-40f6-b27d-9fa8feaf332f",
+      "instanceFormatIds": [
+        "8d511d33-5e85-4c5d-9bce-6e3c9cd0c324"
+      ],
+      "physicalDescriptions": [
+        "251 pages ; 24 cm"
+      ],
+      "languages": [
+        "eng"
+      ],
+      "notes": [
+        {
+          "instanceNoteTypeId": "10e2e11b-450f-45c8-b09b-0f819999966e",
+          "note": "Explores \"the criminal masterminds driving some of the biggest spam and hacker operations targeting Americans and their bank accounts. Tracing the rise, fall, and alarming resurrection of the digital mafia behind the two largest spam pharmacies--and countless viruses, phishing, and spyware attacks--he delivers the first definitive narrative of the global spam problem and its threat to consumers everywhere\"--Amazon.com",
+          "staffOnly": false
+        },
+        {
+          "instanceNoteTypeId": "5ba8e385-0e27-462e-a571-ffa1fa34ea54",
+          "note": "Parasite -- Bulletproof -- The pharma wars -- Meet the buyers -- Russian roulette -- Partner(ka)s in (dis)organized crime -- Meet the spammers -- Old friends, bitter enemies -- Meeting in Moscow -- The antis -- Takedown -- Endgame -- Epilogue: A spam-free world: how you can protect yourself from cybercrime",
+          "staffOnly": false
+        },
+        {
+          "instanceNoteTypeId": "86b6e817-e1bc-42fb-bab0-70e7547de6c1",
+          "note": "Includes bibliographical references",
+          "staffOnly": false
+        }
+      ],
+      "modeOfIssuanceId": "9d18a02f-5897-4c31-9106-c9abb5c7ae8b",
+      "discoverySuppress": false,
+      "statisticalCodeIds": [],
+      "statusId": "c8d51dc6-2f84-4220-8aef-3c4894d53b93",
+      "metadata": {
+        "createdDate": "2021-04-08T20:26:18.068+00:00",
+        "createdByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498",
+        "updatedDate": "2021-04-08T20:26:18.068+00:00",
+        "updatedByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498"
+      },
+      "tags": {
+        "tagList": []
+      },
+      "natureOfContentTermIds": [],
+      "links": {
+        "self": "http://folio-okapi-q3.library.tamu.edu/inventory/instances/829fecd3-67c3-3ca2-b9d4-281227690e0f"
+      }
+    },
+    {
+      "@context": "http://folio-okapi-q3.library.tamu.edu/inventory/instances/context",
+      "id": "f29d73fc-b4ef-3616-be63-cacf0b853c3e",
+      "hrid": "in00002535779",
+      "source": "MARC",
+      "title": "Military economics : the interaction of power and money / Ron Smith.",
+      "indexTitle": "Military economics : the interaction of power and money /",
+      "alternativeTitles": [],
+      "editions": [],
+      "series": [],
+      "identifiers": [
+        {
+          "identifierTypeId": "76b5963b-ccce-4715-b453-1a7354f4f597",
+          "value": "3562262"
+        },
+        {
+          "identifierTypeId": "c858e4f2-2b6b-4385-842b-60732ee14abb",
+          "value": "2009042127"
+        },
+        {
+          "identifierTypeId": "8261054f-be78-422d-bd51-4ed9f33c3422",
+          "value": "9780230228535 (hardback)"
+        },
+        {
+          "identifierTypeId": "8261054f-be78-422d-bd51-4ed9f33c3422",
+          "value": "0230228534 (hardback)"
+        },
+        {
+          "identifierTypeId": "439bfbae-75bc-4f74-9fc7-b2a2d47ce3ef",
+          "value": "(OCoLC)ocn317926576"
+        },
+        {
+          "identifierTypeId": "439bfbae-75bc-4f74-9fc7-b2a2d47ce3ef",
+          "value": "(OCoLC)317926576"
+        }
+      ],
+      "contributors": [
+        {
+          "contributorNameTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2a",
+          "name": "Smith, Ron, 1946 September 2-",
+          "contributorTypeId": null,
+          "contributorTypeText": null,
+          "primary": true
+        }
+      ],
+      "subjects": [
+        "Defense industries",
+        "Military policy--Economic aspects",
+        "Armed Forces--Appropriations and expenditures"
+      ],
+      "classifications": [],
+      "publication": [
+        {
+          "publisher": "Palgrave Macmillan",
+          "place": "Basingstoke [England] ; New York",
+          "dateOfPublication": "2009",
+          "role": "Publication"
+        }
+      ],
+      "publicationFrequency": [],
+      "publicationRange": [],
+      "electronicAccess": [],
+      "instanceTypeId": "6312d172-f0cf-40f6-b27d-9fa8feaf332f",
+      "instanceFormatIds": [
+        "8d511d33-5e85-4c5d-9bce-6e3c9cd0c324"
+      ],
+      "physicalDescriptions": [
+        "viii, 194 pages : illustrations ; 23 cm."
+      ],
+      "languages": [
+        "eng"
+      ],
+      "notes": [
+        {
+          "instanceNoteTypeId": "86b6e817-e1bc-42fb-bab0-70e7547de6c1",
+          "note": "Includes bibliographical references and index",
+          "staffOnly": false
+        },
+        {
+          "instanceNoteTypeId": "10e2e11b-450f-45c8-b09b-0f819999966e",
+          "note": "\"Military power needs to be financed and economic development is often shaped by military conflict, thus the interaction of military and economy, power and money is central to the modern world. This book provides an accessible introduction to the economics of the use of organised force, with a wide range of historical and current examples\"--Provided by publisher",
+          "staffOnly": false
+        }
+      ],
+      "modeOfIssuanceId": "9d18a02f-5897-4c31-9106-c9abb5c7ae8b",
+      "discoverySuppress": false,
+      "statisticalCodeIds": [],
+      "statusId": "c8d51dc6-2f84-4220-8aef-3c4894d53b93",
+      "metadata": {
+        "createdDate": "2021-04-08T20:33:35.921+00:00",
+        "createdByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498",
+        "updatedDate": "2021-04-08T20:33:35.921+00:00",
+        "updatedByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498"
+      },
+      "tags": {
+        "tagList": []
+      },
+      "natureOfContentTermIds": [],
+      "links": {
+        "self": "http://folio-okapi-q3.library.tamu.edu/inventory/instances/f29d73fc-b4ef-3616-be63-cacf0b853c3e"
+      }
+    },
+    {
+      "@context": "http://folio-okapi-q3.library.tamu.edu/inventory/instances/context",
+      "id": "69dd6864-4d52-387c-b5b2-8db1ce8f5013",
+      "hrid": "in00003570562",
+      "source": "MARC",
+      "title": "Rising strong / Brené Brown.",
+      "indexTitle": "Rising strong /",
+      "alternativeTitles": [],
+      "editions": [
+        "First edition."
+      ],
+      "series": [],
+      "identifiers": [
+        {
+          "identifierTypeId": "76b5963b-ccce-4715-b453-1a7354f4f597",
+          "value": "4922932"
+        },
+        {
+          "identifierTypeId": "c858e4f2-2b6b-4385-842b-60732ee14abb",
+          "value": "2015010832"
+        },
+        {
+          "identifierTypeId": "439bfbae-75bc-4f74-9fc7-b2a2d47ce3ef",
+          "value": "(OCoLC)ocn909776909"
+        },
+        {
+          "identifierTypeId": "8261054f-be78-422d-bd51-4ed9f33c3422",
+          "value": "9780812995824 (hardback) : $27.00"
+        },
+        {
+          "identifierTypeId": "8261054f-be78-422d-bd51-4ed9f33c3422",
+          "value": "0812995821 (hardback) $27.00"
+        },
+        {
+          "identifierTypeId": "fcca2643-406a-482a-b760-7a7f8aec640e",
+          "value": "9780812995831 (ebook)"
+        }
+      ],
+      "contributors": [
+        {
+          "contributorNameTypeId": "2b94c631-fca9-4892-a730-03ee529ffe2a",
+          "name": "Brown, Brené,",
+          "contributorTypeId": null,
+          "contributorTypeText": "author.",
+          "primary": true
+        }
+      ],
+      "subjects": [
+        "Self-actualization (Psychology)",
+        "Courage",
+        "SELF-HELP / Motivational & Inspirational",
+        "PSYCHOLOGY / Emotions",
+        "BUSINESS & ECONOMICS / Motivational"
+      ],
+      "classifications": [],
+      "publication": [
+        {
+          "publisher": "Spiegel & Grau",
+          "place": "New York",
+          "dateOfPublication": "[2015]",
+          "role": "Publication"
+        },
+        {
+          "publisher": null,
+          "place": null,
+          "dateOfPublication": "©2015",
+          "role": null
+        }
+      ],
+      "publicationFrequency": [],
+      "publicationRange": [],
+      "electronicAccess": [],
+      "instanceTypeId": "6312d172-f0cf-40f6-b27d-9fa8feaf332f",
+      "instanceFormatIds": [
+        "8d511d33-5e85-4c5d-9bce-6e3c9cd0c324"
+      ],
+      "physicalDescriptions": [
+        "xxviii, 301 pages ; 22 cm"
+      ],
+      "languages": [
+        "eng"
+      ],
+      "notes": [
+        {
+          "instanceNoteTypeId": "86b6e817-e1bc-42fb-bab0-70e7547de6c1",
+          "note": "Includes bibliographical references (pages [281]-289) and index",
+          "staffOnly": false
+        },
+        {
+          "instanceNoteTypeId": "5ba8e385-0e27-462e-a571-ffa1fa34ea54",
+          "note": "A note on research and storytelling as methodology -- Truth and dare : an introduction -- The physics of vulnerability -- Civilization stops at the waterline -- Owning our stories -- The reckoning -- The rumble -- Sewer rats and scofflaws -- The brave and brokenhearted -- Easy mark -- Composting failure -- You got to dance with them that brung you -- The revolution -- Appendices. Notes on trauma and complicated grief ; Finding a certified Daring Way helping professional ; The gift of imperfection : summary of key learnings ; Daring greatly : summary of key learnings",
+          "staffOnly": false
+        },
+        {
+          "instanceNoteTypeId": "10e2e11b-450f-45c8-b09b-0f819999966e",
+          "note": "\"The physics of vulnerability is simple: If we are brave enough often enough, we will fall. The author of the #1 New York Times bestsellers Daring Greatly and The Gifts of Imperfection tells us what it takes to get back up, and how owning our stories of disappointment, failure, and heartbreak gives us the power to write a daring new ending. Struggle, Brene Brown writes, can be our greatest call to courage, and rising strong our clearest path to a wholehearted life\"-- Provided by publisher",
+          "staffOnly": false
+        }
+      ],
+      "modeOfIssuanceId": "9d18a02f-5897-4c31-9106-c9abb5c7ae8b",
+      "discoverySuppress": false,
+      "statisticalCodeIds": [],
+      "statusId": "c8d51dc6-2f84-4220-8aef-3c4894d53b93",
+      "metadata": {
+        "createdDate": "2021-04-08T20:48:45.342+00:00",
+        "createdByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498",
+        "updatedDate": "2021-04-08T20:48:45.342+00:00",
+        "updatedByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498"
+      },
+      "tags": {
+        "tagList": []
+      },
+      "natureOfContentTermIds": [],
+      "links": {
+        "self": "http://folio-okapi-q3.library.tamu.edu/inventory/instances/69dd6864-4d52-387c-b5b2-8db1ce8f5013"
       }
     }
-  ]
+  ],
+  "totalRecords": 4
 }

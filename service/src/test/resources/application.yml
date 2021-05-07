@@ -10,7 +10,6 @@ logging:
   level:
     edu.tamu: INFO
     org.springframework: INFO
-    ro.isdc.wro: INFO
 
 app:
   http.timeout: 10000

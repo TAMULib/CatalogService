@@ -87,15 +87,23 @@ public class PatronControllerTest extends PatronControllerTestBase {
             fieldWithPath("[].itemId").description(descItemId("*Loan*")),
             fieldWithPath("[].instanceId").description(descInstanceId("*Loan*")),
             fieldWithPath("[].instanceHrid").description(descInstanceHrid("*Loan*")),
+            fieldWithPath("[].itemType").description(descField("*Loan*", "itemType")),
             fieldWithPath("[].loanDate").description(descTimestamp("the *Loan* was created")),
             fieldWithPath("[].loanDueDate").description(descTimestamp("the *Loan* is due")),
             fieldWithPath("[].overdue").description(descBoolean("*Loan* is overdue")),
             fieldWithPath("[].title").description(descField("*Loan*", "title")),
-            fieldWithPath("[].author").description(descField("*Loan*", "author")));
+            fieldWithPath("[].author").description(descField("*Loan*", "author")),
+            fieldWithPath("[].locationCode").description(descField("*Loan*", "locationCode")),
+            fieldWithPath("[].location").description(descField("*Loan*", "location")),
+            fieldWithPath("[].canRenew").description(descField("*Loan*", "canRenew")));
 
         expectGetResponse(getLoansUrl(), once(), respondJsonOk(patronAccountPayload));
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
         expectGetResponse(getOkapiBatchInstancesUrl(INSTANCES_TOTAL), once(), respondJsonOk(instancesPayload), true);
+        expectGetResponse(getOkapiBatchItemsUrl(ITEMS_TOTAL), once(), respondJsonOk(itemsPayload), true);
+        expectGetResponse(getOkapiBatchLoansUrl(LOANS_TOTAL), once(), respondJsonOk(loansPayload), true);
+        expectGetResponse(getOkapiLocationsUrl(), between(0, 4), respondJsonOk(locationPayload));
+        expectGetResponse(getOkapiLoanPoliciesUrl(), between(0, 4), respondJsonOk(loanPolicyPayload));
 
         mockMvc.perform(
             get(PATRON_MVC_PREFIX + LOANS_ENDPOINT, UIN)
@@ -132,15 +140,23 @@ public class PatronControllerTest extends PatronControllerTestBase {
             fieldWithPath("itemId").description(descItemId("*Loan*")),
             fieldWithPath("instanceId").description(descInstanceId("*Loan*")),
             fieldWithPath("instanceHrid").description(descInstanceHrid("*Loan*")),
+            fieldWithPath("itemType").description(descField("*Loan*", "itemType")),
             fieldWithPath("loanDate").description(descTimestamp("the *Loan* was created")),
             fieldWithPath("loanDueDate").description(descTimestamp("the *Loan* is due")),
             fieldWithPath("overdue").description(descBoolean("*Loan* is overdue")),
             fieldWithPath("title").description(descField("*Loan*", "title")),
-            fieldWithPath("author").description(descField("*Loan*", "author")));
+            fieldWithPath("author").description(descField("*Loan*", "author")),
+            fieldWithPath("locationCode").description(descField("*Loan*", "locationCode")),
+            fieldWithPath("location").description(descField("*Loan*", "location")),
+            fieldWithPath("canRenew").description(descField("*Loan*", "canRenew")));
 
         expectPostResponse(getLoanRenewalUrl(), once(), respondJsonOk(patronAccountRenewalPayload));
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
-        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID1), between(0, 1), respondJsonOk(instance1Payload));
+        expectGetResponse(getOkapiInstancesUrl(INSTANCE_ID), between(0, 1), respondJsonOk(instancePayload));
+        expectGetResponse(getOkapiItemsUrl(ITEM_ID), between(0, 1), respondJsonOk(itemPayload));
+        expectGetResponse(getOkapiLoansUrl(LOAN_ID), between(0, 1), respondJsonOk(loanPayload));
+        expectGetResponse(getOkapiLocationsUrl(), between(0, 1), respondJsonOk(locationPayload));
+        expectGetResponse(getOkapiLoanPoliciesUrl(), between(0, 1), respondJsonOk(loanPolicyPayload));
 
         mockMvc.perform(
             post(PATRON_MVC_PREFIX + RENEW_MVC_PATH, UIN, ITEM_ID)
@@ -150,6 +166,7 @@ public class PatronControllerTest extends PatronControllerTestBase {
                 .content(loanRenewalCatalogPayload)
             )
             .andExpect(status().isOk())
+            .andExpect(content().json(loanRenewalCatalogPayload))
             .andDo(
                 document(
                     DOC_PREFIX + RENEWAL_ENDPOINT,
@@ -179,6 +196,7 @@ public class PatronControllerTest extends PatronControllerTestBase {
             fieldWithPath("[].statusText").description(descField("*Hold Request*", "descriptive status")),
             fieldWithPath("[].pickupServicePoint").description(descPickupServicePoint()),
             fieldWithPath("[].queuePosition").description(descQueuePosition()),
+            fieldWithPath("[].requestDate").description(descTimestamp("the *Hold Request* created")),
             fieldWithPath("[].expirationDate").description(descTimestamp("the *Hold Request* will expire")));
 
         expectGetResponse(getHoldsUrl(), once(), respondJsonOk(patronAccountPayload));
@@ -290,7 +308,12 @@ public class PatronControllerTest extends PatronControllerTestBase {
         expectResponse(url, method, count, response, false);
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
         expectGetResponse(getOkapiBatchInstancesUrl(1), between(0, 1), respondJsonOk(instancesPayload), true);
-        expectGetResponse(getOkapiBatchInstancesUrl(INSTANCES_TOTAL), between(0, 1), respondJsonOk(instancesPayload), true);
+        expectGetResponse(getOkapiBatchItemsUrl(1), between(0, 1), respondJsonOk(itemsPayload), true);
+        expectGetResponse(getOkapiBatchInstancesUrl(1), between(0, 1), respondJsonOk(instancesPayload), true);
+        expectGetResponse(getOkapiBatchItemsUrl(1), between(0, 1), respondJsonOk(itemsPayload), true);
+        expectGetResponse(getOkapiBatchLoansUrl(1), between(0, 1), respondJsonOk(loansPayload), true);
+        expectGetResponse(getOkapiLocationsUrl(), between(0, 4), respondJsonOk(locationPayload));
+        expectGetResponse(getOkapiLoanPoliciesUrl(), between(0, 4), respondJsonOk(loanPolicyPayload));
 
         mockMvc.perform(builder)
             .andExpect(result);
@@ -306,6 +329,7 @@ public class PatronControllerTest extends PatronControllerTestBase {
         expectResponse(url, method, count, response, false);
         expectOkapiLoginResponse(between(0, 1), withStatus(CREATED));
         expectGetResponse(getOkapiBatchInstancesUrl(1), between(0, 4), respondJsonOk(instancesPayload), true);
+        expectGetResponse(getOkapiBatchItemsUrl(1), between(0, 4), respondJsonOk(itemsPayload), true);
 
         mockMvc.perform(builder)
             .andExpect(result);
@@ -444,11 +468,11 @@ public class PatronControllerTest extends PatronControllerTestBase {
             Arguments.of(block, between(0, 1), once(), once(), respondJsonOk(blUserBadUUIDErrorPayload),
                 withStatus(BAD_REQUEST), "Bad%20UUID", status().isBadRequest()),
             Arguments.of(block, between(0, 1), once(), never(), respondJsonOk(blockEmptyCatalogPayload),
-                withNoContent(), USER_ID, status().isNotFound()),
+                withNoContent(), USER_ID, status().isInternalServerError()),
             Arguments.of(block, between(0, 1), once(), between(0, 1), respondJsonOk(blUserDuplicateErrorPayload),
                 respondJsonOk(automatedBlocksResponsePayload), USER_ID, status().isInternalServerError()),
             Arguments.of(block, between(0, 1), once(), between(0, 1), respondJsonOk(blUserEmptyErrorPayload),
-                respondJsonOk(automatedBlocksResponsePayload), USER_ID, status().isNotFound()));
+                respondJsonOk(automatedBlocksResponsePayload), USER_ID, status().isInternalServerError()));
     }
 
     private static Stream<? extends Arguments> argumentsLoansResponses() throws Exception {

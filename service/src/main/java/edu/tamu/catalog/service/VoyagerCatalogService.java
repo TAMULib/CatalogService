@@ -164,13 +164,28 @@ public class VoyagerCatalogService implements CatalogService {
                     }
                 }
 
-                catalogHoldings.add(new HoldingsRecord(recordValues.get(RECORD_MARC_RECORD_LEADER), holdingValues.get(RECORD_MFHD),
-                        recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
-                        recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
-                        recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE),
-                        holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_EDITION), recordValues.get(RECORD_OCLC),
-                        recordValues.get(RECORD_RECORD_ID), holdingValues.get(RECORD_CALL_NUMBER), validLargeVolume,
-                        new HashMap<String, Map<String, String>>(catalogItems)));
+                HoldingsRecord holdingsRecord = HoldingsRecord.builder()
+                    .recordId(recordValues.get(RECORD_RECORD_ID))
+                    .marcRecordLeader(recordValues.get(RECORD_MARC_RECORD_LEADER))
+                    .mfhd(holdingValues.get(RECORD_MFHD))
+                    .issn(recordValues.get(RECORD_ISSN))
+                    .isbn(recordValues.get(RECORD_ISBN))
+                    .title(recordValues.get(RECORD_TITLE))
+                    .author(recordValues.get(RECORD_AUTHOR))
+                    .publisher(recordValues.get(RECORD_PUBLISHER))
+                    .place(recordValues.get(RECORD_PLACE))
+                    .year(recordValues.get(RECORD_YEAR))
+                    .genre(recordValues.get(RECORD_GENRE))
+                    .fallbackLocationCode(holdingValues.get(RECORD_FALLBACK_LOCATION_CODE))
+                    .edition(recordValues.get(RECORD_EDITION))
+                    .oclc(recordValues.get(RECORD_OCLC))
+                    .callNumber(holdingValues.get(RECORD_CALL_NUMBER))
+                    .largeVolume(validLargeVolume)
+                    .catalogItems(catalogItems)
+                    .build();
+
+                catalogHoldings.add(holdingsRecord);
+
                 catalogItems.clear();
             }
             return catalogHoldings;

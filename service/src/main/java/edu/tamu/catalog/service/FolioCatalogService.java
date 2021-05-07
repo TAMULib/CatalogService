@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -71,6 +72,7 @@ import edu.tamu.catalog.domain.model.FeeFine;
 import edu.tamu.catalog.domain.model.HoldRequest;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
+import edu.tamu.catalog.exception.RenewFailureException;
 import edu.tamu.catalog.model.FolioHoldCancellation;
 import edu.tamu.catalog.properties.CatalogServiceProperties;
 import edu.tamu.catalog.properties.Credentials;
@@ -81,7 +83,13 @@ import edu.tamu.catalog.utility.TokenUtility;
 
 public class FolioCatalogService implements CatalogService {
 
+    private static final String RENEWAL_WOULD_NOT_CHANGE_THE_DUE_DATE = "renewal would not change the due date";
+
     private static final Logger logger = LoggerFactory.getLogger(FolioCatalogService.class);
+
+    private static final Map<String, JsonNode> LOCATION_CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, JsonNode> SERVICE_POINT_CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, JsonNode> LOAN_POLICY_CACHE = new ConcurrentHashMap<>();
 
     private static final String VERB_GET_RECORD = "GetRecord";
     private static final String METADATA_PREFIX = "marc21_withholdings";
@@ -100,7 +108,7 @@ public class FolioCatalogService implements CatalogService {
     private static final String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
     private static final String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
 
-    private static final int MAX_INSTANCE_ID_BATCH_SIZE = 90;
+    private static final int MAX_BATCH_SIZE = 90;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -175,8 +183,8 @@ public class FolioCatalogService implements CatalogService {
     @Override
     public List<LoanItem> getLoanItems(String uin) throws Exception {
         String path = "patron/account";
-        String additional = "&includeLoans=true&includeCharges=false&includeHolds=false";
-        String url = String.format("%s/%s/%s?apikey={apikey}%s", properties.getBaseEdgeUrl(), path, uin, additional);
+        String queryString = "apikey={apikey}&includeLoans=true&includeCharges=false&includeHolds=false";
+        String url = String.format("%s/%s/%s?%s", properties.getBaseEdgeUrl(), path, uin, queryString);
         String apiKey = properties.getEdgeApiKey();
 
         logger.debug("Asking for patron loans from: {}", url);
@@ -189,29 +197,75 @@ public class FolioCatalogService implements CatalogService {
 
         if (loans.isContainerNode() && loans.isArray()) {
             Iterator<JsonNode> iter = loans.elements();
-            Map<String, JsonNode> instanceToloan = new HashMap<>();
+
+            Map<String, JsonNode> loanIdToPartialLoan = new HashMap<>();
+            Map<String, JsonNode> instanceIdToPartialLoan = new HashMap<>();
+            Map<String, JsonNode> itemIdToPartialLoan = new HashMap<>();
 
             while (iter.hasNext()) {
-                JsonNode loan = iter.next();
-                String instanceId = getText(loan, "/item/instanceId");
-                instanceToloan.put(instanceId, loan);
+                JsonNode partialLoan = iter.next();
+                String loanId = getText(partialLoan, "/id");
+                String instanceId = getText(partialLoan, "/item/instanceId");
+                String itemId = getText(partialLoan, "/item/itemId");
+                loanIdToPartialLoan.put(loanId, partialLoan);
+                instanceIdToPartialLoan.put(instanceId, partialLoan);
+                itemIdToPartialLoan.put(itemId, partialLoan);
             }
 
-            for (JsonNode instance : getInstances(instanceToloan.keySet())) {
+            Map<String, JsonNode> loanIdToLoan = new HashMap<>();
+            Map<String, JsonNode> instanceIdToInstance = new HashMap<>();
+            Map<String, JsonNode> itemIdToItem = new HashMap<>();
+
+            for (JsonNode loan : getLoans(loanIdToPartialLoan.keySet())) {
+                String loanId = getText(loan, "/id");
+                loanIdToLoan.put(loanId, loan);
+            }
+
+            for (JsonNode instance : getInstances(instanceIdToPartialLoan.keySet())) {
                 String instanceId = getText(instance, "/id");
-                String instanceHrid = getText(instance, "/hrid");
-                JsonNode loan = instanceToloan.get(instanceId);
-                list.add(LoanItem.builder()
-                    .loanId(getText(loan, "/id"))
-                    .itemId(getText(loan, "/item/itemId"))
+                instanceIdToInstance.put(instanceId, instance);
+            }
+
+            for (JsonNode item : getItems(itemIdToPartialLoan.keySet())) {
+                String itemId = getText(item, "/id");
+                itemIdToItem.put(itemId, item);
+            }
+
+            for (JsonNode partialLoan : instanceIdToPartialLoan.values()) {
+                String loanId = getText(partialLoan, "/id");
+                String instanceId = getText(partialLoan, "/item/instanceId");
+                String itemId = getText(partialLoan, "/item/itemId");
+
+                JsonNode loan = loanIdToLoan.get(loanId);
+                JsonNode instance = instanceIdToInstance.get(instanceId);
+                JsonNode item = itemIdToItem.get(itemId);
+
+                String locationId = getText(item, "/effectiveLocation/id");
+
+                String loanPolicyName = getText(loan, "/loanPolicy/name");
+
+                JsonNode loanPolicy = getLoanPolicy(loanPolicyName);
+
+                LoanItem.LoanItemBuilder builder = LoanItem.builder()
+                    .loanId(getText(partialLoan, "/id"))
+                    .itemId(itemId)
                     .instanceId(instanceId)
-                    .instanceHrid(instanceHrid)
-                    .loanDate(getDate(loan, "/loanDate"))
-                    .loanDueDate(getDate(loan, "/dueDate"))
-                    .overdue(getBoolean(loan, "/overdue", false))
-                    .title(getText(loan, "/item/title"))
-                    .author(getText(loan, "/item/author"))
-                    .build());
+                    .instanceHrid(getText(instance, "/hrid"))
+                    .itemType(getText(item, "/permanentLoanType/name"))
+                    .loanDate(getDate(partialLoan, "/loanDate"))
+                    .loanDueDate(getDate(partialLoan, "/dueDate"))
+                    .overdue(getBoolean(partialLoan, "/overdue", false))
+                    .title(getText(partialLoan, "/item/title"))
+                    .author(getText(partialLoan, "/item/author"))
+                    .canRenew(getBoolean(loanPolicy, "/renewable"));
+
+                if (StringUtils.isNotEmpty(locationId)) {
+                    JsonNode location = getLocation(locationId);
+                    builder.location(getText(location, "/name"))
+                        .locationCode(getText(location, "/code"));
+                }
+
+                list.add(builder.build());
             }
         }
         return list;
@@ -220,8 +274,8 @@ public class FolioCatalogService implements CatalogService {
     @Override
     public List<HoldRequest> getHoldRequests(String uin) throws Exception {
         String path = "patron/account";
-        String additional = "&includeLoans=false&includeCharges=false&includeHolds=true";
-        String url = String.format("%s/%s/%s?apikey={apikey}%s", properties.getBaseEdgeUrl(), path, uin, additional);
+        String queryString = "apikey={apikey}&includeLoans=false&includeCharges=false&includeHolds=true";
+        String url = String.format("%s/%s/%s?%s", properties.getBaseEdgeUrl(), path, uin, queryString);
         String apiKey = properties.getEdgeApiKey();
 
         logger.debug("Asking for patron hold requests from: {}", url);
@@ -246,6 +300,7 @@ public class FolioCatalogService implements CatalogService {
                     .itemTitle(getText(hold, "/item/title"))
                     .statusText(getText(hold, "/status"))
                     .queuePosition(getInt(hold, "/queuePosition"))
+                    .requestDate(getDate(hold, "/requestDate"))
                     .expirationDate(getDate(hold, "/expirationDate"))
                     .requestType(getRequestType(requestId))
                     .pickupServicePoint(getServicePointDisplayName(servicePointId))
@@ -258,8 +313,9 @@ public class FolioCatalogService implements CatalogService {
 
     @Override
     public void cancelHoldRequest(String uin, String requestId) throws Exception {
-        String path = "%s/patron/account/%s/holds/%s/cancel?apikey={apikey}";
-        String url = String.format(path, properties.getBaseEdgeUrl(), uin, requestId);
+        String path = String.format("patron/account/%s/hold/%s/cancel", uin, requestId);
+        String queryString = "apikey={apikey}";
+        String url = String.format("%s/%s?%s", properties.getBaseEdgeUrl(), path, queryString);
         String apiKey = properties.getEdgeApiKey();
 
         logger.debug("Cancelling hold request via: {}", url);
@@ -275,43 +331,76 @@ public class FolioCatalogService implements CatalogService {
 
     @Override
     public LoanItem renewItem(String uin, String itemId) throws Exception {
-        String path = "/patron/account/";
-        String itemPath = "/item/";
-        String renewPath = "/renew";
-        String url = String.format("%s%s%s%s%s%s?apikey={apikey}", properties.getBaseEdgeUrl(), path, uin, itemPath, itemId, renewPath);
+        String path = String.format("patron/account/%s/item/%s/renew", uin, itemId);
+        String queryString = "apikey={apikey}";
+        String url = String.format("%s/%s?%s", properties.getBaseEdgeUrl(), path, queryString);
         String apiKey = properties.getEdgeApiKey();
-        JsonNode loan = restTemplate.postForObject(url, null, JsonNode.class, apiKey);
 
-        return LoanItem.builder()
-            .loanId(getText(loan, "/id"))
-            .itemId(getText(loan, "/item/itemId"))
-            .instanceId(getText(loan, "/item/instanceId"))
-            .instanceHrid(getInstanceHrid(loan))
-            .loanDate(getDate(loan, "/loanDate"))
-            .loanDueDate(getDate(loan, "/dueDate"))
-            .overdue(getBoolean(loan, "/overdue", false))
-            .title(getText(loan, "/item/title"))
-            .author(getText(loan, "/item/author"))
-            .build();
+        JsonNode partialLoan;
+
+        try {
+            partialLoan = restTemplate.postForObject(url, null, JsonNode.class, apiKey);
+        } catch (RestClientResponseException e) {
+            if (e.getRawStatusCode() == 422) {
+                JsonNode error = objectMapper.readTree(e.getResponseBodyAsString());
+                JsonNode errorMessage = error.at("/errorMessage");
+                if (errorMessage.isValueNode() && errorMessage.textValue().equals(RENEWAL_WOULD_NOT_CHANGE_THE_DUE_DATE)) {
+                    throw new RenewFailureException(errorMessage.textValue());
+                }
+            }
+            throw e;
+        }
+
+        JsonNode item = getItem(itemId);
+
+        String loanId = getText(partialLoan, "/id");
+
+        String instanceId = getText(partialLoan, "/item/instanceId");
+        String instanceHrid = getInstanceHrid(instanceId);
+
+        JsonNode loan = getLoan(loanId);
+
+        String loanPolicyName = getText(loan, "/loanPolicy/name");
+
+        JsonNode loanPolicy = getLoanPolicy(loanPolicyName);
+
+        LoanItem.LoanItemBuilder builder = LoanItem.builder()
+            .loanId(loanId)
+            .itemId(itemId)
+            .instanceId(instanceId)
+            .instanceHrid(instanceHrid)
+            .itemType(getText(item, "/permanentLoanType/name"))
+            .loanDate(getDate(partialLoan, "/loanDate"))
+            .loanDueDate(getDate(partialLoan, "/dueDate"))
+            .overdue(getBoolean(partialLoan, "/overdue", false))
+            .title(getText(partialLoan, "/item/title"))
+            .author(getText(partialLoan, "/item/author"))
+            .canRenew(getBoolean(loanPolicy, "/renewable"));
+
+        String locationId = getText(item, "/effectiveLocation/id");
+
+        if (StringUtils.isNotEmpty(locationId)) {
+            JsonNode location = getLocation(locationId);
+            builder.location(getText(location, "/name"))
+                .locationCode(getText(location, "/code"));
+        }
+
+        return builder.build();
     }
 
     @Override
     public Boolean getBlockStatus(String uin) throws Exception {
         JsonNode user = getUserByUin(uin);
 
-        if (Objects.nonNull(user) && user.isObject()) {
-            Boolean block = getAutomatedBlockStatus(getText(user, "/id"));
-            if (Objects.nonNull(block)) {
-                return block;
-            }
+        String userId = getText(user, "/id");
+        if (StringUtils.isNotEmpty(userId)) {
 
-            HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
-            throw new HttpClientErrorException(status,
-                String.format("%s: Unable to retrieve automated block status for user.", status.getReasonPhrase()));
+            return getAutomatedBlockStatus(userId) || getManualBlockStatus(userId);
         }
 
-        HttpStatus status = HttpStatus.NOT_FOUND;
-        throw new HttpClientErrorException(status, String.format("%s: Unable to find user.", status.getReasonPhrase()));
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+        String message = "%s: Unable to retrieve automated block status for user.";
+        throw new HttpClientErrorException(status, String.format(message, status.getReasonPhrase()));
     }
 
     /**
@@ -324,7 +413,10 @@ public class FolioCatalogService implements CatalogService {
      */
     JsonNode okapiRequestJsonNode(String url, HttpMethod method, String message) {
         try {
-            return okapiRequest(url, method, JsonNode.class).getBody();
+            ResponseEntity<JsonNode> response = okapiRequest(url, method, JsonNode.class);
+            if (Objects.nonNull(response) && response.getBody().isContainerNode()) {
+                return response.getBody();
+            }
         }
         catch (HttpClientErrorException e) {
             throw new HttpClientErrorException(e.getStatusCode(),
@@ -334,19 +426,26 @@ public class FolioCatalogService implements CatalogService {
             throw new HttpServerErrorException(e.getStatusCode(),
                 String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
         }
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpServerErrorException(status,
+            String.format("%s: Catalog service failed to find %s.", status.getReasonPhrase(), message));
     }
 
-    /**
-     * Use OKAPI to retrieve the JsonNode, throwing a customized exception on client or server errors.
-     *
-     * @param <T> generic class for response body type.
-     * @param url String the URL to retrieve.
-     *
-     * @return response entity with response type as body.
-     */
+     /**
+      * Use OKAPI to retrieve the JsonNode, throwing a customized exception on client or server errors.
+      *
+      * @param url String the URL to retrieve
+      * @param method HttpMethod
+      * @param message exception response message
+      * @param uriVariables interpolation variables
+      * @return response entity with response type as body.
+      */
     JsonNode okapiRequestJsonNode(String url, HttpMethod method, String message, Object... uriVariables) {
         try {
-            return okapiRequest(url, method, JsonNode.class, uriVariables).getBody();
+            ResponseEntity<JsonNode> response = okapiRequest(url, method, JsonNode.class, uriVariables);
+            if (Objects.nonNull(response) && response.getBody().isContainerNode()) {
+                return response.getBody();
+            }
         }
         catch (HttpClientErrorException e) {
             throw new HttpClientErrorException(e.getStatusCode(),
@@ -356,6 +455,9 @@ public class FolioCatalogService implements CatalogService {
             throw new HttpServerErrorException(e.getStatusCode(),
                 String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
         }
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+        throw new HttpServerErrorException(status,
+            String.format("%s: Catalog service failed to find %s.", status.getReasonPhrase(), message));
     }
 
     /**
@@ -404,15 +506,10 @@ public class FolioCatalogService implements CatalogService {
         if (Objects.isNull(requestId)) {
             return null;
         }
-        String requestUrl = String.format("%s/circulation/requests/%s", properties.getBaseOkapiUrl(), requestId);
-        logger.debug("Asking for hold request from: {}", requestUrl);
-        String message = String.format("hold request with id \"%s\"", requestId);
-        JsonNode response = okapiRequestJsonNode(requestUrl, HttpMethod.GET, message);
-        if (response.isContainerNode()) {
-            JsonNode requestType = response.at("/requestType");
-            if (requestType.isValueNode()) {
-                return requestType.asText();
-            }
+        JsonNode request = getRequest(requestId);
+        JsonNode requestType = request.at("/requestType");
+        if (requestType.isValueNode()) {
+            return requestType.asText();
         }
 
         return  null;
@@ -428,15 +525,10 @@ public class FolioCatalogService implements CatalogService {
         if (Objects.isNull(servicePointId)) {
             return null;
         }
-        String servicePointUrl = String.format("%s/service-points/%s", properties.getBaseOkapiUrl(), servicePointId);
-        logger.debug("Asking for service-point from: {}", servicePointUrl);
-        String message = String.format("service point with id \"%s\"", servicePointId);
-        JsonNode response = okapiRequestJsonNode(servicePointUrl, HttpMethod.GET, message);
-        if (response.isContainerNode()) {
-            JsonNode discoveryDisplayName = response.at("/discoveryDisplayName");
-            if (discoveryDisplayName.isValueNode()) {
-                return discoveryDisplayName.asText();
-            }
+        JsonNode servicePoint = getServicePoint(servicePointId);
+        JsonNode discoveryDisplayName = servicePoint.at("/discoveryDisplayName");
+        if (discoveryDisplayName.isValueNode()) {
+            return discoveryDisplayName.asText();
         }
 
         return  null;
@@ -449,10 +541,6 @@ public class FolioCatalogService implements CatalogService {
      * @return request type
      */
     private JsonNode getUserByUin(String uin) {
-        if (Objects.isNull(uin)) {
-            return null;
-        }
-
         String path = "%s/bl-users?query=(externalSystemId==\"{uin}\")&limit=2";
         String url = String.format(path, properties.getBaseOkapiUrl(), uin);
         String message = "user using external system id";
@@ -460,37 +548,36 @@ public class FolioCatalogService implements CatalogService {
         logger.debug("Asking for User from: {}", url);
 
         JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, message, uin);
+        JsonNode users = response.at("/compositeUsers");
 
-        if (Objects.nonNull(response) && response.isObject()) {
-            JsonNode users = response.at("/compositeUsers");
+        if (users.isArray()) {
+            int numOfUsers = ((ArrayNode) users).size();
 
-            if (Objects.nonNull(users) && users.isArray()) {
-                if (Objects.nonNull(users.get(1))) {
-                    throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Found multiple users with the same external system id");
-                }
-
-                JsonNode user = users.get(0);
-                if (Objects.nonNull(user) && user.isObject()) {
-                    return user.at("/users");
-                }
+            if (numOfUsers == 1) {
+                return users.get(0).at("/users");
+            } else if (numOfUsers == 0) {
+                HttpStatus status = HttpStatus.NOT_FOUND;
+                throw new HttpClientErrorException(status, String.format("%s: Unable to find user.", status.getReasonPhrase()));
+            } else if (numOfUsers > 1) {
+                throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Found multiple users with the same external system id");
             }
         }
 
-        return null;
+        throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR,
+            "Unable to get user by external system id");
     }
 
     /**
      * Get FOLIO automated block status via OKAPI.
      *
+     * This method does not take into consideration the type of block.
+     * A block can be for any combination of borrowing, renewals, and requests.
+     *
      * @param userId The user's UIN.
      * @return automated block status
      */
-    private Boolean getAutomatedBlockStatus(String userId) {
-        if (Objects.isNull(userId)) {
-            return null;
-        }
-
+    private boolean getAutomatedBlockStatus(String userId) {
         String path = "%s/automated-patron-blocks/%s";
         String url = String.format(path, properties.getBaseOkapiUrl(), userId);
         String message = String.format("automated block status for the user id");
@@ -499,19 +586,32 @@ public class FolioCatalogService implements CatalogService {
 
         JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, message);
 
-        if (Objects.nonNull(response) && response.isObject()) {
-            JsonNode blocks = response.at("/automatedPatronBlocks");
+        JsonNode blocks = response.at("/automatedPatronBlocks");
 
-            if (Objects.nonNull(blocks)) {
-                if (blocks.isArray() && Objects.nonNull(blocks.get(0))) {
-                    return true;
-                }
+        return blocks.isArray() && ((ArrayNode) blocks).size() > 0;
+    }
 
-                return false;
-            }
-        }
+    /**
+     * Get FOLIO manual block status via OKAPI.
+     *
+     * This method does not take into consideration the type of block.
+     * A block can be for any combination of borrowing, renewals, and requests.
+     *
+     * @param userId The user's UIN.
+     * @return manual block status
+     */
+    private boolean getManualBlockStatus(String userId) {
+        String path = "%s/manualblocks?query=userId==%s";
+        String url = String.format(path, properties.getBaseOkapiUrl(), userId);
+        String message = String.format("automated block status for the user id");
 
-        return null;
+        logger.debug("Asking for Manual Block Status from: {}", url);
+
+        JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, message);
+
+        JsonNode blocks = response.at("/manualblocks");
+
+        return blocks.isArray() && ((ArrayNode) blocks).size() > 0;
     }
 
     /**
@@ -601,16 +701,27 @@ public class FolioCatalogService implements CatalogService {
 
                 //combine marc based holding data and direct okapi data
                 HoldingsRecord recordValues = marcHoldings.get(0);
-                finalHoldings.add(new HoldingsRecord(recordValues.getMarcRecordLeader(), hrid,
-                    recordValues.getIssn(), recordValues.getIsbn(), recordValues.getTitle(),
-                    recordValues.getAuthor(), recordValues.getPublisher(), recordValues.getPlace(),
-                    recordValues.getYear(), recordValues.getGenre(),
-                    fallbackLocationCode, recordValues.getEdition(), recordValues.getOclc(),
-                    recordValues.getRecordId(), recordValues.getCallNumber(), recordValues.isLargeVolume(),
-                    (okapiItems.size() > 0) ? okapiItems:recordValues.getCatalogItems()));
+                HoldingsRecord.builder()
+                    .recordId(recordValues.getMarcRecordLeader())
+                    .mfhd(hrid)
+                    .issn(recordValues.getIssn())
+                    .isbn(recordValues.getIsbn())
+                    .title(recordValues.getTitle())
+                    .author(recordValues.getAuthor())
+                    .publisher(recordValues.getPublisher())
+                    .place(recordValues.getPlace())
+                    .year(recordValues.getYear())
+                    .genre(recordValues.getGenre())
+                    .fallbackLocationCode(fallbackLocationCode)
+                    .edition(recordValues.getEdition())
+                    .oclc(recordValues.getOclc())
+                    .recordId(recordValues.getRecordId())
+                    .callNumber(recordValues.getCallNumber())
+                    .largeVolume(recordValues.isLargeVolume())
+                    .catalogItems(okapiItems.size() > 0 ? okapiItems:recordValues.getCatalogItems()).build();
             });
         } catch (DOMException | IOException | ParserConfigurationException | SAXException e) {
-            // TODO consider throwing all of these so that caller can handle more appropriately.
+            // TODO: consider throwing all of these so that caller can handle more appropriately.
             e.printStackTrace();
         }
 
@@ -770,13 +881,25 @@ public class FolioCatalogService implements CatalogService {
             }
         }
 
-        return new HoldingsRecord(recordValues.get(RECORD_MARC_RECORD_LEADER), holdingValues.get(RECORD_MFHD),
-            recordValues.get(RECORD_ISSN), recordValues.get(RECORD_ISBN), recordValues.get(RECORD_TITLE),
-            recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
-            recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE),
-            holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_EDITION), recordValues.get(RECORD_OCLC),
-            recordValues.get(RECORD_RECORD_ID), holdingValues.get(RECORD_CALL_NUMBER), validLargeVolume,
-            new HashMap<String, Map<String, String>>(catalogItems));
+        return HoldingsRecord.builder()
+            .recordId(recordValues.get(RECORD_RECORD_ID))
+            .marcRecordLeader(recordValues.get(RECORD_MARC_RECORD_LEADER))
+            .mfhd(holdingValues.get(RECORD_MFHD))
+            .issn(recordValues.get(RECORD_ISSN))
+            .isbn(recordValues.get(RECORD_ISBN))
+            .title(recordValues.get(RECORD_TITLE))
+            .author(recordValues.get(RECORD_AUTHOR))
+            .publisher(recordValues.get(RECORD_PUBLISHER))
+            .place(recordValues.get(RECORD_PLACE))
+            .year(recordValues.get(RECORD_YEAR))
+            .genre(recordValues.get(RECORD_GENRE))
+            .fallbackLocationCode(holdingValues.get(RECORD_FALLBACK_LOCATION_CODE))
+            .edition(recordValues.get(RECORD_EDITION))
+            .oclc(recordValues.get(RECORD_OCLC))
+            .callNumber(holdingValues.get(RECORD_CALL_NUMBER))
+            .largeVolume(validLargeVolume)
+            .catalogItems(catalogItems)
+            .build();
     }
 
     /**
@@ -817,11 +940,78 @@ public class FolioCatalogService implements CatalogService {
         catalogItems.put(barcode, itemData);
     }
 
+    /**
+     * Get instance hrid by instance id.
+     *
+     * @param instanceId
+     * @return instance hrid or null
+     * @throws Exception
+     */
+    private String getInstanceHrid(String instanceId) throws Exception {
+        JsonNode instance = getInstance(instanceId);
+        JsonNode hrid = instance.at("/hrid");
+        if (hrid.isValueNode()) {
+            return hrid.asText();
+        }
+
+        return null;
+    }
+
+    /**
+     * Get loans from a set of ids.
+     *
+     * @param loanIds
+     * @return ArrayNode of loans
+     * @throws Exception
+     */
+    private JsonNode getLoans(Set<String> loanIds) throws Exception {
+        ArrayNode loans = objectMapper.createArrayNode();
+        AtomicInteger counter = new AtomicInteger();
+        Collection<List<String>> loanIdsPartitions = loanIds.stream()
+            .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / MAX_BATCH_SIZE))
+            .values();
+        for (List<String> loanIdsBatch : loanIdsPartitions) {
+            loans.addAll((ArrayNode) fetchLoans(new HashSet<String>(loanIdsBatch)));
+        }
+
+       return loans;
+    }
+
+    /**
+     * Fetch batch of loans.
+     *
+     * @param loanIdsPartitions Set<String>
+     * @return ArrayNode of loans
+     * @throws Exception
+     */
+    private JsonNode fetchLoans(Set<String> loanIdsPartitions) throws Exception {
+        String baseOkapiUrl = properties.getBaseOkapiUrl();
+        Integer limit = loanIdsPartitions.size();
+        String ids = String.join(" OR ", loanIdsPartitions);
+        String url = "{baseOkapiUrl}/circulation/loans?limit={limit}&query=id==({ids})";
+        ResponseEntity<JsonNode> response = okapiRequest(url, HttpMethod.GET, JsonNode.class, baseOkapiUrl, limit, ids);
+        if (response.hasBody()) {
+            JsonNode loansNode = response.getBody().get("loans");
+            if (loansNode.isArray()) {
+                return loansNode;
+            }
+        }
+
+        return objectMapper.createObjectNode();
+    }
+
+    /**
+     * Get instances from a set of ids.
+     *
+     * @param instanceIds
+     * @return ArrayNode of instances
+     * @throws Exception
+     */
     private JsonNode getInstances(Set<String> instanceIds) throws Exception {
         ArrayNode instances = objectMapper.createArrayNode();
         AtomicInteger counter = new AtomicInteger();
         Collection<List<String>> instanceIdsPartitions = instanceIds.stream()
-            .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / MAX_INSTANCE_ID_BATCH_SIZE))
+            .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / MAX_BATCH_SIZE))
             .values();
         for (List<String> instanceIdsBatch : instanceIdsPartitions) {
             instances.addAll((ArrayNode) fetchInstances(new HashSet<String>(instanceIdsBatch)));
@@ -830,6 +1020,13 @@ public class FolioCatalogService implements CatalogService {
        return instances;
     }
 
+    /**
+     * Fetch batch of instances.
+     *
+     * @param instanceIdsBatch Set<String>
+     * @return ArrayNode of instances
+     * @throws Exception
+     */
     private JsonNode fetchInstances(Set<String> instanceIdsBatch) throws Exception {
         String baseOkapiUrl = properties.getBaseOkapiUrl();
         Integer limit = instanceIdsBatch.size();
@@ -838,30 +1035,212 @@ public class FolioCatalogService implements CatalogService {
         ResponseEntity<JsonNode> response = okapiRequest(url, HttpMethod.GET, JsonNode.class, baseOkapiUrl, limit, ids);
         if (response.hasBody()) {
             JsonNode instancesNode = response.getBody().get("instances");
-            if (instancesNode.isContainerNode() && instancesNode.isArray()) {
+            if (instancesNode.isArray()) {
                 return instancesNode;
             }
         }
+
         return objectMapper.createObjectNode();
     }
 
-    private String getInstanceHrid(JsonNode loan) throws Exception {
-        // This approach is not the most efficient way and may incur network performance problems for large numbers of instances.
-        String instanceId = getText(loan, "/item/instanceId");
+    /**
+     * Get items from a set of ids.
+     *
+     * @param itemIds
+     * @return ArrayNode of items
+     * @throws Exception
+     */
+    private JsonNode getItems(Set<String> itemIds) throws Exception {
+        ArrayNode items = objectMapper.createArrayNode();
+        AtomicInteger counter = new AtomicInteger();
+        Collection<List<String>> itemIdsPartitions = itemIds.stream()
+            .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / MAX_BATCH_SIZE))
+            .values();
+        for (List<String> itemIdsBatch : itemIdsPartitions) {
+            items.addAll((ArrayNode) fetchItems(new HashSet<String>(itemIdsBatch)));
+        }
+
+       return items;
+    }
+
+    /**
+     * Fetch batch of items.
+     *
+     * @param itemIdsBatch Set<String>
+     * @return ArrayNode of items
+     * @throws Exception
+     */
+    private JsonNode fetchItems(Set<String> itemIdsBatch) throws Exception {
+        String baseOkapiUrl = properties.getBaseOkapiUrl();
+        Integer limit = itemIdsBatch.size();
+        String ids = String.join(" OR ", itemIdsBatch);
+        String url = "{baseOkapiUrl}/inventory/items?limit={limit}&query=id==({ids})";
+        ResponseEntity<JsonNode> response = okapiRequest(url, HttpMethod.GET, JsonNode.class, baseOkapiUrl, limit, ids);
+        if (response.hasBody()) {
+            JsonNode itemsNode = response.getBody().get("items");
+            if (itemsNode.isArray()) {
+                return itemsNode;
+            }
+        }
+
+        return objectMapper.createObjectNode();
+    }
+
+    /**
+     * Get instance by id.
+     *
+     * @param instanceId String
+     * @return instance
+     */
+    private JsonNode getInstance(String instanceId) throws Exception {
         String url = String.format("%s/instance-storage/instances/%s", properties.getBaseOkapiUrl(), instanceId);
         String message = String.format("user with instanceId \"%s\"", instanceId);
 
         logger.debug("Asking for instance from: {}", url);
 
-        JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, message);
-        if (response.isObject()) {
-            JsonNode hrid = response.at("/hrid");
-            if (hrid.isValueNode()) {
-                return hrid.asText();
+        JsonNode instance = okapiRequestJsonNode(url, HttpMethod.GET, message);
+        if (instance.isContainerNode()) {
+            return instance;
+        }
+
+        return objectMapper.createObjectNode();
+    }
+
+    /**
+     * Get item by id.
+     *
+     * @param itemId String
+     * @return item
+     */
+    private JsonNode getItem(String itemId) throws Exception {
+        String url = String.format("%s/inventory/items/%s", properties.getBaseOkapiUrl(), itemId);
+        String message = String.format("user with itemId \"%s\"", itemId);
+
+        logger.debug("Asking for item from: {}", url);
+
+        JsonNode item = okapiRequestJsonNode(url, HttpMethod.GET, message);
+        if (item.isContainerNode()) {
+            return item;
+        }
+
+        return objectMapper.createObjectNode();
+    }
+
+    /**
+     * Get loan by id.
+     *
+     * @param loanId String
+     * @return loan
+     */
+    private JsonNode getLoan(String loanId) {
+        String url = String.format("%s/circulation/loans/%s", properties.getBaseOkapiUrl(), loanId);
+        String message = String.format("loan with id \"%s\"", loanId);
+
+        logger.debug("Asking for loan from: {}", url);
+
+        JsonNode loan = okapiRequestJsonNode(url, HttpMethod.GET, message);
+        if (loan.isContainerNode()) {
+            return loan;
+        }
+
+        return objectMapper.createObjectNode();
+    }
+
+    /**
+     * Get request by id.
+     *
+     * @param requestId String
+     * @return request
+     */
+    private JsonNode getRequest(String requestId) {
+        String url = String.format("%s/circulation/requests/%s", properties.getBaseOkapiUrl(), requestId);
+        String message = String.format("hold request with id \"%s\"", requestId);
+
+        logger.debug("Asking for request from: {}", url);
+
+        JsonNode request = okapiRequestJsonNode(url, HttpMethod.GET, message);
+        if (request.isContainerNode()) {
+            return request;
+        }
+
+        return objectMapper.createObjectNode();
+    }
+
+    /**
+     * Get and cache location by id.
+     *
+     * @param locationId String
+     * @return location
+     */
+    private JsonNode getLocation(String locationId) {
+        if (LOCATION_CACHE.containsKey(locationId)) {
+            return LOCATION_CACHE.get(locationId);
+        }
+        String url = String.format("%s/locations/%s", properties.getBaseOkapiUrl(), locationId);
+        String message = String.format("location with id \"%s\"", locationId);
+
+        logger.debug("Asking for location from: {}", url);
+
+        JsonNode location = okapiRequestJsonNode(url, HttpMethod.GET, message);
+        if (location.isContainerNode()) {
+            LOCATION_CACHE.put(locationId, location);
+            return location;
+        }
+
+        return objectMapper.createObjectNode();
+    }
+
+    /**
+     * Get and cache service point by id.
+     *
+     * @param servicePointId String
+     * @return service point
+     */
+    private JsonNode getServicePoint(String servicePointId) {
+        if (SERVICE_POINT_CACHE.containsKey(servicePointId)) {
+            return SERVICE_POINT_CACHE.get(servicePointId);
+        }
+        String url = String.format("%s/service-points/%s", properties.getBaseOkapiUrl(), servicePointId);
+        String message = String.format("service point with id \"%s\"", servicePointId);
+
+        logger.debug("Asking for service point from: {}", url);
+
+        JsonNode servicePoint = okapiRequestJsonNode(url, HttpMethod.GET, message);
+        if (servicePoint.isContainerNode()) {
+            SERVICE_POINT_CACHE.put(servicePointId, servicePoint);
+            return servicePoint;
+        }
+
+        return objectMapper.createObjectNode();
+    }
+
+    /**
+     * Get and cache loan policy by name.
+     *
+     * @param loanPolicyName String
+     * @return loan policy
+     */
+    private JsonNode getLoanPolicy(String loanPolicyName) {
+        if (LOAN_POLICY_CACHE.containsKey(loanPolicyName)) {
+            return LOAN_POLICY_CACHE.get(loanPolicyName);
+        }
+        String url = String.format("%s/loan-policy-storage/loan-policies?query=name=={loanPolicyName}", properties.getBaseOkapiUrl());
+        String message = String.format("loan policy with name \"%s\"", loanPolicyName);
+
+        logger.debug("Asking for loan policy from: {}", url);
+
+        JsonNode loanPolicyCollection = okapiRequestJsonNode(url, HttpMethod.GET, message, loanPolicyName);
+
+        if (loanPolicyCollection.isContainerNode()) {
+            JsonNode totalRecords = loanPolicyCollection.at("/totalRecords");
+            if (totalRecords.isValueNode() && totalRecords.intValue() == 1) {
+                JsonNode loanPolicy = ((ArrayNode) loanPolicyCollection.at("/loanPolicies")).get(0);
+                LOAN_POLICY_CACHE.put(loanPolicyName, loanPolicy);
+                return loanPolicy;
             }
         }
 
-        return null;
+        return objectMapper.createObjectNode();
     }
 
     /**

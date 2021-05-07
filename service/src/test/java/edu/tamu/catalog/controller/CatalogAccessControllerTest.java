@@ -54,7 +54,25 @@ public class CatalogAccessControllerTest {
     @Test
     public void testGetHoldingSuccess() {
         Map<String, Map<String, String>> catalogItems = new HashMap<>();
-        HoldingsRecord holding = new HoldingsRecord("marcRecordLeader", "mfhd", "issn", "isbn", "title", "author", "publisher", "place", "year", "genre", "edition", "fallBackLocationCode", "oclc", "recordId", "callNumber", catalogItems);
+        HoldingsRecord holding =  HoldingsRecord.builder()
+            .recordId("recordId")
+            .marcRecordLeader("marcRecordLeader")
+            .mfhd("mfhd")
+            .issn("issn")
+            .isbn("isbn")
+            .title("title")
+            .author("author")
+            .publisher("publisher")
+            .place("place")
+            .year("year")
+            .genre("genre")
+            .fallbackLocationCode("fallbackLocationCode")
+            .edition("edition")
+            .oclc("oclc")
+            .callNumber("callNumber")
+            .largeVolume(false)
+            .catalogItems(catalogItems)
+            .build();
 
         when(folioCatalogService.getHolding(any(String.class), any(String.class))).thenReturn(holding);
 

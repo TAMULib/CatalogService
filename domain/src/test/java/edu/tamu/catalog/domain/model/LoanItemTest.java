@@ -20,7 +20,7 @@ public class LoanItemTest {
         final Date now = new Date();
         final Date due = Date.from(now.toInstant().plusSeconds(100));
 
-        final LoanItem loanItem = new LoanItem("loanId", "itemId", "instanceId", "instanceHrid", now, due, false, "title", "author");
+        final LoanItem loanItem = new LoanItem("loanId", "itemId", "instanceId", "instanceHrid", "itemType", now, due, false, "title", "author", "location", "locationCode", true);
 
         assertNotNull(loanItem);
         assertNotNull(loanItem.getLoanDate());
@@ -30,11 +30,15 @@ public class LoanItemTest {
         assertEquals("itemId", loanItem.getItemId());
         assertEquals("instanceId", loanItem.getInstanceId());
         assertEquals("instanceHrid", loanItem.getInstanceHrid());
+        assertEquals("itemType", loanItem.getItemType());
         assertEquals(now.toString(), loanItem.getLoanDate().toString());
         assertEquals(due.toString(), loanItem.getLoanDueDate().toString());
         assertEquals(false, loanItem.isOverdue());
         assertEquals("title", loanItem.getTitle());
         assertEquals("author", loanItem.getAuthor());
+        assertEquals("location", loanItem.getLocation());
+        assertEquals("locationCode", loanItem.getLocationCode());
+        assertEquals(true, loanItem.getCanRenew());
     }
 
     @Test
@@ -47,11 +51,15 @@ public class LoanItemTest {
         assertNull(loanItem.getItemId());
         assertNull(loanItem.getInstanceId());
         assertNull(loanItem.getInstanceHrid());
+        assertNull(loanItem.getItemType());
         assertNull(loanItem.getLoanDate());
         assertNull(loanItem.getLoanDueDate());
         assertFalse(loanItem.isOverdue());
         assertNull(loanItem.getTitle());
         assertNull(loanItem.getAuthor());
+        assertNull(loanItem.getLocation());
+        assertNull(loanItem.getLocationCode());
+        assertNull(loanItem.getCanRenew());
     }
 
     @Test
@@ -63,11 +71,15 @@ public class LoanItemTest {
             .itemId("itemId")
             .instanceId("instanceId")
             .instanceHrid("instanceHrid")
+            .itemType("itemType")
             .loanDate(now)
             .loanDueDate(due)
             .overdue(false)
             .title("title")
             .author("author")
+            .location("location")
+            .locationCode("locationCode")
+            .canRenew(true)
             .build();
 
         assertNotNull(loanItem);
@@ -78,11 +90,15 @@ public class LoanItemTest {
         assertEquals("itemId", loanItem.getItemId());
         assertEquals("instanceId", loanItem.getInstanceId());
         assertEquals("instanceHrid", loanItem.getInstanceHrid());
+        assertEquals("itemType", loanItem.getItemType());
         assertEquals(now.toString(), loanItem.getLoanDate().toString());
         assertEquals(due.toString(), loanItem.getLoanDueDate().toString());
         assertEquals(false, loanItem.isOverdue());
         assertEquals("title", loanItem.getTitle());
         assertEquals("author", loanItem.getAuthor());
+        assertEquals("location", loanItem.getLocation());
+        assertEquals("locationCode", loanItem.getLocationCode());
+        assertEquals(true, loanItem.getCanRenew());
     }
 
     @Test
@@ -92,17 +108,21 @@ public class LoanItemTest {
         final Date later = Date.from(due.toInstant().plusSeconds(100));
         final Date dueLater = Date.from(later.toInstant().plusSeconds(100));
 
-        final LoanItem loanItem = new LoanItem("loanId", "itemId", "instanceId", "instanceHrid", now, due, false, "title", "author");
+        final LoanItem loanItem = new LoanItem("loanId", "itemId", "instanceId", "instanceHrid", "itemType", now, due, false, "title", "author", "location", "locationCode", true);
 
         loanItem.setLoanId("updatedLoanId");
         loanItem.setItemId("updatedItemId");
         loanItem.setInstanceId("updatedInstanceId");
         loanItem.setInstanceHrid("updatedInstanceHrid");
+        loanItem.setItemType("updatedItemType");
         loanItem.setLoanDate(later);
         loanItem.setLoanDueDate(dueLater);
         loanItem.setOverdue(true);
         loanItem.setTitle("updatedTitle");
         loanItem.setAuthor("updatedAuthor");
+        loanItem.setLocation("updatedLocation");
+        loanItem.setLocationCode("updatedLocationCode");
+        loanItem.setCanRenew(false);
 
         assertNotNull(loanItem);
         assertNotNull(loanItem.getLoanDate());
@@ -112,11 +132,15 @@ public class LoanItemTest {
         assertEquals("updatedItemId", loanItem.getItemId());
         assertEquals("updatedInstanceId", loanItem.getInstanceId());
         assertEquals("updatedInstanceHrid", loanItem.getInstanceHrid());
+        assertEquals("updatedItemType", loanItem.getItemType());
         assertEquals(later.toString(), loanItem.getLoanDate().toString());
         assertEquals(dueLater.toString(), loanItem.getLoanDueDate().toString());
         assertEquals(true, loanItem.isOverdue());
         assertEquals("updatedTitle", loanItem.getTitle());
         assertEquals("updatedAuthor", loanItem.getAuthor());
+        assertEquals("updatedLocation", loanItem.getLocation());
+        assertEquals("updatedLocationCode", loanItem.getLocationCode());
+        assertEquals(false, loanItem.getCanRenew());
     }
 
     @Test
@@ -124,8 +148,8 @@ public class LoanItemTest {
         final Date now = new Date();
         final Date due = Date.from(now.toInstant().plusSeconds(100));
 
-        final LoanItem loanItem1 = new LoanItem("loanId", "itemId", "instanceId", "instanceHrid", now, due, false, "title", "author");
-        final LoanItem loanItem2 = new LoanItem("loanId", "itemId", "instanceId", "instanceHrid", now, due, false, "title", "author");
+        final LoanItem loanItem1 = new LoanItem("loanId", "itemId", "instanceId", "instanceHrid", "itemType", now, due, false, "title", "author", "location", "locationCode", true);
+        final LoanItem loanItem2 = new LoanItem("loanId", "itemId", "instanceId", "instanceHrid", "itemType", now, due, false, "title", "author", "location", "locationCode", true);
         final LoanItem loanItem3 = new LoanItem();
 
         assertTrue(loanItem1.equals(loanItem2));

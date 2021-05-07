@@ -47,12 +47,6 @@ public class HoldingsRecord {
 
     private Map<String, Map<String, String>> catalogItems;
 
-    public HoldingsRecord(String marcRecordLeader, String mfhd, String issn, String isbn, String title, String author,
-            String publisher, String place, String year, String genre, String edition, String fallBackLocationCode, String oclc, String recordId, String callNumber,
-            Map<String, Map<String, String>> catalogItems) {
-        this(marcRecordLeader, mfhd, issn, isbn, title, author, publisher, place, year, genre, fallBackLocationCode, edition, oclc, recordId, callNumber, false, catalogItems);
-    }
-
     public boolean isMultiVolume() {
         return (this.getCatalogItems().size() > 1);
     }

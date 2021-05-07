@@ -21,7 +21,7 @@
       "accrualDate": "2019-05-01T14:08:46.000+0000",
       "state": "Outstanding",
       "reason": "charge",
-      "feeFineId" : "d4d849f9-f953-4f7c-acf6-b16b65cb3bb4"
+      "feeFineId": "d4d849f9-f953-4f7c-acf6-b16b65cb3bb4"
     },
     {
       "item": {
@@ -37,7 +37,7 @@
       "accrualDate": "2019-08-20T13:41:41.000+0000",
       "state": "Outstanding",
       "reason": "charge",
-      "feeFineId" : "e2791487-9962-4e67-98dd-99f8bc89e3e4"
+      "feeFineId": "e2791487-9962-4e67-98dd-99f8bc89e3e4"
     }
   ],
   "holds": [
@@ -58,19 +58,7 @@
   ],
   "loans": [
     {
-      "id": "9b9b592a-1b4c-43b4-a91f-901d4ec9d3d6",
-      "item": {
-        "instanceId": "2422160d-23c4-356b-ad1c-44d90fc1320b",
-        "itemId": "40053ccb-fd0c-304b-9547-b2fc06f34d3e",
-        "title": "An ontology of consciousness / by Ralph Ellis.",
-        "author": "Ellis, Ralph D"
-      },
-      "loanDate": "2011-02-17T22:46:08.000+0000",
-      "dueDate": "2021-10-09T02:00:00.000+0000",
-      "overdue": false
-    },
-    {
-      "id": "d135ea73-f80e-45b6-9046-9414334d64ff",
+      "id": "adbe373f-89ec-44e9-8840-f6906adc7adf",
       "item": {
         "instanceId": "829fecd3-67c3-3ca2-b9d4-281227690e0f",
         "itemId": "f5a63a6f-4b1d-3a75-8fba-668efffae4ad",
@@ -82,19 +70,19 @@
       "overdue": false
     },
     {
-      "id": "a7e13621-4b48-4d59-9ab8-9cae71f1bb6e",
+      "id": "0003fb96-3b67-42f9-be46-643462ac3ee4",
       "item": {
-        "instanceId": "b8ea27b8-5280-3023-bbf8-9113849120a1",
-        "itemId": "bdcdd69e-f2ab-3cff-8da3-01d9ce236c8d",
-        "title": "Daring greatly : how the courage to be vulnerable transforms the way we live, love, parent, and lead / Brené Brown.",
-        "author": "Brown, Brené"
+        "instanceId": "f29d73fc-b4ef-3616-be63-cacf0b853c3e",
+        "itemId": "400f84bc-5400-3987-b87e-14940bd57334",
+        "title": "Military economics : the interaction of power and money / Ron Smith.",
+        "author": "Smith, Ron, 1946 September 2-"
       },
-      "loanDate": "2018-05-10T22:00:44.000+0000",
+      "loanDate": "2016-02-09T22:19:07.000+0000",
       "dueDate": "2021-10-09T02:00:00.000+0000",
       "overdue": false
     },
     {
-      "id": "f035a7d6-40aa-4351-8936-f8dfbf4de443",
+      "id": "b7c200ba-6e34-4222-9b53-cc22625fa627",
       "item": {
         "instanceId": "a0480d3f-181e-3abd-a091-288e1cfc05ab",
         "itemId": "a4c4ec98-f7ae-365c-8597-dc151c173c65",
@@ -102,6 +90,18 @@
         "author": "Quine, W. V. (Willard Van Orman)"
       },
       "loanDate": "2011-01-25T19:35:18.000+0000",
+      "dueDate": "2021-10-09T02:00:00.000+0000",
+      "overdue": false
+    },
+    {
+      "id": "5667d646-6b40-46f9-80bb-d965a46e7116",
+      "item": {
+        "instanceId": "69dd6864-4d52-387c-b5b2-8db1ce8f5013",
+        "itemId": "04dbd368-5952-3779-9bcd-563cd2c53746",
+        "title": "Rising strong / Brené Brown.",
+        "author": "Brown, Brené,"
+      },
+      "loanDate": "2018-05-10T22:00:40.000+0000",
       "dueDate": "2021-10-09T02:00:00.000+0000",
       "overdue": false
     }

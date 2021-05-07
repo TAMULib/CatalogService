@@ -15,19 +15,36 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @ControllerAdvice
 public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
+    private static final String RENEWAL_DID_NOT_CHANGE_THE_DUE_DATE = "Renewal did not change the due date";
+
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    @ExceptionHandler(HttpClientErrorException.class)
-    public ResponseEntity<String> clientError(HttpClientErrorException e, WebRequest request) {
+
+    @ExceptionHandler(RenewFailureException.class)
+    public ResponseEntity<String> renewError(RenewFailureException e, WebRequest request) {
         logger.warn(e.getMessage());
 
         if (logger.isDebugEnabled()) {
             e.printStackTrace();
         }
 
-        return ResponseEntity.status(e.getRawStatusCode())
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
             .contentType(MediaType.TEXT_PLAIN)
-            .body(e.getMessage());
+            .body(RENEWAL_DID_NOT_CHANGE_THE_DUE_DATE);
+    }
+
+    @ExceptionHandler(HttpClientErrorException.class)
+    public ResponseEntity<String> clientError(HttpClientErrorException e, WebRequest request) {
+        logger.warn(e.getMessage());
+
+        if (logger.isDebugEnabled()) {
+            logger.warn(e.getResponseBodyAsString());
+            e.printStackTrace();
+        }
+
+        return ResponseEntity.status(e.getRawStatusCode())
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(e.getResponseBodyAsString());
     }
 
     @ExceptionHandler(HttpServerErrorException.class)
@@ -36,11 +53,12 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
         if (logger.isDebugEnabled()) {
             e.printStackTrace();
+            logger.error(e.getResponseBodyAsString());
         }
 
         return ResponseEntity.status(e.getRawStatusCode())
-            .contentType(MediaType.TEXT_PLAIN)
-            .body(e.getMessage());
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(e.getResponseBodyAsString());
     }
 
     @ExceptionHandler(UnsupportedOperationException.class)

@@ -195,9 +195,25 @@ public class HoldingsRecordTest {
         catalogItem.put("key", "value");
         catalogItems.put("item", catalogItem);
 
-        final HoldingsRecord holdingsRecord1 = new HoldingsRecord("recordId", "marcRecordLeader", "mfhd", "issn",
-            "isbn", "title", "author", "publisher", "place", "year", "genre", "fallbackLocationCode", "edition",
-            "oclc", "callNumber", catalogItems);
+        final HoldingsRecord holdingsRecord1 = HoldingsRecord.builder()
+            .recordId("recordId")
+            .marcRecordLeader("marcRecordLeader")
+            .mfhd("mfhd")
+            .issn("issn")
+            .isbn("isbn")
+            .title("title")
+            .author("author")
+            .publisher("publisher")
+            .place("place")
+            .year("year")
+            .genre("genre")
+            .fallbackLocationCode("fallbackLocationCode")
+            .edition("edition")
+            .oclc("oclc")
+            .callNumber("callNumber")
+            .largeVolume(false)
+            .catalogItems(catalogItems)
+            .build();
 
         final HoldingsRecord holdingsRecord2 = new HoldingsRecord("recordId", "marcRecordLeader", "mfhd", "issn",
             "isbn", "title", "author", "publisher", "place", "year", "genre", "fallbackLocationCode", "edition",
