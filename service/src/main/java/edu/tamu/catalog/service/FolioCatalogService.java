@@ -701,26 +701,38 @@ public class FolioCatalogService implements CatalogService {
 
                 //combine marc based holding data and direct okapi data
                 HoldingsRecord recordValues = marcHoldings.get(0);
-                finalHoldings.add(HoldingsRecord.builder()
-                    .recordId(recordValues.getRecordId())
-                    .marcRecordLeader(recordValues.getMarcRecordLeader())
-                    .mfhd(hrid)
-                    .issn(recordValues.getIssn())
-                    .isbn(recordValues.getIsbn())
-                    .title(recordValues.getTitle())
-                    .author(recordValues.getAuthor())
-                    .publisher(recordValues.getPublisher())
-                    .place(recordValues.getPlace())
-                    .year(recordValues.getYear())
-                    .genre(recordValues.getGenre())
-                    .fallbackLocationCode(fallbackLocationCode)
-                    .edition(recordValues.getEdition())
-                    .oclc(recordValues.getOclc())
-                    .recordId(recordValues.getRecordId())
-                    .callNumber(recordValues.getCallNumber())
-                    .largeVolume(recordValues.isLargeVolume())
-                    .catalogItems(okapiItems.size() > 0 ? okapiItems:recordValues.getCatalogItems()).build());
+                HoldingsRecord currentHolding = HoldingsRecord.builder()
+                                .recordId(recordValues.getRecordId())
+                                .marcRecordLeader(recordValues.getMarcRecordLeader())
+                                .mfhd(hrid)
+                                .issn(recordValues.getIssn())
+                                .isbn(recordValues.getIsbn())
+                                .title(recordValues.getTitle())
+                                .author(recordValues.getAuthor())
+                                .publisher(recordValues.getPublisher())
+                                .place(recordValues.getPlace())
+                                .year(recordValues.getYear())
+                                .genre(recordValues.getGenre())
+                                .fallbackLocationCode(fallbackLocationCode)
+                                .edition(recordValues.getEdition())
+                                .oclc(recordValues.getOclc())
+                                .recordId(recordValues.getRecordId())
+                                .callNumber(recordValues.getCallNumber())
+                                .largeVolume(recordValues.isLargeVolume())
+                                .catalogItems(okapiItems.size() > 0 ? okapiItems:recordValues.getCatalogItems())
+                                .build();
+
+                finalHoldings.add(currentHolding);
+
+                logger.debug("Record ID: {}", currentHolding.getRecordId());
+                logger.debug("Marc record leader: {}", currentHolding.getMarcRecordLeader());
+                logger.debug("MFHD: {}", currentHolding.getMfhd());
+                logger.debug("ISBN: {}", currentHolding.getIsbn());
+                logger.debug("Fallback location: {}", currentHolding.getFallbackLocationCode());
+                logger.debug("Call number: {}", currentHolding.getCallNumber());
+                logger.debug("Valid large volume: {}", currentHolding.isLargeVolume());
             });
+
         } catch (DOMException | IOException | ParserConfigurationException | SAXException e) {
             // TODO: consider throwing all of these so that caller can handle more appropriately.
             e.printStackTrace();
@@ -854,18 +866,6 @@ public class FolioCatalogService implements CatalogService {
         // different nesting structure in the XML.
         Map<String, String> holdingValues = Marc21Xml.buildCoreHolding(NODE_PREFIX, marcRecord);
 
-
-        logger.debug("Record ID: {}", recordValues.get(RECORD_RECORD_ID));
-        logger.debug("Marc record leader: {}", recordValues.get(RECORD_MARC_RECORD_LEADER));
-        logger.debug("MFHD: {}", holdingValues.get(RECORD_MFHD));
-        logger.debug("ISBN: {}", recordValues.get(RECORD_ISBN));
-        logger.debug("Fallback location: {}", holdingValues.get(RECORD_FALLBACK_LOCATION_CODE));
-        logger.debug("Call number: {}", holdingValues.get(RECORD_CALL_NUMBER));
-
-        Boolean validLargeVolume = Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME));
-
-        logger.debug("Valid large volume: {}", validLargeVolume);
-
         Map<String, Map<String, String>> catalogItems = new HashMap<String, Map<String, String>>();
 
         for (int i = 0; i < marcListCount; i++) {
@@ -874,13 +874,17 @@ public class FolioCatalogService implements CatalogService {
 
                 NodeList childNodes = marcList.item(i).getChildNodes();
                 for (int j = 0; j < childNodes.getLength(); j++) {
-                    if (Marc21Xml.attributeCodeMatches(childNodes.item(j), "m")) {
+                    if (Marc21Xml.attributeCodeMatches(childNodes.item(j), "e")) {
+                        holdingValues.put(RECORD_CALL_NUMBER, childNodes.item(j).getTextContent());
+                    } else if (Marc21Xml.attributeCodeMatches(childNodes.item(j), "m")) {
                         buildCoreItem(instanceId, childNodes.item(j).getTextContent(), childNodes, catalogItems);
                         break;
                     }
                 }
             }
         }
+
+        Boolean validLargeVolume = Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME));
 
         return HoldingsRecord.builder()
             .recordId(recordValues.get(RECORD_RECORD_ID))
