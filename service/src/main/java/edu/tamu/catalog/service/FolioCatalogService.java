@@ -701,8 +701,9 @@ public class FolioCatalogService implements CatalogService {
 
                 //combine marc based holding data and direct okapi data
                 HoldingsRecord recordValues = marcHoldings.get(0);
-                HoldingsRecord.builder()
-                    .recordId(recordValues.getMarcRecordLeader())
+                finalHoldings.add(HoldingsRecord.builder()
+                    .recordId(recordValues.getRecordId())
+                    .marcRecordLeader(recordValues.getMarcRecordLeader())
                     .mfhd(hrid)
                     .issn(recordValues.getIssn())
                     .isbn(recordValues.getIsbn())
@@ -718,7 +719,7 @@ public class FolioCatalogService implements CatalogService {
                     .recordId(recordValues.getRecordId())
                     .callNumber(recordValues.getCallNumber())
                     .largeVolume(recordValues.isLargeVolume())
-                    .catalogItems(okapiItems.size() > 0 ? okapiItems:recordValues.getCatalogItems()).build();
+                    .catalogItems(okapiItems.size() > 0 ? okapiItems:recordValues.getCatalogItems()).build());
             });
         } catch (DOMException | IOException | ParserConfigurationException | SAXException e) {
             // TODO: consider throwing all of these so that caller can handle more appropriately.
