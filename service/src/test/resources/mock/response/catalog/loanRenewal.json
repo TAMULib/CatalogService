@@ -1,11 +1,15 @@
 {
-  "loanId": "9b9b592a-1b4c-43b4-a91f-901d4ec9d3d6",
-  "itemId": "40053ccb-fd0c-304b-9547-b2fc06f34d3e",
-  "instanceId": "2422160d-23c4-356b-ad1c-44d90fc1320b",
-  "instanceHrid": "in1",
-  "loanDate": 1297982768000,
-  "loanDueDate": 1633744800000,
+  "loanId": "adbe373f-89ec-44e9-8840-f6906adc7adf",
+  "loanDate": 1496336617000,
+  "loanDueDate": 1633734000000,
+  "itemId": "f5a63a6f-4b1d-3a75-8fba-668efffae4ad",
+  "itemType": "normal",
+  "instanceId": "829fecd3-67c3-3ca2-b9d4-281227690e0f",
+  "instanceHrid": "in00003466399",
   "overdue": false,
-  "title": "An ontology of consciousness / by Ralph Ellis.",
-  "author": "Ellis, Ralph D"
+  "title": "Spam nation : the inside story of organized cybercrime--from global epidemic to your front door / Brian Krebs.",
+  "author": "Krebs, Brian,",
+  "locationCode": "stk",
+  "location": "Evans stk",
+  "canRenew": true
 }

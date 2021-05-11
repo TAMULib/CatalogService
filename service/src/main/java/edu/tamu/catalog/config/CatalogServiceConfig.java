@@ -8,7 +8,9 @@ import java.util.List;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,10 +39,14 @@ public class CatalogServiceConfig {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Value("${app.catalogs.path.uri:classpath:/catalogs}")
+    private String catalogsPathUri;
+
     @Bean
     public List<CatalogService> createCatalogServices() throws IOException {
         List<CatalogService> catalogServices = new ArrayList<>();
-        for (Resource resource : loadResources("classpath:/catalogs/*.json")) {
+
+        for (Resource resource : loadResources(StringUtils.removeEnd(catalogsPathUri, "/") + "/*.json")) {
             JsonNode propertiesNode = objectMapper.readTree(resource.getInputStream());
             JsonNode typeNode = propertiesNode.get(TYPE_FIELD);
             if (typeNode.isValueNode()) {
