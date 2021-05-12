@@ -755,6 +755,16 @@ public class FolioCatalogService implements CatalogService {
         return null;
     }
 
+    private JsonNode getOkapiLoanType(String loanTypeId) {
+        String url = String.format("%s/loan-types/%s", properties.getBaseOkapiUrl(), loanTypeId);
+        logger.debug("Asking for loan type from: {}", url);
+        JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, "loan type from okapi");
+        if (response.isObject()) {
+            return response;
+        }
+        return null;
+    }
+
     private JsonNode getOkapiHoldings(String instanceId) {
         String url = String.format("%s/holdings-storage/holdings", properties.getBaseOkapiUrl());
         String query = String.format("(instanceId==\"%s\" NOT discoverySuppress==true)", instanceId);
@@ -784,11 +794,14 @@ public class FolioCatalogService implements CatalogService {
         Map<String, Map<String, String>> okapiItems = new HashMap<String, Map<String, String>>();
         if (itemsResponse.isObject()) {
             itemsResponse.at("/items").forEach(i -> {
+                JsonNode loanType = getOkapiLoanType(i.at("/permanentLoanTypeId").asText());
                 Map<String, String> itemData = new HashMap<String, String>();
                 itemData.put("hrid", i.at("/hrid").asText());
                 itemData.put("barcode", i.at("/barcode").asText());
                 itemData.put("locationCode", locationMap.get(i.at("/effectiveLocationId").asText()));
                 itemData.put("enumeration", i.at("/enumeration").asText());
+                itemData.put("status", i.at("/status/name").asText());
+                itemData.put("typeDesc", loanType.at("/name").asText());
                 okapiItems.put(i.at("/hrid").asText(), itemData);
             });
         }
