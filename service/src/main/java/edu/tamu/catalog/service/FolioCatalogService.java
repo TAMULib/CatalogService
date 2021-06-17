@@ -689,15 +689,14 @@ public class FolioCatalogService implements CatalogService {
                     }
                 }
             }
-            Map<String,String> locationMap = getOkapiLocations();
 
             JsonNode okapiHoldings = getOkapiHoldings(instanceId);
             okapiHoldings.forEach(holding -> {
                 String hrid = holding.at("/hrid").asText();
-                String fallbackLocationCode = locationMap.get(holding.at("/permanentLocationId").asText());
+                String fallbackLocationCode = getLocation(holding.at("/permanentLocationId").asText()).at("/code").asText();
 
                 //get items for holding from okapi
-                Map<String, Map<String,String>> okapiItems = getOkapiItems(holding.at("/id").asText(), locationMap);
+                Map<String, Map<String,String>> okapiItems = getOkapiItems(holding.at("/id").asText());
 
                 //combine marc based holding data and direct okapi data
                 HoldingsRecord recordValues = marcHoldings.get(0);
@@ -741,20 +740,6 @@ public class FolioCatalogService implements CatalogService {
         return finalHoldings;
     }
 
-    private Map<String,String> getOkapiLocations() {
-        String url = String.format("%s/locations?limit=500", properties.getBaseOkapiUrl());
-        logger.debug("Asking for locations from: {}", url);
-        JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, "locations from okapi");
-        if (response.isObject()) {
-            Map<String,String> locationMap = new HashMap<String,String>();
-            response.at("/locations").forEach(i -> {
-                locationMap.put(i.at("/id").asText(),i.at("/code").asText());
-            });
-            return locationMap;
-        }
-        return null;
-    }
-
     private JsonNode getOkapiLoanType(String loanTypeId) {
         String url = String.format("%s/loan-types/%s", properties.getBaseOkapiUrl(), loanTypeId);
         logger.debug("Asking for loan type from: {}", url);
@@ -780,7 +765,7 @@ public class FolioCatalogService implements CatalogService {
         return null;
     }
 
-    private Map<String, Map<String, String>> getOkapiItems(String holdingsRecordId, Map<String,String> locationMap) {
+    private Map<String, Map<String, String>> getOkapiItems(String holdingsRecordId) {
         String itemsUrl = String.format("%s/item-storage/items", properties.getBaseOkapiUrl());
         String itemsQuery = String.format("(holdingsRecordId==\"%s\" NOT discoverySuppress==true)", holdingsRecordId);
         itemsUrl += String.format("?query={itemsQuery}&offset={itemsOffset}&limit={itemsLimit}");
@@ -798,7 +783,7 @@ public class FolioCatalogService implements CatalogService {
                 Map<String, String> itemData = new HashMap<String, String>();
                 itemData.put("hrid", i.at("/hrid").asText());
                 itemData.put("barcode", i.at("/barcode").asText());
-                itemData.put("locationCode", locationMap.get(i.at("/effectiveLocationId").asText()));
+                itemData.put("locationCode", getLocation(i.at("/effectiveLocationId").asText()).at("/code").asText());
                 itemData.put("enumeration", i.at("/enumeration").asText());
                 itemData.put("status", i.at("/status/name").asText());
                 itemData.put("typeDesc", loanType.at("/name").asText());
