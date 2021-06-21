@@ -23,9 +23,9 @@ public class HoldingsRecordTest {
         catalogItem.put("key", "value");
         catalogItems.put("item", catalogItem);
 
-        final HoldingsRecord holdingsRecord = new HoldingsRecord("recordId", "marcRecordLeader", "mfhd", "issn",
+        final HoldingsRecord holdingsRecord = new HoldingsRecord("marcRecordLeader", "mfhd", "issn",
             "isbn", "title", "author", "publisher", "place", "year", "genre", "fallbackLocationCode", "edition",
-            "oclc", "callNumber", false, catalogItems);
+            "oclc", "recordId", "callNumber", false, catalogItems);
 
         assertNotNull(holdingsRecord);
         assertNotNull(holdingsRecord.getCatalogItems());
@@ -215,9 +215,9 @@ public class HoldingsRecordTest {
             .catalogItems(catalogItems)
             .build();
 
-        final HoldingsRecord holdingsRecord2 = new HoldingsRecord("recordId", "marcRecordLeader", "mfhd", "issn",
+        final HoldingsRecord holdingsRecord2 = new HoldingsRecord("marcRecordLeader", "mfhd", "issn",
             "isbn", "title", "author", "publisher", "place", "year", "genre", "fallbackLocationCode", "edition",
-            "oclc", "callNumber", false, catalogItems);
+            "oclc", "recordId", "callNumber", false, catalogItems);
 
         final HoldingsRecord holdingsRecord3 = new HoldingsRecord();
 

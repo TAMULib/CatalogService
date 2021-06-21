@@ -354,7 +354,7 @@ public class FolioCatalogService implements CatalogService {
         JsonNode item = getItem(itemId);
 
         String loanId = getText(partialLoan, "/id");
-    
+
         String instanceId = getText(partialLoan, "/item/instanceId");
         String instanceHrid = getInstanceHrid(instanceId);
 
@@ -593,7 +593,7 @@ public class FolioCatalogService implements CatalogService {
 
     /**
      * Get FOLIO manual block status via OKAPI.
-     * 
+     *
      * This method does not take into consideration the type of block.
      * A block can be for any combination of borrowing, renewals, and requests.
      *
@@ -623,7 +623,7 @@ public class FolioCatalogService implements CatalogService {
      * @return list of holdings records
      */
     private List<HoldingsRecord> requestHoldings(String instanceId, String holdingId) {
-        List<HoldingsRecord> holdings = new ArrayList<>();
+        List<HoldingsRecord> finalHoldings = new ArrayList<>();
 
         try {
             String apiKey = properties.getEdgeApiKey();
@@ -637,7 +637,7 @@ public class FolioCatalogService implements CatalogService {
 
             String url = String.format("%s/%s?%s", properties.getBaseEdgeUrl(), oaiPath, queryString);
 
-            logger.debug("Asking for holdings from: {}", url);
+            logger.debug("Asking for edge holdings from: {}", url);
 
             String result = restTemplate.getForObject(url, String.class);
 
@@ -664,6 +664,8 @@ public class FolioCatalogService implements CatalogService {
 
             NodeList verbNodes = doc.getElementsByTagName(VERB_GET_RECORD);
 
+            List<HoldingsRecord> marcHoldings = new ArrayList<>();
+
             if (verbNodes.getLength() > 0) {
 
                 // there should only be a single getRecord element, only get the first one even if more than one exist.
@@ -675,11 +677,11 @@ public class FolioCatalogService implements CatalogService {
 
                     if (recordHoldings.size() > 0) {
                         if (holdingId == null) {
-                            holdings.addAll(recordHoldings);
+                            marcHoldings.addAll(recordHoldings);
                         } else {
                             for (int j = 0; j < recordHoldings.size(); j++) {
                                 if (recordHoldings.get(j).getMfhd().equalsIgnoreCase(holdingId)) {
-                                    holdings.add(recordHoldings.get(j));
+                                    marcHoldings.add(recordHoldings.get(j));
                                     break;
                                 }
                             }
@@ -687,12 +689,108 @@ public class FolioCatalogService implements CatalogService {
                     }
                 }
             }
+
+            JsonNode okapiHoldings = getOkapiHoldings(instanceId);
+            okapiHoldings.forEach(holding -> {
+                String hrid = holding.at("/hrid").asText();
+                String fallbackLocationCode = getLocation(holding.at("/permanentLocationId").asText()).at("/code").asText();
+
+                //get items for holding from okapi
+                Map<String, Map<String,String>> okapiItems = getOkapiItems(holding.at("/id").asText());
+
+                //combine marc based holding data and direct okapi data
+                HoldingsRecord recordValues = marcHoldings.get(0);
+                HoldingsRecord currentHolding = HoldingsRecord.builder()
+                                .recordId(recordValues.getRecordId())
+                                .marcRecordLeader(recordValues.getMarcRecordLeader())
+                                .mfhd(hrid)
+                                .issn(recordValues.getIssn())
+                                .isbn(recordValues.getIsbn())
+                                .title(recordValues.getTitle())
+                                .author(recordValues.getAuthor())
+                                .publisher(recordValues.getPublisher())
+                                .place(recordValues.getPlace())
+                                .year(recordValues.getYear())
+                                .genre(recordValues.getGenre())
+                                .fallbackLocationCode(fallbackLocationCode)
+                                .edition(recordValues.getEdition())
+                                .oclc(recordValues.getOclc())
+                                .recordId(recordValues.getRecordId())
+                                .callNumber(recordValues.getCallNumber())
+                                .largeVolume(recordValues.isLargeVolume())
+                                .catalogItems(okapiItems.size() > 0 ? okapiItems:recordValues.getCatalogItems())
+                                .build();
+
+                finalHoldings.add(currentHolding);
+
+                logger.debug("Record ID: {}", currentHolding.getRecordId());
+                logger.debug("Marc record leader: {}", currentHolding.getMarcRecordLeader());
+                logger.debug("MFHD: {}", currentHolding.getMfhd());
+                logger.debug("ISBN: {}", currentHolding.getIsbn());
+                logger.debug("Fallback location: {}", currentHolding.getFallbackLocationCode());
+                logger.debug("Call number: {}", currentHolding.getCallNumber());
+                logger.debug("Valid large volume: {}", currentHolding.isLargeVolume());
+            });
+
         } catch (DOMException | IOException | ParserConfigurationException | SAXException e) {
             // TODO: consider throwing all of these so that caller can handle more appropriately.
             e.printStackTrace();
         }
 
-        return holdings;
+        return finalHoldings;
+    }
+
+    private JsonNode getOkapiLoanType(String loanTypeId) {
+        String url = String.format("%s/loan-types/%s", properties.getBaseOkapiUrl(), loanTypeId);
+        logger.debug("Asking for loan type from: {}", url);
+        JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, "loan type from okapi");
+        if (response.isObject()) {
+            return response;
+        }
+        return null;
+    }
+
+    private JsonNode getOkapiHoldings(String instanceId) {
+        String url = String.format("%s/holdings-storage/holdings", properties.getBaseOkapiUrl());
+        String query = String.format("(instanceId==\"%s\" NOT discoverySuppress==true)", instanceId);
+        url += String.format("?query={query}&offset={offset}&limit={limit}");
+        String message = String.format("holdings from okapi with instanceId \"%s\"", instanceId);
+        String offset = "0";
+        String limit = "1000";
+        logger.debug("Asking for okapi holdings from: {}", url);
+        JsonNode response = okapiRequestJsonNode(url, HttpMethod.GET, message, query, offset, limit);
+        if (response.isObject()) {
+            return response.at("/holdingsRecords");
+        }
+        return null;
+    }
+
+    private Map<String, Map<String, String>> getOkapiItems(String holdingsRecordId) {
+        String itemsUrl = String.format("%s/item-storage/items", properties.getBaseOkapiUrl());
+        String itemsQuery = String.format("(holdingsRecordId==\"%s\" NOT discoverySuppress==true)", holdingsRecordId);
+        itemsUrl += String.format("?query={itemsQuery}&offset={itemsOffset}&limit={itemsLimit}");
+        String itemsMessage = String.format("items from okapi with holdingsRecordId \"%s\"", holdingsRecordId);
+
+        String itemsOffset = "0";
+        String itemsLimit = "1000";
+
+        logger.debug("Asking for items from: {}", itemsUrl);
+        JsonNode itemsResponse = okapiRequestJsonNode(itemsUrl, HttpMethod.GET, itemsMessage, itemsQuery, itemsOffset, itemsLimit);
+        Map<String, Map<String, String>> okapiItems = new HashMap<String, Map<String, String>>();
+        if (itemsResponse.isObject()) {
+            itemsResponse.at("/items").forEach(i -> {
+                JsonNode loanType = getOkapiLoanType(i.at("/permanentLoanTypeId").asText());
+                Map<String, String> itemData = new HashMap<String, String>();
+                itemData.put("hrid", i.at("/hrid").asText());
+                itemData.put("barcode", i.at("/barcode").asText());
+                itemData.put("locationCode", getLocation(i.at("/effectiveLocationId").asText()).at("/code").asText());
+                itemData.put("enumeration", i.at("/enumeration").asText());
+                itemData.put("status", i.at("/status/name").asText());
+                itemData.put("typeDesc", loanType.at("/name").asText());
+                okapiItems.put(i.at("/hrid").asText(), itemData);
+            });
+        }
+        return okapiItems;
     }
 
     /**
@@ -734,9 +832,9 @@ public class FolioCatalogService implements CatalogService {
         NodeList marcList = marcRecord.getChildNodes();
         int marcListCount = marcList.getLength();
 
+
         for (int i = 0; i < marcList.getLength(); i++) {
             Node node = marcList.item(i);
-
             if (nodeNameMatches(node.getNodeName(), NODE_LEADER)) {
                 Marc21Xml.addMapValue(recordValues, NODE_MARC_RECORD_LEADER, node.getTextContent());
                 break;
@@ -766,16 +864,6 @@ public class FolioCatalogService implements CatalogService {
         // different nesting structure in the XML.
         Map<String, String> holdingValues = Marc21Xml.buildCoreHolding(NODE_PREFIX, marcRecord);
 
-        logger.debug("Marc record leader: {}", recordValues.get(RECORD_MARC_RECORD_LEADER));
-        logger.debug("MFHD: {}", holdingValues.get(RECORD_MFHD));
-        logger.debug("ISBN: {}", recordValues.get(RECORD_ISBN));
-        logger.debug("Fallback location: {}", holdingValues.get(RECORD_FALLBACK_LOCATION_CODE));
-        logger.debug("Call number: {}", holdingValues.get(RECORD_CALL_NUMBER));
-
-        Boolean validLargeVolume = Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME));
-
-        logger.debug("Valid large volume: {}", validLargeVolume);
-
         Map<String, Map<String, String>> catalogItems = new HashMap<String, Map<String, String>>();
 
         for (int i = 0; i < marcListCount; i++) {
@@ -784,13 +872,17 @@ public class FolioCatalogService implements CatalogService {
 
                 NodeList childNodes = marcList.item(i).getChildNodes();
                 for (int j = 0; j < childNodes.getLength(); j++) {
-                    if (Marc21Xml.attributeCodeMatches(childNodes.item(j), "m")) {
+                    if (Marc21Xml.attributeCodeMatches(childNodes.item(j), "e")) {
+                        holdingValues.put(RECORD_CALL_NUMBER, childNodes.item(j).getTextContent());
+                    } else if (Marc21Xml.attributeCodeMatches(childNodes.item(j), "m")) {
                         buildCoreItem(instanceId, childNodes.item(j).getTextContent(), childNodes, catalogItems);
                         break;
                     }
                 }
             }
         }
+
+        Boolean validLargeVolume = Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME));
 
         return HoldingsRecord.builder()
             .recordId(recordValues.get(RECORD_RECORD_ID))
@@ -841,8 +933,10 @@ public class FolioCatalogService implements CatalogService {
         itemData.put("itemBarcode", barcode);
 
         for (int i = 0; i < nodes.getLength(); i++) {
-            if (Marc21Xml.attributeCodeMatches(nodes.item(i), "c")) {
-                itemData.put("location", nodes.item(i).getTextContent());
+            if (Marc21Xml.attributeCodeMatches(nodes.item(i), "d")) {
+                itemData.put("locationName", nodes.item(i).getTextContent());
+            } else if (Marc21Xml.attributeCodeMatches(nodes.item(i), "k")) {
+                itemData.put("enumeration", nodes.item(i).getTextContent());
             }
         }
 
@@ -868,7 +962,7 @@ public class FolioCatalogService implements CatalogService {
 
     /**
      * Get loans from a set of ids.
-     * 
+     *
      * @param loanIds
      * @return ArrayNode of loans
      * @throws Exception
@@ -911,7 +1005,7 @@ public class FolioCatalogService implements CatalogService {
 
     /**
      * Get instances from a set of ids.
-     * 
+     *
      * @param instanceIds
      * @return ArrayNode of instances
      * @throws Exception
@@ -954,7 +1048,7 @@ public class FolioCatalogService implements CatalogService {
 
     /**
      * Get items from a set of ids.
-     * 
+     *
      * @param itemIds
      * @return ArrayNode of items
      * @throws Exception
@@ -1154,7 +1248,7 @@ public class FolioCatalogService implements CatalogService {
 
     /**
      * Get parsed data time from JsonNode at path expression. Return null if value not found.
-     * 
+     *
      * @param input JsonNode
      * @param jsonPtrExpr String
      * @return date time value
