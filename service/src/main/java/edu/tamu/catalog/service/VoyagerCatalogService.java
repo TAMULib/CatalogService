@@ -58,7 +58,7 @@ import edu.tamu.weaver.utility.HttpUtility;
  */
 public class VoyagerCatalogService implements CatalogService {
 
-    private static final Logger logger = LoggerFactory.getLogger(FolioCatalogService.class);
+    private static final Logger logger = LoggerFactory.getLogger(VoyagerCatalogService.class);
 
     private static final int REQUEST_TIMEOUT = 120000;
 
@@ -185,8 +185,6 @@ public class VoyagerCatalogService implements CatalogService {
                     .build();
 
                 catalogHoldings.add(holdingsRecord);
-
-                catalogItems.clear();
             }
             return catalogHoldings;
         } catch (IOException | ParserConfigurationException | SAXException e) {
