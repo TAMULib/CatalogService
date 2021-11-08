@@ -785,6 +785,7 @@ public class FolioCatalogService implements CatalogService {
                 itemData.put("barcode", i.at("/barcode").asText());
                 itemData.put("locationCode", getLocation(i.at("/effectiveLocationId").asText()).at("/code").asText());
                 itemData.put("enumeration", i.at("/enumeration").asText());
+                itemData.put("chron", i.at("/chronology").asText());
                 itemData.put("status", i.at("/status/name").asText());
                 itemData.put("typeDesc", loanType.at("/name").asText());
                 okapiItems.put(i.at("/hrid").asText(), itemData);
