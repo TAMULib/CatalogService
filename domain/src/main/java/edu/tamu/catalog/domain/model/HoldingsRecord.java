@@ -43,9 +43,9 @@ public class HoldingsRecord {
 
     private String callNumber;
 
-    private boolean largeVolume;
-
     private String holdingLocation;
+
+    private boolean largeVolume;
 
     private Map<String, Map<String, String>> catalogItems;
 
