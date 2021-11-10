@@ -45,6 +45,8 @@ public class HoldingsRecord {
 
     private boolean largeVolume;
 
+    private String holdingLocation;
+
     private Map<String, Map<String, String>> catalogItems;
 
     public boolean isMultiVolume() {

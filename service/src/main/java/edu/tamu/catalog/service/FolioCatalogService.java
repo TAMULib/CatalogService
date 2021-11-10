@@ -693,8 +693,9 @@ public class FolioCatalogService implements CatalogService {
             JsonNode okapiHoldings = getOkapiHoldings(instanceId);
             okapiHoldings.forEach(holding -> {
                 String hrid = holding.at("/hrid").asText();
-                String fallbackLocationCode = getLocation(holding.at("/permanentLocationId").asText()).at("/code").asText();
-
+                JsonNode holdingLocationNode = getLocation(holding.at("/permanentLocationId").asText());
+                String fallbackLocationCode = holdingLocationNode.at("/code").asText();
+                String holdingLocationName = holdingLocationNode.at("/name").asText();
                 //get items for holding from okapi
                 Map<String, Map<String,String>> okapiItems = getOkapiItems(holding.at("/id").asText());
 
@@ -713,10 +714,11 @@ public class FolioCatalogService implements CatalogService {
                                 .year(recordValues.getYear())
                                 .genre(recordValues.getGenre())
                                 .fallbackLocationCode(fallbackLocationCode)
+                                .holdingLocation(holdingLocationName)
                                 .edition(recordValues.getEdition())
                                 .oclc(recordValues.getOclc())
                                 .recordId(recordValues.getRecordId())
-                                .callNumber(recordValues.getCallNumber())
+                                .callNumber(holding.at("/callNumber").asText())
                                 .largeVolume(recordValues.isLargeVolume())
                                 .catalogItems(okapiItems.size() > 0 ? okapiItems:recordValues.getCatalogItems())
                                 .build();
@@ -779,15 +781,18 @@ public class FolioCatalogService implements CatalogService {
         Map<String, Map<String, String>> okapiItems = new HashMap<String, Map<String, String>>();
         if (itemsResponse.isObject()) {
             itemsResponse.at("/items").forEach(i -> {
+                JsonNode itemLocationNode = getLocation(i.at("/effectiveLocationId").asText());
                 JsonNode loanType = getOkapiLoanType(i.at("/permanentLoanTypeId").asText());
                 Map<String, String> itemData = new HashMap<String, String>();
                 itemData.put("hrid", i.at("/hrid").asText());
                 itemData.put("barcode", i.at("/barcode").asText());
-                itemData.put("locationCode", getLocation(i.at("/effectiveLocationId").asText()).at("/code").asText());
+                itemData.put("locationCode", itemLocationNode.at("/code").asText());
+                itemData.put("locationName", itemLocationNode.at("/name").asText());
                 itemData.put("enumeration", i.at("/enumeration").asText());
                 itemData.put("chron", i.at("/chronology").asText());
                 itemData.put("status", i.at("/status/name").asText());
                 itemData.put("typeDesc", loanType.at("/name").asText());
+                itemData.put("callNumber", i.at("/effectiveCallNumberComponents").at("/callNumber").asText());
                 okapiItems.put(i.at("/hrid").asText(), itemData);
             });
         }
