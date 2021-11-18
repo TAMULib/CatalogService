@@ -696,6 +696,7 @@ public class FolioCatalogService implements CatalogService {
                 JsonNode holdingLocationNode = getLocation(holding.at("/permanentLocationId").asText());
                 String fallbackLocationCode = holdingLocationNode.at("/code").asText();
                 String holdingLocationName = holdingLocationNode.at("/name").asText();
+                String holdingCallNumber = holding.at("/callNumber").asText();
                 //get items for holding from okapi
                 Map<String, Map<String,String>> okapiItems = getOkapiItems(holding.at("/id").asText());
 
@@ -718,7 +719,7 @@ public class FolioCatalogService implements CatalogService {
                                 .edition(recordValues.getEdition())
                                 .oclc(recordValues.getOclc())
                                 .recordId(recordValues.getRecordId())
-                                .callNumber(holding.at("/callNumber").asText())
+                                .callNumber(holdingCallNumber)
                                 .largeVolume(recordValues.isLargeVolume())
                                 .catalogItems(okapiItems.size() > 0 ? okapiItems:recordValues.getCatalogItems())
                                 .build();
@@ -730,7 +731,7 @@ public class FolioCatalogService implements CatalogService {
                 logger.debug("MFHD: {}", currentHolding.getMfhd());
                 logger.debug("ISBN: {}", currentHolding.getIsbn());
                 logger.debug("Fallback location: {}", currentHolding.getFallbackLocationCode());
-                logger.debug("Call number: {}", currentHolding.getCallNumber());
+                logger.debug("Call number: {}", holdingCallNumber);
                 logger.debug("Valid large volume: {}", currentHolding.isLargeVolume());
             });
 
@@ -792,7 +793,7 @@ public class FolioCatalogService implements CatalogService {
                 itemData.put("chron", i.at("/chronology").asText());
                 itemData.put("status", i.at("/status/name").asText());
                 itemData.put("typeDesc", loanType.at("/name").asText());
-                itemData.put("callNumber", i.at("/effectiveCallNumberComponents").at("/callNumber").asText());
+                itemData.put("callNumber", i.at("/effectiveCallNumberComponents/callNumber").asText());
                 okapiItems.put(i.at("/hrid").asText(), itemData);
             });
         }
