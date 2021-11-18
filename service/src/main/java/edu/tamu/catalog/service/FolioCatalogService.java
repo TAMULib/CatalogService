@@ -787,7 +787,7 @@ public class FolioCatalogService implements CatalogService {
                 itemData.put("hrid", i.at("/hrid").asText());
                 itemData.put("barcode", i.at("/barcode").asText());
                 itemData.put("locationCode", itemLocationNode.at("/code").asText());
-                itemData.put("locationName", itemLocationNode.at("/name").asText());
+                itemData.put("location", itemLocationNode.at("/name").asText());
                 itemData.put("enumeration", i.at("/enumeration").asText());
                 itemData.put("chron", i.at("/chronology").asText());
                 itemData.put("status", i.at("/status/name").asText());
@@ -869,13 +869,11 @@ public class FolioCatalogService implements CatalogService {
         // TODO: the current implementation of buildCoreHolding() expects a slightly
         // different nesting structure in the XML.
         Map<String, String> holdingValues = Marc21Xml.buildCoreHolding(NODE_PREFIX, marcRecord);
-
         Map<String, Map<String, String>> catalogItems = new HashMap<String, Map<String, String>>();
 
         for (int i = 0; i < marcListCount; i++) {
             if (nodeNameMatches(marcList.item(i).getNodeName().toString(), NODE_DATA_FIELD) &&
                 Marc21Xml.attributeTagMatches(marcList.item(i), "952")) {
-
                 NodeList childNodes = marcList.item(i).getChildNodes();
                 for (int j = 0; j < childNodes.getLength(); j++) {
                     if (Marc21Xml.attributeCodeMatches(childNodes.item(j), "e")) {
