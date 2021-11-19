@@ -180,6 +180,7 @@ public class VoyagerCatalogService implements CatalogService {
                     .edition(recordValues.get(RECORD_EDITION))
                     .oclc(recordValues.get(RECORD_OCLC))
                     .callNumber(holdingValues.get(RECORD_CALL_NUMBER))
+                    .holdingLocation(holdingValues.get(RECORD_FALLBACK_LOCATION_CODE))
                     .largeVolume(validLargeVolume)
                     .catalogItems(catalogItems)
                     .build();
@@ -245,7 +246,7 @@ public class VoyagerCatalogService implements CatalogService {
                 recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
                 recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
                 holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC),
-                recordValues.get(RECORD_RECORD_ID), holdingValues.get(RECORD_CALL_NUMBER),
+                recordValues.get(RECORD_RECORD_ID), holdingValues.get(RECORD_CALL_NUMBER), holdingValues.get(RECORD_FALLBACK_LOCATION_CODE),
                 Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME)),
                 new HashMap<String, Map<String, String>>(catalogItems));
 

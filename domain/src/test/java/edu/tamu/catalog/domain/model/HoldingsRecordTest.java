@@ -25,7 +25,7 @@ public class HoldingsRecordTest {
 
         final HoldingsRecord holdingsRecord = new HoldingsRecord("marcRecordLeader", "mfhd", "issn",
             "isbn", "title", "author", "publisher", "place", "year", "genre", "fallbackLocationCode", "edition",
-            "oclc", "recordId", "callNumber", false, catalogItems);
+            "oclc", "recordId", "callNumber", "holdingLocation", false, catalogItems);
 
         assertNotNull(holdingsRecord);
         assertNotNull(holdingsRecord.getCatalogItems());
@@ -45,6 +45,7 @@ public class HoldingsRecordTest {
         assertEquals("edition", holdingsRecord.getEdition());
         assertEquals("oclc", holdingsRecord.getOclc());
         assertEquals("callNumber", holdingsRecord.getCallNumber());
+        assertEquals("holdingLocation", holdingsRecord.getHoldingLocation());
         assertEquals(false, holdingsRecord.isLargeVolume());
         assertEquals(1, holdingsRecord.getCatalogItems().size());
 
@@ -99,6 +100,7 @@ public class HoldingsRecordTest {
             .edition("edition")
             .oclc("oclc")
             .callNumber("callNumber")
+            .holdingLocation("holdingLocation")
             .largeVolume(false)
             .catalogItems(catalogItems)
             .build();
@@ -121,6 +123,7 @@ public class HoldingsRecordTest {
         assertEquals("edition", holdingsRecord.getEdition());
         assertEquals("oclc", holdingsRecord.getOclc());
         assertEquals("callNumber", holdingsRecord.getCallNumber());
+        assertEquals("holdingLocation", holdingsRecord.getHoldingLocation());
         assertEquals(false, holdingsRecord.isLargeVolume());
         assertEquals(1, holdingsRecord.getCatalogItems().size());
 
@@ -144,7 +147,7 @@ public class HoldingsRecordTest {
 
         final HoldingsRecord holdingsRecord = new HoldingsRecord("recordId", "marcRecordLeader", "mfhd", "issn",
             "isbn", "title", "author", "publisher", "place", "year", "genre", "fallbackLocationCode", "edition",
-            "oclc", "callNumber", false, catalogItems);
+            "oclc", "callNumber", "holdingLocation", false, catalogItems);
 
         holdingsRecord.setRecordId("updatedRecordId");
         holdingsRecord.setMarcRecordLeader("updatedMarcRecordLeader");
@@ -161,6 +164,7 @@ public class HoldingsRecordTest {
         holdingsRecord.setEdition("updatedEdition");
         holdingsRecord.setOclc("updatedOclc");
         holdingsRecord.setCallNumber("updatedCallNumber");
+        holdingsRecord.setHoldingLocation("updatedHoldingLocation");
         holdingsRecord.setLargeVolume(true);
         holdingsRecord.setCatalogItems(updatedCatalogItems);
 
@@ -182,6 +186,7 @@ public class HoldingsRecordTest {
         assertEquals("updatedEdition", holdingsRecord.getEdition());
         assertEquals("updatedOclc", holdingsRecord.getOclc());
         assertEquals("updatedCallNumber", holdingsRecord.getCallNumber());
+        assertEquals("updatedHoldingLocation", holdingsRecord.getHoldingLocation());
         assertEquals(true, holdingsRecord.isLargeVolume());
         assertEquals(2, holdingsRecord.getCatalogItems().size());
 
@@ -211,13 +216,14 @@ public class HoldingsRecordTest {
             .edition("edition")
             .oclc("oclc")
             .callNumber("callNumber")
+            .holdingLocation("holdingLocation")
             .largeVolume(false)
             .catalogItems(catalogItems)
             .build();
 
         final HoldingsRecord holdingsRecord2 = new HoldingsRecord("marcRecordLeader", "mfhd", "issn",
             "isbn", "title", "author", "publisher", "place", "year", "genre", "fallbackLocationCode", "edition",
-            "oclc", "recordId", "callNumber", false, catalogItems);
+            "oclc", "recordId", "callNumber", "holdingLocation", false, catalogItems);
 
         final HoldingsRecord holdingsRecord3 = new HoldingsRecord();
 

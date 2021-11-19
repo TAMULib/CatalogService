@@ -693,8 +693,10 @@ public class FolioCatalogService implements CatalogService {
             JsonNode okapiHoldings = getOkapiHoldings(instanceId);
             okapiHoldings.forEach(holding -> {
                 String hrid = holding.at("/hrid").asText();
-                String fallbackLocationCode = getLocation(holding.at("/permanentLocationId").asText()).at("/code").asText();
-
+                JsonNode holdingLocationNode = getLocation(holding.at("/permanentLocationId").asText());
+                String fallbackLocationCode = holdingLocationNode.at("/code").asText();
+                String holdingLocationName = holdingLocationNode.at("/name").asText();
+                String holdingCallNumber = holding.at("/callNumber").asText();
                 //get items for holding from okapi
                 Map<String, Map<String,String>> okapiItems = getOkapiItems(holding.at("/id").asText());
 
@@ -713,10 +715,11 @@ public class FolioCatalogService implements CatalogService {
                                 .year(recordValues.getYear())
                                 .genre(recordValues.getGenre())
                                 .fallbackLocationCode(fallbackLocationCode)
+                                .holdingLocation(holdingLocationName)
                                 .edition(recordValues.getEdition())
                                 .oclc(recordValues.getOclc())
                                 .recordId(recordValues.getRecordId())
-                                .callNumber(recordValues.getCallNumber())
+                                .callNumber(holdingCallNumber)
                                 .largeVolume(recordValues.isLargeVolume())
                                 .catalogItems(okapiItems.size() > 0 ? okapiItems:recordValues.getCatalogItems())
                                 .build();
@@ -728,7 +731,7 @@ public class FolioCatalogService implements CatalogService {
                 logger.debug("MFHD: {}", currentHolding.getMfhd());
                 logger.debug("ISBN: {}", currentHolding.getIsbn());
                 logger.debug("Fallback location: {}", currentHolding.getFallbackLocationCode());
-                logger.debug("Call number: {}", currentHolding.getCallNumber());
+                logger.debug("Call number: {}", holdingCallNumber);
                 logger.debug("Valid large volume: {}", currentHolding.isLargeVolume());
             });
 
@@ -779,15 +782,18 @@ public class FolioCatalogService implements CatalogService {
         Map<String, Map<String, String>> okapiItems = new HashMap<String, Map<String, String>>();
         if (itemsResponse.isObject()) {
             itemsResponse.at("/items").forEach(i -> {
+                JsonNode itemLocationNode = getLocation(i.at("/effectiveLocationId").asText());
                 JsonNode loanType = getOkapiLoanType(i.at("/permanentLoanTypeId").asText());
                 Map<String, String> itemData = new HashMap<String, String>();
                 itemData.put("hrid", i.at("/hrid").asText());
                 itemData.put("barcode", i.at("/barcode").asText());
-                itemData.put("locationCode", getLocation(i.at("/effectiveLocationId").asText()).at("/code").asText());
+                itemData.put("locationCode", itemLocationNode.at("/code").asText());
+                itemData.put("location", itemLocationNode.at("/name").asText());
                 itemData.put("enumeration", i.at("/enumeration").asText());
                 itemData.put("chron", i.at("/chronology").asText());
                 itemData.put("status", i.at("/status/name").asText());
                 itemData.put("typeDesc", loanType.at("/name").asText());
+                itemData.put("callNumber", i.at("/effectiveCallNumberComponents/callNumber").asText());
                 okapiItems.put(i.at("/hrid").asText(), itemData);
             });
         }
@@ -864,13 +870,11 @@ public class FolioCatalogService implements CatalogService {
         // TODO: the current implementation of buildCoreHolding() expects a slightly
         // different nesting structure in the XML.
         Map<String, String> holdingValues = Marc21Xml.buildCoreHolding(NODE_PREFIX, marcRecord);
-
         Map<String, Map<String, String>> catalogItems = new HashMap<String, Map<String, String>>();
 
         for (int i = 0; i < marcListCount; i++) {
             if (nodeNameMatches(marcList.item(i).getNodeName().toString(), NODE_DATA_FIELD) &&
                 Marc21Xml.attributeTagMatches(marcList.item(i), "952")) {
-
                 NodeList childNodes = marcList.item(i).getChildNodes();
                 for (int j = 0; j < childNodes.getLength(); j++) {
                     if (Marc21Xml.attributeCodeMatches(childNodes.item(j), "e")) {

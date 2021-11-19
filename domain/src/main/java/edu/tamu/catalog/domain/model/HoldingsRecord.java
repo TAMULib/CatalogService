@@ -43,6 +43,8 @@ public class HoldingsRecord {
 
     private String callNumber;
 
+    private String holdingLocation;
+
     private boolean largeVolume;
 
     private Map<String, Map<String, String>> catalogItems;
