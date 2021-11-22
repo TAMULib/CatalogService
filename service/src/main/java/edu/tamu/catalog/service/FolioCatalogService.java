@@ -775,7 +775,7 @@ public class FolioCatalogService implements CatalogService {
         String itemsMessage = String.format("items from okapi with holdingsRecordId \"%s\"", holdingsRecordId);
 
         String itemsOffset = "0";
-        String itemsLimit = "1000";
+        String itemsLimit = "2000";
 
         logger.debug("Asking for items from: {}", itemsUrl);
         JsonNode itemsResponse = okapiRequestJsonNode(itemsUrl, HttpMethod.GET, itemsMessage, itemsQuery, itemsOffset, itemsLimit);
