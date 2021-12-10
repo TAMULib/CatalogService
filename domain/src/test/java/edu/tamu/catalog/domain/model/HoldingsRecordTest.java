@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +26,7 @@ public class HoldingsRecordTest {
 
         final HoldingsRecord holdingsRecord = new HoldingsRecord("marcRecordLeader", "mfhd", "issn",
             "isbn", "title", "author", "publisher", "place", "year", "genre", "fallbackLocationCode", "edition",
-            "oclc", "recordId", "callNumber", "holdingLocation", false, catalogItems);
+            "oclc", "recordId", "callNumber", "holdingLocation", new ArrayList<Note>(), false, catalogItems);
 
         assertNotNull(holdingsRecord);
         assertNotNull(holdingsRecord.getCatalogItems());
@@ -147,7 +148,7 @@ public class HoldingsRecordTest {
 
         final HoldingsRecord holdingsRecord = new HoldingsRecord("recordId", "marcRecordLeader", "mfhd", "issn",
             "isbn", "title", "author", "publisher", "place", "year", "genre", "fallbackLocationCode", "edition",
-            "oclc", "callNumber", "holdingLocation", false, catalogItems);
+            "oclc", "callNumber", "holdingLocation", new ArrayList<Note>(),  false, catalogItems);
 
         holdingsRecord.setRecordId("updatedRecordId");
         holdingsRecord.setMarcRecordLeader("updatedMarcRecordLeader");
@@ -223,7 +224,7 @@ public class HoldingsRecordTest {
 
         final HoldingsRecord holdingsRecord2 = new HoldingsRecord("marcRecordLeader", "mfhd", "issn",
             "isbn", "title", "author", "publisher", "place", "year", "genre", "fallbackLocationCode", "edition",
-            "oclc", "recordId", "callNumber", "holdingLocation", false, catalogItems);
+            "oclc", "recordId", "callNumber", "holdingLocation", new ArrayList<Note>(),  false, catalogItems);
 
         final HoldingsRecord holdingsRecord3 = new HoldingsRecord();
 

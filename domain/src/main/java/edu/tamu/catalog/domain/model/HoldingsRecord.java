@@ -1,5 +1,6 @@
 package edu.tamu.catalog.domain.model;
 
+import java.util.List;
 import java.util.Map;
 
 import lombok.AllArgsConstructor;
@@ -44,6 +45,8 @@ public class HoldingsRecord {
     private String callNumber;
 
     private String holdingLocation;
+
+    private List<Note> holdingNotes;
 
     private boolean largeVolume;
 
