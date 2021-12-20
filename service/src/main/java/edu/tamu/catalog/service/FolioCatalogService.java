@@ -72,6 +72,7 @@ import edu.tamu.catalog.domain.model.FeeFine;
 import edu.tamu.catalog.domain.model.HoldRequest;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
+import edu.tamu.catalog.domain.model.Note;
 import edu.tamu.catalog.exception.RenewFailureException;
 import edu.tamu.catalog.model.FolioHoldCancellation;
 import edu.tamu.catalog.properties.CatalogServiceProperties;
@@ -697,6 +698,18 @@ public class FolioCatalogService implements CatalogService {
                 String fallbackLocationCode = holdingLocationNode.at("/code").asText();
                 String holdingLocationName = holdingLocationNode.at("/name").asText();
                 String holdingCallNumber = holding.at("/callNumber").asText();
+
+                List<Note> holdingNotes = new ArrayList<Note>();
+                holding.at("/notes").forEach(note -> {
+                    holdingNotes.add(Note.builder().note(note.at("/note").asText()).isStaffOnly(note.at("/staffOnly").asBoolean())
+                        .noteTypeId(note.at("/holdingsNoteTypeId").asText()).build());
+                });
+
+                List<String> holdingStatements = new ArrayList<String>();
+                holding.at("/holdingsStatements").forEach(statementNode -> {
+                    holdingStatements.add(statementNode.get("statement").asText());
+                });
+
                 //get items for holding from okapi
                 Map<String, Map<String,String>> okapiItems = getOkapiItems(holding.at("/id").asText());
 
@@ -722,6 +735,8 @@ public class FolioCatalogService implements CatalogService {
                                 .callNumber(holdingCallNumber)
                                 .largeVolume(recordValues.isLargeVolume())
                                 .catalogItems(okapiItems.size() > 0 ? okapiItems:recordValues.getCatalogItems())
+                                .holdingNotes(holdingNotes)
+                                .holdingStatements(holdingStatements)
                                 .build();
 
                 finalHoldings.add(currentHolding);
