@@ -704,6 +704,12 @@ public class FolioCatalogService implements CatalogService {
                     holdingNotes.add(Note.builder().note(note.at("/note").asText()).isStaffOnly(note.at("/staffOnly").asBoolean())
                         .noteTypeId(note.at("/holdingsNoteTypeId").asText()).build());
                 });
+
+                List<String> holdingStatements = new ArrayList<String>();
+                holding.at("/holdingsStatements").forEach(statementNode -> {
+                    holdingStatements.add(statementNode.get("statement").asText());
+                });
+
                 //get items for holding from okapi
                 Map<String, Map<String,String>> okapiItems = getOkapiItems(holding.at("/id").asText());
 
@@ -730,6 +736,7 @@ public class FolioCatalogService implements CatalogService {
                                 .largeVolume(recordValues.isLargeVolume())
                                 .catalogItems(okapiItems.size() > 0 ? okapiItems:recordValues.getCatalogItems())
                                 .holdingNotes(holdingNotes)
+                                .holdingStatements(holdingStatements)
                                 .build();
 
                 finalHoldings.add(currentHolding);

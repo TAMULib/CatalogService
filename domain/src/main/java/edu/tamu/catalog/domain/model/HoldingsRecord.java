@@ -48,6 +48,8 @@ public class HoldingsRecord {
 
     private List<Note> holdingNotes;
 
+    private List<String> holdingStatements;
+
     private boolean largeVolume;
 
     private Map<String, Map<String, String>> catalogItems;
