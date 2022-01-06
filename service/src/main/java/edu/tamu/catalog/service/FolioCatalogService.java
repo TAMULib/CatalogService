@@ -696,7 +696,7 @@ public class FolioCatalogService implements CatalogService {
                 String hrid = holding.at("/hrid").asText();
                 JsonNode holdingLocationNode = getLocation(holding.at("/permanentLocationId").asText());
                 String fallbackLocationCode = holdingLocationNode.at("/code").asText();
-                String holdingLocationName = holdingLocationNode.at("/name").asText();
+                String holdingLocationName = holdingLocationNode.at("/discoveryDisplayName").asText();
                 String holdingCallNumber = holding.at("/callNumber").asText();
 
                 List<Note> holdingNotes = new ArrayList<Note>();
@@ -803,7 +803,7 @@ public class FolioCatalogService implements CatalogService {
                 itemData.put("hrid", i.at("/hrid").asText());
                 itemData.put("barcode", i.at("/barcode").asText());
                 itemData.put("locationCode", itemLocationNode.at("/code").asText());
-                itemData.put("location", itemLocationNode.at("/name").asText());
+                itemData.put("location", itemLocationNode.at("/discoveryDisplayName").asText());
                 itemData.put("enumeration", i.at("/enumeration").asText());
                 itemData.put("chron", i.at("/chronology").asText());
                 itemData.put("status", i.at("/status/name").asText());
