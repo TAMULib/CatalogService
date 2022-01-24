@@ -200,17 +200,18 @@ public class FolioCatalogService implements CatalogService {
             Iterator<JsonNode> iter = loans.elements();
 
             Map<String, JsonNode> loanIdToPartialLoan = new HashMap<>();
-            Map<String, JsonNode> instanceIdToPartialLoan = new HashMap<>();
-            Map<String, JsonNode> itemIdToPartialLoan = new HashMap<>();
+            Map<String, String> instanceIdToLoanId = new HashMap<>();
+            Map<String, String> itemIdToLoanId = new HashMap<>();
 
             while (iter.hasNext()) {
                 JsonNode partialLoan = iter.next();
                 String loanId = getText(partialLoan, "/id");
                 String instanceId = getText(partialLoan, "/item/instanceId");
                 String itemId = getText(partialLoan, "/item/itemId");
+
                 loanIdToPartialLoan.put(loanId, partialLoan);
-                instanceIdToPartialLoan.put(instanceId, partialLoan);
-                itemIdToPartialLoan.put(itemId, partialLoan);
+                instanceIdToLoanId.put(instanceId, loanId);
+                itemIdToLoanId.put(itemId, loanId);
             }
 
             Map<String, JsonNode> loanIdToLoan = new HashMap<>();
@@ -222,18 +223,19 @@ public class FolioCatalogService implements CatalogService {
                 loanIdToLoan.put(loanId, loan);
             }
 
-            for (JsonNode instance : getInstances(instanceIdToPartialLoan.keySet())) {
+            for (JsonNode instance : getInstances(instanceIdToLoanId.keySet())) {
                 String instanceId = getText(instance, "/id");
                 instanceIdToInstance.put(instanceId, instance);
             }
 
-            for (JsonNode item : getItems(itemIdToPartialLoan.keySet())) {
+            for (JsonNode item : getItems(itemIdToLoanId.keySet())) {
                 String itemId = getText(item, "/id");
                 itemIdToItem.put(itemId, item);
             }
 
-            for (JsonNode partialLoan : instanceIdToPartialLoan.values()) {
-                String loanId = getText(partialLoan, "/id");
+            for (String loanId : itemIdToLoanId.values()) {
+                JsonNode partialLoan = loanIdToPartialLoan.get(loanId);
+
                 String instanceId = getText(partialLoan, "/item/instanceId");
                 String itemId = getText(partialLoan, "/item/itemId");
 
@@ -242,7 +244,6 @@ public class FolioCatalogService implements CatalogService {
                 JsonNode item = itemIdToItem.get(itemId);
 
                 String locationId = getText(item, "/effectiveLocation/id");
-
                 String loanPolicyName = getText(loan, "/loanPolicy/name");
 
                 JsonNode loanPolicy = getLoanPolicy(loanPolicyName);
