@@ -5,7 +5,10 @@
   "source": "MARC",
   "title": "Spam nation : the inside story of organized cybercrime--from global epidemic to your front door / Brian Krebs.",
   "indexTitle": "Spam nation : the inside story of organized cybercrime--from global epidemic to your front door /",
+  "parentInstances": [],
+  "childInstances": [],
   "alternativeTitles": [],
+  "isBoundWith": false,
   "editions": [],
   "series": [],
   "identifiers": [
@@ -92,6 +95,7 @@
     }
   ],
   "modeOfIssuanceId": "9d18a02f-5897-4c31-9106-c9abb5c7ae8b",
+  "previouslyHeld" : true,
   "discoverySuppress": false,
   "statisticalCodeIds": [],
   "statusId": "c8d51dc6-2f84-4220-8aef-3c4894d53b93",
@@ -105,6 +109,8 @@
     "tagList": []
   },
   "natureOfContentTermIds": [],
+  "precedingTitles": [],
+  "succeedingTitles": [],
   "links": {
     "self": "http://folio-okapi-q3.library.tamu.edu/inventory/instances/829fecd3-67c3-3ca2-b9d4-281227690e0f"
   }
