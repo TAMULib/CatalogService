@@ -56,6 +56,7 @@ public class PatronControllerTestBase extends AbstractTestRestController {
     protected static String holdRequestPayload;
     protected static String servicePointPayload;
     protected static String locationPayload;
+    protected static String locationsPayload;
     protected static String loanPolicyPayload;
     protected static String blUserResponsePayload;
     protected static String blUserBadUUIDErrorPayload;
@@ -102,6 +103,7 @@ public class PatronControllerTestBase extends AbstractTestRestController {
         loanPayload = loadPayload("mock/response/loans/loan.json");
         loansPayload = loadPayload("mock/response/loans/loans.json");
         locationPayload = loadPayload("mock/response/locations/location.json");
+        locationsPayload = loadPayload("mock/response/locations/locations.json");
         loanPolicyPayload = loadPayload("mock/response/loanPolicies/loanPolicy.json");
 
         finesCatalogPayload = loadPayload("mock/response/catalog/fines.json");
