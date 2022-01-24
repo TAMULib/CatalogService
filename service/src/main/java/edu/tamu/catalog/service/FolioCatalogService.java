@@ -262,7 +262,7 @@ public class FolioCatalogService implements CatalogService {
 
                 if (StringUtils.isNotEmpty(locationId)) {
                     JsonNode location = getLocation(locationId);
-                    builder.location(getText(location, "/name"))
+                    builder.location(getText(location, "/discoveryDisplayName"))
                         .locationCode(getText(location, "/code"));
                 }
 
