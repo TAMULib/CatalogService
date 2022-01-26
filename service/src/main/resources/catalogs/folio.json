@@ -1,14 +1,14 @@
 {
   "name": "folio",
   "type": "folio",
-  "baseOkapiUrl": "https://folio-okapi-q3.library.tamu.edu/",
-  "baseEdgeUrl": "https://folio-edge.library.tamu.edu/",
+  "baseOkapiUrl": "",
+  "baseEdgeUrl": "",
   "tenant": "tamu",
   "credentials": {
     "username": "",
     "password": ""
   },
   "edgeApiKey": "",
-  "repositoryBaseUrl": "folio-edge.library.tamu.edu",
+  "repositoryBaseUrl": "",
   "cancelHoldReasonId": "75187e8d-e25a-47a7-89ad-23ba612338de"
 }
