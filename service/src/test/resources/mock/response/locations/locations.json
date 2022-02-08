@@ -1,0 +1,137 @@
+{
+  "locations": [
+    {
+      "id": "1d1ca55a-86a1-489b-a645-2d52742c196a",
+      "name": "Evans stk",
+      "code": "stk",
+      "discoveryDisplayName": "Evans: Library Stacks",
+      "isActive": true,
+      "institutionId": "786bccb0-1795-4896-9452-a6e5bd5f28ac",
+      "campusId": "addb918a-5b84-48a2-81d2-0a086948c347",
+      "libraryId": "e19f62b7-5e0d-490f-b469-80a2b0940e74",
+      "details": {},
+      "primaryServicePoint": "3b80cfdf-438b-48c1-aadc-57965a0d7680",
+      "servicePointIds": [
+        "3b80cfdf-438b-48c1-aadc-57965a0d7680"
+      ],
+      "servicePoints": [],
+      "metadata": {
+        "createdDate": "2021-02-26T15:22:25.295+00:00",
+        "createdByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498",
+        "updatedDate": "2021-02-26T15:22:25.295+00:00",
+        "updatedByUserId": "8969ea03-da8f-47bc-a35b-e5257581d498"
+      }
+    },
+    {
+      "id": "46f3391a-7260-4530-b2a8-83595f369362",
+      "name": "WWW MSL Ebooks",
+      "code": "WWWebooks",
+      "discoveryDisplayName": "Available Online",
+      "isActive": true,
+      "institutionId": "786bccb0-1795-4896-9452-a6e5bd5f28ac",
+      "campusId": "addb918a-5b84-48a2-81d2-0a086948c347",
+      "libraryId": "efeb9b55-9f64-423e-aa88-6c12208288fc",
+      "details": {},
+      "primaryServicePoint": "d6a37d8a-7d36-416a-a53f-7c703ca4ad5b",
+      "servicePointIds": [
+        "d6a37d8a-7d36-416a-a53f-7c703ca4ad5b"
+      ],
+      "servicePoints": [],
+      "metadata": {
+        "createdDate": "2022-01-05T21:18:46.016+00:00",
+        "createdByUserId": "7ee13708-2b32-4a2d-85ed-2d1a373b5762",
+        "updatedDate": "2022-01-05T21:18:46.016+00:00",
+        "updatedByUserId": "7ee13708-2b32-4a2d-85ed-2d1a373b5762"
+      }
+    },
+    {
+      "id": "41f87c6b-7393-4fae-9967-733cbd55d16a",
+      "name": "Evans udoc cd",
+      "code": "udoc,cd",
+      "discoveryDisplayName": "Evans: US Documents CD-ROMs (Annex  5th floor)",
+      "isActive": true,
+      "institutionId": "786bccb0-1795-4896-9452-a6e5bd5f28ac",
+      "campusId": "addb918a-5b84-48a2-81d2-0a086948c347",
+      "libraryId": "e19f62b7-5e0d-490f-b469-80a2b0940e74",
+      "details": {},
+      "primaryServicePoint": "3b80cfdf-438b-48c1-aadc-57965a0d7680",
+      "servicePointIds": [
+        "3b80cfdf-438b-48c1-aadc-57965a0d7680"
+      ],
+      "servicePoints": [],
+      "metadata": {
+        "createdDate": "2022-01-05T21:18:46.028+00:00",
+        "createdByUserId": "7ee13708-2b32-4a2d-85ed-2d1a373b5762",
+        "updatedDate": "2022-01-05T21:18:46.028+00:00",
+        "updatedByUserId": "7ee13708-2b32-4a2d-85ed-2d1a373b5762"
+      }
+    },
+    {
+      "id": "1c403f5b-0336-4083-ad3e-41930fc2b491",
+      "name": "MSL Evans Reserve at MSL",
+      "code": "EvResMSL",
+      "discoveryDisplayName": "MSL: Reserve",
+      "isActive": true,
+      "institutionId": "786bccb0-1795-4896-9452-a6e5bd5f28ac",
+      "campusId": "addb918a-5b84-48a2-81d2-0a086948c347",
+      "libraryId": "171494ea-b9e6-41ce-8c04-967de9a81b99",
+      "details": {},
+      "primaryServicePoint": "9311b907-0c9f-42d0-aea4-62d33a7ab7b7",
+      "servicePointIds": [
+        "9311b907-0c9f-42d0-aea4-62d33a7ab7b7"
+      ],
+      "servicePoints": [],
+      "metadata": {
+        "createdDate": "2022-01-05T21:18:46.239+00:00",
+        "createdByUserId": "7ee13708-2b32-4a2d-85ed-2d1a373b5762",
+        "updatedDate": "2022-01-05T21:18:46.239+00:00",
+        "updatedByUserId": "7ee13708-2b32-4a2d-85ed-2d1a373b5762"
+      }
+    },
+    {
+      "id": "4fd3f37f-733d-4db7-8ab0-4d4e292efb8e",
+      "name": "Evans bodr",
+      "code": "bodr",
+      "discoveryDisplayName": "Bodrum (located in Turkey)",
+      "isActive": true,
+      "institutionId": "786bccb0-1795-4896-9452-a6e5bd5f28ac",
+      "campusId": "addb918a-5b84-48a2-81d2-0a086948c347",
+      "libraryId": "e19f62b7-5e0d-490f-b469-80a2b0940e74",
+      "details": {},
+      "primaryServicePoint": "d6a37d8a-7d36-416a-a53f-7c703ca4ad5b",
+      "servicePointIds": [
+        "d6a37d8a-7d36-416a-a53f-7c703ca4ad5b"
+      ],
+      "servicePoints": [],
+      "metadata": {
+        "createdDate": "2022-01-05T21:18:46.366+00:00",
+        "createdByUserId": "7ee13708-2b32-4a2d-85ed-2d1a373b5762",
+        "updatedDate": "2022-01-05T21:18:46.366+00:00",
+        "updatedByUserId": "7ee13708-2b32-4a2d-85ed-2d1a373b5762"
+      }
+    },
+    {
+      "id": "614f969f-f1dc-4cda-8fee-83f9f5948ea3",
+      "name": "Evans sysm",
+      "code": "sysm",
+      "discoveryDisplayName": "SUPPRESSED",
+      "isActive": true,
+      "institutionId": "786bccb0-1795-4896-9452-a6e5bd5f28ac",
+      "campusId": "addb918a-5b84-48a2-81d2-0a086948c347",
+      "libraryId": "e19f62b7-5e0d-490f-b469-80a2b0940e74",
+      "details": {},
+      "primaryServicePoint": "d6a37d8a-7d36-416a-a53f-7c703ca4ad5b",
+      "servicePointIds": [
+        "d6a37d8a-7d36-416a-a53f-7c703ca4ad5b"
+      ],
+      "servicePoints": [],
+      "metadata": {
+        "createdDate": "2022-01-05T21:18:46.426+00:00",
+        "createdByUserId": "7ee13708-2b32-4a2d-85ed-2d1a373b5762",
+        "updatedDate": "2022-01-05T21:18:46.426+00:00",
+        "updatedByUserId": "7ee13708-2b32-4a2d-85ed-2d1a373b5762"
+      }
+    }
+  ],
+  "totalRecords": 6
+}

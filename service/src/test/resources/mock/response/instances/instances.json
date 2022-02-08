@@ -7,7 +7,10 @@
       "source": "MARC",
       "title": "Philosophy of logic / [by] W. V. Quine.",
       "indexTitle": "Philosophy of logic /",
+      "parentInstances": [],
+      "childInstances": [],
       "alternativeTitles": [],
+      "isBoundWith": false,
       "editions": [],
       "series": [
         "Prentice-Hall foundations of philosophy series."
@@ -73,6 +76,7 @@
         }
       ],
       "modeOfIssuanceId": "9d18a02f-5897-4c31-9106-c9abb5c7ae8b",
+      "previouslyHeld" : true,
       "discoverySuppress": false,
       "statisticalCodeIds": [],
       "statusId": "c8d51dc6-2f84-4220-8aef-3c4894d53b93",
@@ -86,6 +90,8 @@
         "tagList": []
       },
       "natureOfContentTermIds": [],
+      "precedingTitles": [],
+      "succeedingTitles": [],
       "links": {
         "self": "http://folio-okapi-q3.library.tamu.edu/inventory/instances/a0480d3f-181e-3abd-a091-288e1cfc05ab"
       }
@@ -97,7 +103,10 @@
       "source": "MARC",
       "title": "Spam nation : the inside story of organized cybercrime--from global epidemic to your front door / Brian Krebs.",
       "indexTitle": "Spam nation : the inside story of organized cybercrime--from global epidemic to your front door /",
+      "parentInstances": [],
+      "childInstances": [],
       "alternativeTitles": [],
+      "isBoundWith": false,
       "editions": [],
       "series": [],
       "identifiers": [
@@ -184,6 +193,7 @@
         }
       ],
       "modeOfIssuanceId": "9d18a02f-5897-4c31-9106-c9abb5c7ae8b",
+      "previouslyHeld" : true,
       "discoverySuppress": false,
       "statisticalCodeIds": [],
       "statusId": "c8d51dc6-2f84-4220-8aef-3c4894d53b93",
@@ -197,6 +207,8 @@
         "tagList": []
       },
       "natureOfContentTermIds": [],
+      "precedingTitles": [],
+      "succeedingTitles": [],
       "links": {
         "self": "http://folio-okapi-q3.library.tamu.edu/inventory/instances/829fecd3-67c3-3ca2-b9d4-281227690e0f"
       }
@@ -208,7 +220,10 @@
       "source": "MARC",
       "title": "Military economics : the interaction of power and money / Ron Smith.",
       "indexTitle": "Military economics : the interaction of power and money /",
+      "parentInstances": [],
+      "childInstances": [],
       "alternativeTitles": [],
+      "isBoundWith": false,
       "editions": [],
       "series": [],
       "identifiers": [
@@ -286,6 +301,7 @@
         }
       ],
       "modeOfIssuanceId": "9d18a02f-5897-4c31-9106-c9abb5c7ae8b",
+      "previouslyHeld" : true,
       "discoverySuppress": false,
       "statisticalCodeIds": [],
       "statusId": "c8d51dc6-2f84-4220-8aef-3c4894d53b93",
@@ -299,6 +315,8 @@
         "tagList": []
       },
       "natureOfContentTermIds": [],
+      "precedingTitles": [],
+      "succeedingTitles": [],
       "links": {
         "self": "http://folio-okapi-q3.library.tamu.edu/inventory/instances/f29d73fc-b4ef-3616-be63-cacf0b853c3e"
       }
@@ -310,7 +328,10 @@
       "source": "MARC",
       "title": "Rising strong / Brené Brown.",
       "indexTitle": "Rising strong /",
+      "parentInstances": [],
+      "childInstances": [],
       "alternativeTitles": [],
+      "isBoundWith": false,
       "editions": [
         "First edition."
       ],
@@ -403,6 +424,7 @@
         }
       ],
       "modeOfIssuanceId": "9d18a02f-5897-4c31-9106-c9abb5c7ae8b",
+      "previouslyHeld" : true,
       "discoverySuppress": false,
       "statisticalCodeIds": [],
       "statusId": "c8d51dc6-2f84-4220-8aef-3c4894d53b93",
@@ -416,6 +438,8 @@
         "tagList": []
       },
       "natureOfContentTermIds": [],
+      "precedingTitles": [],
+      "succeedingTitles": [],
       "links": {
         "self": "http://folio-okapi-q3.library.tamu.edu/inventory/instances/69dd6864-4d52-387c-b5b2-8db1ce8f5013"
       }
