@@ -130,8 +130,29 @@ public class FolioCatalogService implements CatalogService {
         return properties.getName();
     }
 
+    private boolean isUUID(String id) {
+        String[] components = id.split("-");
+        if (components.length == 5) {
+            return true;
+        }
+        return false;
+    }
+
     @Override
-    public List<HoldingsRecord> getHoldingsByBibId(String instanceId) {
+    public List<HoldingsRecord> getHoldingsByBibId(String id) {
+        String instanceId = null;
+        //if it's not a uuid, assume hrid and try to get the uuid from the instance data
+        if (!isUUID(id)) {
+            try {
+                JsonNode instanceData = getInstanceByHrid(id);
+                instanceId = instanceData.at("/instances").get(0).at("/id").asText();
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        } else {
+            instanceId = id;
+        }
         return requestHoldings(instanceId, null);
     }
 
@@ -1105,6 +1126,26 @@ public class FolioCatalogService implements CatalogService {
             if (itemsNode.isArray()) {
                 return itemsNode;
             }
+        }
+
+        return objectMapper.createObjectNode();
+    }
+
+    /**
+     * Get instance by hrid.
+     *
+     * @param hrid String
+     * @return instance
+     */
+    private JsonNode getInstanceByHrid(String hrid) throws Exception {
+        String url = String.format("%s/instance-storage/instances?query=hrid==\"%s\"", properties.getBaseOkapiUrl(), hrid);
+        String message = String.format("instance with hrid \"%s\"", hrid);
+
+        logger.debug("Asking for instance from: {}", url);
+
+        JsonNode instance = okapiRequestJsonNode(url, HttpMethod.GET, message);
+        if (instance.isContainerNode()) {
+            return instance;
         }
 
         return objectMapper.createObjectNode();
