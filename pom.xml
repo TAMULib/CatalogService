@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>edu.tamu.catalog</groupId>
   <artifactId>catalog-parent</artifactId>
-  <version>3.2.0</version>
+  <version>3.3.0</version>
 
   <name>Catalog Parent</name>
   <description>A service and a domain for interfacing with Library Catalogs</description>
