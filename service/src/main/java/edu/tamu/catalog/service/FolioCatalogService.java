@@ -147,6 +147,7 @@ public class FolioCatalogService implements CatalogService {
                 JsonNode instanceData = getInstanceByHrid(id);
                 instanceId = instanceData.at("/instances").get(0).at("/id").asText();
             } catch (Exception e) {
+                logger.error("Error retrieving instance by hrid: {}", id);
                 e.printStackTrace();
                 return null;
             }
