@@ -109,19 +109,19 @@ public abstract class AbstractTestRestController {
     }
 
     protected static DefaultResponseCreator respondJsonOk(String payload) throws Exception {
-        return withStatus(OK).body(payload).contentType(MediaType.APPLICATION_JSON_UTF8);
+        return withStatus(OK).body(payload).contentType(MediaType.APPLICATION_JSON);
     }
 
     protected static DefaultResponseCreator respondJsonOk(JsonNode node) throws Exception {
-        return withStatus(OK).body(node.toString()).contentType(MediaType.APPLICATION_JSON_UTF8);
+        return withStatus(OK).body(node.toString()).contentType(MediaType.APPLICATION_JSON);
     }
 
     protected static DefaultResponseCreator respondJsonCreated(String payload) throws Exception {
-        return withStatus(CREATED).body(payload).contentType(MediaType.APPLICATION_JSON_UTF8);
+        return withStatus(CREATED).body(payload).contentType(MediaType.APPLICATION_JSON);
     }
 
     protected static DefaultResponseCreator respondJsonCreated(JsonNode node) throws Exception {
-        return withStatus(CREATED).body(node.toString()).contentType(MediaType.APPLICATION_JSON_UTF8);
+        return withStatus(CREATED).body(node.toString()).contentType(MediaType.APPLICATION_JSON);
     }
 
     protected static DefaultResponseCreator respondTextSuccess(String payload) throws Exception {

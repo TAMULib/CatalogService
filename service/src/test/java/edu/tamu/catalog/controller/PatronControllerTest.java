@@ -26,7 +26,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -38,7 +37,6 @@ import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.ResponseFieldsSnippet;
 import org.springframework.restdocs.request.PathParametersSnippet;
 import org.springframework.restdocs.request.RequestParametersSnippet;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.client.ExpectedCount;
 import org.springframework.test.web.client.response.DefaultResponseCreator;
 import org.springframework.test.web.servlet.ResultMatcher;
@@ -47,8 +45,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import edu.tamu.catalog.config.CatalogServiceConfig;
 import edu.tamu.catalog.config.RestConfig;
 
-@ExtendWith(SpringExtension.class)
-@WebMvcTest(value = PatronController.class, secure = false)
+@WebMvcTest(value = PatronController.class)
 @AutoConfigureRestDocs(outputDir = "target/generated-snippets")
 @Import({ RestConfig.class, CatalogServiceConfig.class })
 public class PatronControllerTest extends PatronControllerTestBase {
@@ -108,11 +105,11 @@ public class PatronControllerTest extends PatronControllerTestBase {
         mockMvc.perform(
             get(PATRON_MVC_PREFIX + LOANS_ENDPOINT, UIN)
                 .param(CATALOG_FIELD, FOLIO_CATALOG)
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
-                .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML)
             )
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(content().json(loansCatalogPayload))
             .andDo(
                 document(
@@ -161,8 +158,8 @@ public class PatronControllerTest extends PatronControllerTestBase {
         mockMvc.perform(
             post(PATRON_MVC_PREFIX + RENEW_MVC_PATH, UIN, ITEM_ID)
                 .param(CATALOG_FIELD, FOLIO_CATALOG)
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
-                .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML)
                 .content(loanRenewalCatalogPayload)
             )
             .andExpect(status().isOk())
@@ -207,11 +204,11 @@ public class PatronControllerTest extends PatronControllerTestBase {
         mockMvc.perform(
             get(PATRON_MVC_PREFIX + HOLDS_ENDPOINT, UIN)
                 .param(CATALOG_FIELD, FOLIO_CATALOG)
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
-                .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML)
             )
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(content().json(requestsCatalogPayload))
             .andDo(
                 document(
@@ -240,8 +237,8 @@ public class PatronControllerTest extends PatronControllerTestBase {
         mockMvc.perform(
             post(HOLDS_CANCEL_MVC_PATH, UIN, REQUEST_ID)
                 .param(CATALOG_FIELD, FOLIO_CATALOG)
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
-                .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML)
             )
             .andExpect(status().isNoContent())
             .andExpect(content().string(""))
@@ -273,7 +270,7 @@ public class PatronControllerTest extends PatronControllerTestBase {
                 .param(CATALOG_FIELD, FOLIO_CATALOG)
                 .contentType(MediaType.TEXT_PLAIN)
                 .characterEncoding(CHARSET)
-                .accept(MediaType.TEXT_PLAIN_VALUE, MediaType.TEXT_HTML_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE)
+                .accept(MediaType.TEXT_PLAIN, MediaType.TEXT_HTML, MediaType.APPLICATION_JSON)
             )
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.TEXT_PLAIN))
@@ -381,10 +378,10 @@ public class PatronControllerTest extends PatronControllerTestBase {
         mockMvc.perform(
             get(PATRON_MVC_PREFIX + endpoint, UIN)
                 .param(CATALOG_FIELD, FOLIO_CATALOG)
-                .contentType(MediaType.APPLICATION_JSON_UTF8)
-                .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML))
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML))
             .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(content().json(content))
             .andDo(
                 document(
@@ -408,13 +405,13 @@ public class PatronControllerTest extends PatronControllerTestBase {
 
     private static Stream<? extends Arguments> argumentsHoldsResponses() throws Exception {
         final MockHttpServletRequestBuilder holds = get(PATRON_MVC_PREFIX + HOLDS_ENDPOINT, UIN)
-            .contentType(MediaType.APPLICATION_JSON_UTF8)
-            .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML);
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML);
 
         final MockHttpServletRequestBuilder holdsCatalog = get(PATRON_MVC_PREFIX + HOLDS_ENDPOINT, UIN)
-            .contentType(MediaType.APPLICATION_JSON_UTF8)
+            .contentType(MediaType.APPLICATION_JSON)
             .param(CATALOG_FIELD, VOYAGER_CATALOG)
-            .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML);
+            .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML);
 
         return Stream.of(
             Arguments.of(holds, getHoldsUrl(), never(), once(), never(), never(),
@@ -477,13 +474,13 @@ public class PatronControllerTest extends PatronControllerTestBase {
 
     private static Stream<? extends Arguments> argumentsLoansResponses() throws Exception {
         final MockHttpServletRequestBuilder loans = get(PATRON_MVC_PREFIX + LOANS_ENDPOINT, UIN)
-            .contentType(MediaType.APPLICATION_JSON_UTF8)
-            .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML);
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML);
 
         final MockHttpServletRequestBuilder loansCatalog = get(PATRON_MVC_PREFIX + LOANS_ENDPOINT, UIN)
-            .contentType(MediaType.APPLICATION_JSON_UTF8)
+            .contentType(MediaType.APPLICATION_JSON)
             .param(CATALOG_FIELD, VOYAGER_CATALOG)
-            .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML);
+            .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML);
 
         return Stream.of(
             Arguments.of(loans, getLoansUrl(), GET, once(), withStatus(NOT_FOUND), status().isNotFound()),
@@ -497,14 +494,14 @@ public class PatronControllerTest extends PatronControllerTestBase {
 
     private static Stream<? extends Arguments> argumentsLoanRenewalResponses() {
         final MockHttpServletRequestBuilder loans = post(PATRON_MVC_PREFIX + RENEW_MVC_PATH, UIN, ITEM_ID)
-            .contentType(MediaType.APPLICATION_JSON_UTF8)
-            .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML)
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML)
             .content(loanRenewalCatalogPayload);
 
         final MockHttpServletRequestBuilder loansCatalog = post(PATRON_MVC_PREFIX + RENEW_MVC_PATH, UIN, ITEM_ID)
-            .contentType(MediaType.APPLICATION_JSON_UTF8)
+            .contentType(MediaType.APPLICATION_JSON)
             .param(CATALOG_FIELD, VOYAGER_CATALOG)
-            .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML)
+            .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML)
             .content(loanRenewalCatalogPayload);
 
         return Stream.of(
@@ -518,13 +515,13 @@ public class PatronControllerTest extends PatronControllerTestBase {
 
     private static Stream<? extends Arguments> streamOfFines() throws Exception {
         final MockHttpServletRequestBuilder fines = get(PATRON_MVC_PREFIX + FINES_ENDPOINT, UIN)
-            .contentType(MediaType.APPLICATION_JSON_UTF8)
-            .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML);
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML);
 
         final MockHttpServletRequestBuilder finesCatalog = get(PATRON_MVC_PREFIX + FINES_ENDPOINT, UIN)
-            .contentType(MediaType.APPLICATION_JSON_UTF8)
+            .contentType(MediaType.APPLICATION_JSON)
             .param(CATALOG_FIELD, VOYAGER_CATALOG)
-            .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML);
+            .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML);
 
         return Stream.of(
             Arguments.of(fines, getFinesUrl(), GET, once(), withStatus(NOT_FOUND), status().isNotFound()),
@@ -538,13 +535,13 @@ public class PatronControllerTest extends PatronControllerTestBase {
 
     private static Stream<? extends Arguments> streamOfHoldsCancel() {
         final MockHttpServletRequestBuilder holdsCancel = post(HOLDS_CANCEL_MVC_PATH, UIN, REQUEST_ID)
-            .contentType(MediaType.APPLICATION_JSON_UTF8)
-            .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML);
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML);
 
         final MockHttpServletRequestBuilder holdsCancelCatalog = post(HOLDS_CANCEL_MVC_PATH, UIN, REQUEST_ID)
-            .contentType(MediaType.APPLICATION_JSON_UTF8)
+            .contentType(MediaType.APPLICATION_JSON)
             .param(CATALOG_FIELD, VOYAGER_CATALOG)
-            .accept(MediaType.APPLICATION_JSON_UTF8, MediaType.TEXT_HTML);
+            .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML);
 
         return Stream.of(
             Arguments.of(holdsCancel, getCancelHoldRequestUrl(), POST, once(), withStatus(NOT_FOUND),

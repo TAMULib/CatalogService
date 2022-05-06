@@ -128,7 +128,7 @@ public class PatronController {
      * @return
      */
     @GetMapping("/{uin}/block")
-    public @ResponseBody ResponseEntity<Boolean> getBlockStatus(
+    public @ResponseBody ResponseEntity<String> getBlockStatus(
         @DefaultCatalog("folio") CatalogService catalogService,
         @PathVariable(required = true) String uin
     ) throws Exception {
@@ -136,7 +136,7 @@ public class PatronController {
 
         return ResponseEntity.status(HttpStatus.OK)
             .contentType(MediaType.TEXT_PLAIN)
-            .body(blockStatus);
+            .body(blockStatus.toString());
     }
 
 }

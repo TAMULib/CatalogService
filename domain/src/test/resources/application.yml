@@ -1,0 +1,10 @@
+# (is overwritten by logback-test.xml)
+logging:
+  file:
+    name: logs/catalog-domain-test.log
+  level:
+    com.zaxxer: ERROR
+    edu.tamu: WARN
+    org:
+      hibernate: OFF
+      springframework: ERROR

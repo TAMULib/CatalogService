@@ -6,10 +6,16 @@ security.basic.enabled: false
 
 spring.profiles.active: test
 
+# (is overwritten by logback-test.xml)
 logging:
+  file:
+    name: logs/catalog-service-test.log
   level:
-    edu.tamu: INFO
-    org.springframework: INFO
+    com.zaxxer: ERROR
+    edu.tamu: WARN
+    org:
+      hibernate: OFF
+      springframework: ERROR
 
 app:
   http.timeout: 10000
