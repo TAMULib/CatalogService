@@ -57,7 +57,7 @@ USER $USER_NAME
 WORKDIR $HOME_DIR
 
 # Copy over the built artifact from the maven image.
-COPY --from=maven $SOURCE_DIR/target/ROOT.jar ./catalog-service.jar
+COPY --from=maven $SOURCE_DIR/service/target/ROOT.jar ./catalog-service.jar
 
 # Run java command.
 CMD ["java", "-jar", "./catalog-service.jar"]
