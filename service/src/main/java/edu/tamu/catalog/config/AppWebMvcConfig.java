@@ -9,14 +9,14 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import edu.tamu.catalog.resolver.CatalogServiceArgumentResolver;
 import edu.tamu.catalog.service.CatalogService;
 
 @EnableWebMvc
 @Configuration
-public class AppWebMvcConfig extends WebMvcConfigurerAdapter {
+public class AppWebMvcConfig implements WebMvcConfigurer{
 
     @Value("${app.security.allow-access}")
     private String[] hosts;

@@ -11,7 +11,7 @@
   <parent>
     <groupId>edu.tamu.weaver</groupId>
     <artifactId>webservice-parent</artifactId>
-    <version>2.1.1-RC1</version>
+    <version>2.1.1-RC9</version>
   </parent>
 
   <modules>
@@ -20,14 +20,6 @@
   </modules>
 
   <packaging>pom</packaging>
-
-  <dependencies>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-test</artifactId>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
 
   <repositories>
     <repository>
@@ -43,16 +35,6 @@
       <releases><enabled>false</enabled></releases>
       <snapshots><enabled>true</enabled></snapshots>
     </repository>
-
-    <!-- Begin of Note: The following dependencies are candidates for removal after an upgrade to Spring Boot 2.x -->
-
-    <repository>
-      <id>jitpack.io</id>
-      <name>JitPack for Maven</name>
-      <url>https://jitpack.io</url>
-    </repository>
-
-    <!-- End of Note: candidates for removal after an upgrade to Spring Boot 2.x -->
   </repositories>
 
   <build>
@@ -64,29 +46,10 @@
           <skip>true</skip>
         </configuration>
       </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>cobertura-maven-plugin</artifactId>
-        <version>2.7</version>
-        <configuration>
-          <quiet>true</quiet>
-          <instrumentation>
-            <ignoreTrivial>true</ignoreTrivial>
-            <ignores>
-              <ignore>java.util.logging.*</ignore>
-            </ignores>
-          </instrumentation>
-          <formats>
-            <format>html</format>
-            <format>xml</format>
-          </formats>
-          <aggregate>true</aggregate>
-        </configuration>
-      </plugin>
+
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.6</version>
         <configuration>
         </configuration>
         <executions>
@@ -98,13 +61,20 @@
           </execution>
         </executions>
       </plugin>
+
       <plugin>
         <groupId>org.eluder.coveralls</groupId>
         <artifactId>coveralls-maven-plugin</artifactId>
-        <version>4.3.0</version>
         <configuration>
           <repoToken></repoToken>
         </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.3.1</version>
+          </dependency>
+        </dependencies>
       </plugin>
     </plugins>
   </build>

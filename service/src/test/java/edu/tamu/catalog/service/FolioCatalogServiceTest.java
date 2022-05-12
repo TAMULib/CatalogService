@@ -14,7 +14,6 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -24,7 +23,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -35,7 +33,6 @@ import edu.tamu.catalog.config.RestConfig;
 import edu.tamu.catalog.test.AbstractTestRestController;
 import edu.tamu.catalog.utility.TokenUtility;
 
-@ExtendWith(SpringExtension.class)
 @RestClientTest(FolioCatalogService.class)
 @Import({ RestConfig.class, CatalogServiceConfig.class })
 public class FolioCatalogServiceTest extends AbstractTestRestController {

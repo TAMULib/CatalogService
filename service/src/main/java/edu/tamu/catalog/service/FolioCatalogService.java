@@ -43,10 +43,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +63,10 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import edu.tamu.catalog.domain.model.FeeFine;
 import edu.tamu.catalog.domain.model.HoldRequest;
@@ -1034,8 +1034,8 @@ public class FolioCatalogService implements CatalogService {
         String baseOkapiUrl = properties.getBaseOkapiUrl();
         Integer limit = loanIdsPartitions.size();
         String ids = String.join(" OR ", loanIdsPartitions);
-        String url = "{baseOkapiUrl}/circulation/loans?limit={limit}&query=id==({ids})";
-        ResponseEntity<JsonNode> response = okapiRequest(url, HttpMethod.GET, JsonNode.class, baseOkapiUrl, limit, ids);
+        String url = String.format("%s/circulation/loans?limit={limit}&query=id==({ids})", baseOkapiUrl);
+        ResponseEntity<JsonNode> response = okapiRequest(url, HttpMethod.GET, JsonNode.class, limit, ids);
         if (response.hasBody()) {
             JsonNode loansNode = response.getBody().get("loans");
             if (loansNode.isArray()) {
@@ -1077,8 +1077,8 @@ public class FolioCatalogService implements CatalogService {
         String baseOkapiUrl = properties.getBaseOkapiUrl();
         Integer limit = instanceIdsBatch.size();
         String ids = String.join(" OR ", instanceIdsBatch);
-        String url = "{baseOkapiUrl}/instance-storage/instances?limit={limit}&query=id==({ids})";
-        ResponseEntity<JsonNode> response = okapiRequest(url, HttpMethod.GET, JsonNode.class, baseOkapiUrl, limit, ids);
+        String url = String.format("%s/instance-storage/instances?limit={limit}&query=id==({ids})", baseOkapiUrl);
+        ResponseEntity<JsonNode> response = okapiRequest(url, HttpMethod.GET, JsonNode.class, limit, ids);
         if (response.hasBody()) {
             JsonNode instancesNode = response.getBody().get("instances");
             if (instancesNode.isArray()) {
@@ -1120,8 +1120,8 @@ public class FolioCatalogService implements CatalogService {
         String baseOkapiUrl = properties.getBaseOkapiUrl();
         Integer limit = itemIdsBatch.size();
         String ids = String.join(" OR ", itemIdsBatch);
-        String url = "{baseOkapiUrl}/inventory/items?limit={limit}&query=id==({ids})";
-        ResponseEntity<JsonNode> response = okapiRequest(url, HttpMethod.GET, JsonNode.class, baseOkapiUrl, limit, ids);
+        String url = String.format("%s/inventory/items?limit={limit}&query=id==({ids})", baseOkapiUrl);
+        ResponseEntity<JsonNode> response = okapiRequest(url, HttpMethod.GET, JsonNode.class, limit, ids);
         if (response.hasBody()) {
             JsonNode itemsNode = response.getBody().get("items");
             if (itemsNode.isArray()) {
@@ -1324,6 +1324,10 @@ public class FolioCatalogService implements CatalogService {
 
     /**
      * Okapi request method to attempt one token refresh and retry if request unauthorized.
+     *
+     * Do not pass "{baseOkapiUrl}".
+     * Instead, convert it before sending it to this function because restTemplate.exchange() is always forcing a leading '/'.
+     * If "{baseOkapiUrl}" is not pre-converted, then you might get something like "/http://example.com/".
      *
      * @param <T> generic class for response body type
      * @param attempt int

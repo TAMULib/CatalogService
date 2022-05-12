@@ -28,7 +28,7 @@ public class CatalogServiceArgumentResolver implements HandlerMethodArgumentReso
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
-        return CatalogService.class.isAssignableFrom(parameter.getParameterType());
+        return CatalogService.class.toString().equals(parameter.getParameterType().toString());
     }
 
     @Override
