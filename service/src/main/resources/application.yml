@@ -1,6 +1,7 @@
 server:
   port: 9000
-  contextPath:
+  servlet:
+    context-path:
 
 security.basic.enabled: false
 
