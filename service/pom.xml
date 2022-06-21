@@ -9,7 +9,7 @@
   <parent>
     <groupId>edu.tamu.catalog</groupId>
     <artifactId>catalog-parent</artifactId>
-    <version>3.3.0</version>
+    <version>3.3.1-RC1</version>
   </parent>
 
   <properties>
@@ -41,13 +41,13 @@
     <dependency>
       <groupId>edu.tamu.catalog</groupId>
       <artifactId>catalog-domain</artifactId>
-      <version>3.3.0</version>
+      <version>${project.parent.version}</version>
     </dependency>
 
     <dependency>
       <groupId>edu.tamu.weaver</groupId>
       <artifactId>core</artifactId>
-      <version>2.1.1-RC9</version>
+      <version>2.1.1-RC10</version>
     </dependency>
 
     <dependency>
