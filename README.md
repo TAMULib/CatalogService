@@ -25,9 +25,9 @@ A service for interfacing with Library Catalogs developed and maintained by [Tex
 
 ## Additional Resources
 
-Please feel free to file any issues concerning Auth Service to the issues section of the repository.
+Please feel free to file any issues concerning Catalog Service to the issues section of the repository.
 
-Any questions concerning Auth Service can be directed to helpdesk@library.tamu.edu.
+Any questions concerning Catalog Service can be directed to helpdesk@library.tamu.edu.
 
 <div align="right">(<a href="#readme-top">back to top</a>)</div>
 
