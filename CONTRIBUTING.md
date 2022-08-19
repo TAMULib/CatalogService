@@ -1,23 +1,23 @@
 <a name="readme-top"></a>
-# Contributing To CatalogService
+# Contributing to Catalog Service
 
-Though CatalogService is developed and maintained by Texas A&M University Libraries, we welcome community contributions.
-Involvement in CatalogService can take many forms:
+Though *Catalog Service* is developed and maintained by Texas A&M University Libraries, we welcome community contributions.
+Involvement in *Catalog Service* can take many forms.
 
 <div align="right">(<a href="#readme-top">back to top</a>)</div>
+
 
 ## Using
 
-Deploying CatalogService and trying it out at your own institution is itself a way of contributing to the development process.
+Deploying *Catalog Service* and trying it out at your own institution is itself a way of contributing to the development process.
 For more information on deployment strategies please see the [Deployment Guide][deployment-guide].
-
-[deployment-guide]: DEPLOYING.md
 
 <div align="right">(<a href="#readme-top">back to top</a>)</div>
 
+
 ## Filing Issues
 
-Once you are using CatalogService the creation of new issues through GitHub is a major method of contribution towards CatalogService development.
+Once you are using *Catalog Service* the creation of new issues through GitHub is a major method of contribution towards *Catalog Service* development.
 Issues can be motivated by the discovery of a bug in the software, or by the desire to see either new features added or see changes to existing features.
 
 There are two primary types of issues:
@@ -30,10 +30,11 @@ A **Feature** involves new functionality or behavior.
 
 <div align="right">(<a href="#readme-top">back to top</a>)</div>
 
+
 ## Creating a Pull Request
 
 Community code and documentation contributions are welcome and should take the form of a **GitHub Pull Request** (*PR*).
-Each *PR* will need to be reviewed by a CatalogService developer.
+Each *PR* will need to be reviewed by a *Catalog Service* developer.
 A review will result in the *PR* being accepted and merged, a descriptive request for changes, or the *PR* being closed along with a detailed explanation.
 
 It is our intention to maintain labeling on issues that are deemed to be low difficulty in order to provide a good point of entry for those looking to begin contributing code or documentation.
@@ -50,14 +51,15 @@ In general keep in mind:
 
 <div align="right">(<a href="#readme-top">back to top</a>)</div>
 
+
 ## Good Luck!
 
 We look forward to seeing your contributions.
-If you have any additional questions please contact the CatalogService developers at [helpdesk@library.tamu.edu][helpdesk-email].
+If you have any additional questions please contact the *Catalog Service* developers at helpdesk@library.tamu.edu.
 
 <div align="right">(<a href="#readme-top">back to top</a>)</div>
+
 
 <!-- LINKS -->
 [deployment-guide]: DEPLOYING.md
 [semantic-versioning]: https://semver.org/
-[helpdesk-email]: mailto:helpdesk@library.tamu.edu
