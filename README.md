@@ -1,13 +1,51 @@
-[![Build Status](https://github.com/TAMULib/CatalogService/workflows/Build/badge.svg)](https://github.com/TAMULib/CatalogService/actions?query=workflow%3ABuild)
-[![Coverage Status](https://coveralls.io/repos/github/TAMULib/CatalogService/badge.svg)](https://coveralls.io/github/TAMULib/CatalogService)
+[![Build Status][build-badge]][build-status]
+[![Coverage Status][coverage-badge]][coverage-status]
 
-# CatalogService
-A service for interfacing with Library Catalogs developed and maintained by [Texas A&M University Libraries](http://library.tamu.edu).
+# Catalog Service
+
+<a name="readme-top"></a>
+
+A Spring backend for the *Catalog Service* developed and maintained by [Texas A&M University Libraries][tamu-library].
+
+This is a service for interfacing with *Library Catalogs*.
+
+<details>
+<summary>Table of contents</summary>
+
+  - [Developer Documentation](#developer-documentation)
+  - [Additional Resources](#additional-resources)
+
+</details>
+
 
 ## Developer Documentation
 
-- [Contributors Documentation](https://github.com/TAMULib/CatalogService/blob/master/CONTRIBUTING.md)
-- [API Specification](https://tamulib.github.io/APISpecs/specs/catalog-service/index.html)
-- [API Documentation](https://tamulib.github.io/CatalogService)
+- [Contributors Documentation][contribute-guide]
+- [Deployment Documentation][deployment-guide]
+- [API Documentation][api-guide]
 
-Please feel free to file any issues concerning CatalogService to the issues section of the repository. Any questions concerning CatalogService can be directed to [helpdesk@library.tamu.edu]()
+<div align="right">(<a href="#readme-top">back to top</a>)</div>
+
+
+## Additional Resources
+
+Please feel free to file any issues concerning Catalog Service to the issues section of the repository.
+
+Any questions concerning Catalog Service can be directed to helpdesk@library.tamu.edu.
+
+Copyright © 2022 Texas A&M University Libraries under the [MIT License][license].
+
+<div align="right">(<a href="#readme-top">back to top</a>)</div>
+
+
+<!-- LINKS -->
+[build-badge]: https://github.com/TAMULib/CatalogService/workflows/Build/badge.svg
+[build-status]: https://github.com/TAMULib/CatalogService/actions?query=workflow%3ABuild
+[coverage-badge]: https://coveralls.io/repos/github/TAMULib/CatalogService/badge.svg
+[coverage-status]: https://coveralls.io/github/TAMULib/CatalogService
+
+[api-guide]: https://tamulib.github.io/CatalogService
+[tamu-library]: http://library.tamu.edu
+[deployment-guide]: DEPLOYING.md
+[contribute-guide]: CONTRIBUTING.md
+[license]: LICENSE
