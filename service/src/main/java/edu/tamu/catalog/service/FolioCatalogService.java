@@ -729,8 +729,16 @@ public class FolioCatalogService implements CatalogService {
                 });
 
                 List<String> holdingStatements = new ArrayList<String>();
-                holding.at("/holdingsStatements").forEach(statementNode -> {
-                    holdingStatements.add(statementNode.get("statement").asText());
+
+                ArrayNode holdingsStatements = (ArrayNode) holding.at("/holdingsStatements");
+                logger.info("{} {} is still empty", holdingsStatements, holdingsStatements.isEmpty());
+
+                holdingsStatements.forEach(statementNode -> {
+                    if (statementNode.has("statement")) {
+                        holdingStatements.add(statementNode.get("statement").asText());
+                    } else {
+                        logger.info("Missing statement on holdings statement.", statementNode.get("statement"));
+                    }
                 });
 
                 //get items for holding from okapi
