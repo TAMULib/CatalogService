@@ -1,0 +1,19 @@
+version: '3.7'
+
+networks:
+  default:
+    name: tamu
+
+services:
+
+  service:
+    container_name: catalog_service
+    hostname: catalog_service
+    build:
+      dockerfile: Dockerfile
+      context: './'
+    image: ${IMAGE_HOST}/${SERVICE_PROJECT}${SERVICE_PATH}:${IMAGE_VERSION}
+    ports:
+      - 9000:9000
+    env_file:
+      - .env
