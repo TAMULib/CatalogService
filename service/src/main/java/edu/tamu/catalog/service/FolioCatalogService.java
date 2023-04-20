@@ -721,6 +721,7 @@ public class FolioCatalogService implements CatalogService {
                 String fallbackLocationCode = holdingLocationNode.at("/code").asText();
                 String holdingLocationName = holdingLocationNode.at("/discoveryDisplayName").asText();
                 String holdingCallNumber = holding.at("/callNumber").asText();
+                String holdingCallNumberPrefix = holding.at("/callNumberPrefix").asText();
 
                 List<Note> holdingNotes = new ArrayList<Note>();
                 holding.at("/notes").forEach(note -> {
@@ -764,6 +765,7 @@ public class FolioCatalogService implements CatalogService {
                                 .oclc(recordValues.getOclc())
                                 .recordId(recordValues.getRecordId())
                                 .callNumber(holdingCallNumber)
+                                .callNumberPrefix(holdingCallNumberPrefix)
                                 .largeVolume(recordValues.isLargeVolume())
                                 .catalogItems(okapiItems.size() > 0 ? okapiItems:recordValues.getCatalogItems())
                                 .holdingNotes(holdingNotes)
@@ -777,7 +779,7 @@ public class FolioCatalogService implements CatalogService {
                 logger.debug("MFHD: {}", currentHolding.getMfhd());
                 logger.debug("ISBN: {}", currentHolding.getIsbn());
                 logger.debug("Fallback location: {}", currentHolding.getFallbackLocationCode());
-                logger.debug("Call number: {}", holdingCallNumber);
+                logger.debug("Call number: {} {}", holdingCallNumberPrefix, holdingCallNumber);
                 logger.debug("Valid large volume: {}", currentHolding.isLargeVolume());
             });
 
@@ -840,6 +842,7 @@ public class FolioCatalogService implements CatalogService {
                 itemData.put("status", i.at("/status/name").asText());
                 itemData.put("typeDesc", loanType.at("/name").asText());
                 itemData.put("callNumber", i.at("/effectiveCallNumberComponents/callNumber").asText());
+                itemData.put("callNumberPrefix", i.at("/effectiveCallNumberComponents/prefix").asText());
                 okapiItems.put(i.at("/hrid").asText(), itemData);
             });
         }

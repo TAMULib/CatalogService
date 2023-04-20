@@ -247,7 +247,7 @@ public class VoyagerCatalogService implements CatalogService {
                 recordValues.get(RECORD_AUTHOR), recordValues.get(RECORD_PUBLISHER), recordValues.get(RECORD_PLACE),
                 recordValues.get(RECORD_YEAR), recordValues.get(RECORD_GENRE), recordValues.get(RECORD_EDITION),
                 holdingValues.get(RECORD_FALLBACK_LOCATION_CODE), recordValues.get(RECORD_OCLC),
-                recordValues.get(RECORD_RECORD_ID), holdingValues.get(RECORD_CALL_NUMBER), holdingValues.get(RECORD_FALLBACK_LOCATION_CODE),
+                recordValues.get(RECORD_RECORD_ID), holdingValues.get(RECORD_CALL_NUMBER), null, holdingValues.get(RECORD_FALLBACK_LOCATION_CODE),
                 new ArrayList<Note>(), new ArrayList<String>(), Boolean.valueOf(holdingValues.get(RECORD_VALID_LARGE_VOLUME)),
                 new HashMap<String, Map<String, String>>(catalogItems));
 

@@ -44,6 +44,8 @@ public class HoldingsRecord {
 
     private String callNumber;
 
+    private String callNumberPrefix;
+
     private String holdingLocation;
 
     private List<Note> holdingNotes;
