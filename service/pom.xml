@@ -9,7 +9,7 @@
   <parent>
     <groupId>edu.tamu.catalog</groupId>
     <artifactId>catalog-parent</artifactId>
-    <version>3.3.1-RC1</version>
+    <version>3.3.1</version>
   </parent>
 
   <properties>
