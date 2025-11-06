@@ -23,3 +23,15 @@ app:
   http.timeout: 10000
   security.allow-access: http://localhost,http://localhost:8080
   whitelist: 127.0.0.1
+
+tenant:
+  header-name: X-Okapi-Tenant
+  default-tenant: public
+
+okapi:
+  auth:
+    access-cookie-name: folioAccessToken
+    refresh-cookie-name: folioRefreshToken
+
+    expire-offset: 15
+    login-path: /authn/login-with-expiry
