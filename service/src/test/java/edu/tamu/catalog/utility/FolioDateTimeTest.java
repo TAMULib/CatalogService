@@ -4,10 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -59,9 +59,9 @@ public class FolioDateTimeTest {
     private static Stream<? extends Arguments> argumentsParseWithException() {
         return Stream.of(
           Arguments.of((String) null, NullPointerException.class),
-          Arguments.of("", IllegalArgumentException.class),
-          Arguments.of(" ", IllegalArgumentException.class),
-          Arguments.of("bad date", IllegalArgumentException.class)
+          Arguments.of("", DateTimeParseException.class),
+          Arguments.of(" ", DateTimeParseException.class),
+          Arguments.of("bad date", DateTimeParseException.class)
         );
     }
 
