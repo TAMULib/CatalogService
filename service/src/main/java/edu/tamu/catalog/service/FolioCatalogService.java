@@ -1482,7 +1482,7 @@ public class FolioCatalogService implements CatalogService {
                 String expires = null;
 
                 for (String field : header.split(";")) {
-                    String[] parts = field.split("=");
+                    String[] parts = field.split("=", 2);
 
                     if (parts.length > 1) {
                         if (tokenConfig.getAccessCookieName().equalsIgnoreCase(parts[0].trim())) {
