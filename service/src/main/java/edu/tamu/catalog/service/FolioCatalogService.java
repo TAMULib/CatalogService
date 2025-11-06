@@ -21,8 +21,29 @@ import static edu.tamu.catalog.utility.Marc21Xml.RECORD_TITLE;
 import static edu.tamu.catalog.utility.Marc21Xml.RECORD_VALID_LARGE_VOLUME;
 import static edu.tamu.catalog.utility.Marc21Xml.RECORD_YEAR;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import edu.tamu.catalog.config.FolioTenantConfig;
+import edu.tamu.catalog.config.FolioTokenConfig;
+import edu.tamu.catalog.domain.model.FeeFine;
+import edu.tamu.catalog.domain.model.HoldRequest;
+import edu.tamu.catalog.domain.model.HoldingsRecord;
+import edu.tamu.catalog.domain.model.LoanItem;
+import edu.tamu.catalog.domain.model.Note;
+import edu.tamu.catalog.exception.RenewFailureException;
+import edu.tamu.catalog.model.FolioHoldCancellation;
+import edu.tamu.catalog.model.FolioToken;
+import edu.tamu.catalog.model.FolioTokens;
+import edu.tamu.catalog.properties.CatalogServiceProperties;
+import edu.tamu.catalog.properties.Credentials;
+import edu.tamu.catalog.properties.FolioProperties;
+import edu.tamu.catalog.utility.FolioDateTime;
+import edu.tamu.catalog.utility.FolioTokenUtility;
+import edu.tamu.catalog.utility.Marc21Xml;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -33,16 +54,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,24 +82,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-
-import edu.tamu.catalog.domain.model.FeeFine;
-import edu.tamu.catalog.domain.model.HoldRequest;
-import edu.tamu.catalog.domain.model.HoldingsRecord;
-import edu.tamu.catalog.domain.model.LoanItem;
-import edu.tamu.catalog.domain.model.Note;
-import edu.tamu.catalog.exception.RenewFailureException;
-import edu.tamu.catalog.model.FolioHoldCancellation;
-import edu.tamu.catalog.properties.CatalogServiceProperties;
-import edu.tamu.catalog.properties.Credentials;
-import edu.tamu.catalog.properties.FolioProperties;
-import edu.tamu.catalog.utility.FolioDateTime;
-import edu.tamu.catalog.utility.Marc21Xml;
-import edu.tamu.catalog.utility.TokenUtility;
-
 public class FolioCatalogService implements CatalogService {
 
     private static final String RENEWAL_WOULD_NOT_CHANGE_THE_DUE_DATE = "renewal would not change the due date";
@@ -92,10 +92,9 @@ public class FolioCatalogService implements CatalogService {
     private static final Map<String, JsonNode> SERVICE_POINT_CACHE = new ConcurrentHashMap<>();
     private static final Map<String, JsonNode> LOAN_POLICY_CACHE = new ConcurrentHashMap<>();
 
-    private static final String VERB_GET_RECORD = "GetRecord";
-    private static final String METADATA_PREFIX = "marc21_withholdings";
     private static final String ERROR_ATTR_CODE = "code";
-
+    private static final String EXPIRES = "expires";
+    private static final String METADATA_PREFIX = "marc21_withholdings";
     private static final String NODE_PREFIX = "marc:";
     private static final String NODE_CONTROL_FIELD = "controlfield";
     private static final String NODE_DATA_FIELD = "datafield";
@@ -105,11 +104,16 @@ public class FolioCatalogService implements CatalogService {
     private static final String NODE_METADATA = "metadata";
     private static final String NODE_OAI = "oai";
     private static final String NODE_RECORD = "record";
-
-    private static final String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
-    private static final String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
+    private static final String SET_COOKIE_HEADER = "Set-Cookie";
+    private static final String VERB_GET_RECORD = "GetRecord";
 
     private static final int MAX_BATCH_SIZE = 90;
+
+    @Autowired
+    private FolioTenantConfig tenantConfig;
+
+    @Autowired
+    private FolioTokenConfig tokenConfig;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -430,8 +434,9 @@ public class FolioCatalogService implements CatalogService {
     /**
      * Use OKAPI to retrieve the JsonNode, throwing a customized exception on client or server errors.
      *
-     * @param <T> generic class for response body type.
      * @param url String the URL to retrieve.
+     * @param method The HTTP Method to use when making the request.
+     * @param message The request payload.
      *
      * @return response entity with response type as body.
      */
@@ -496,7 +501,7 @@ public class FolioCatalogService implements CatalogService {
      * @return response entity with response type as body
      */
     <T> ResponseEntity<T> okapiRequest(String url, HttpMethod method, Class<T> responseType, Object... uriVariables) {
-        HttpEntity<?> requestEntity = new HttpEntity<>(headers(properties.getTenant(), getToken()));
+        HttpEntity<?> requestEntity = new HttpEntity<>(headers(properties.getTenant(), getOkapiToken()));
 
         return okapiRequest(1, url, method, requestEntity, responseType, uriVariables);
     }
@@ -515,7 +520,7 @@ public class FolioCatalogService implements CatalogService {
      * @return response entity with response type as body
      */
     <B,T> ResponseEntity<T> okapiRequest(String url, HttpMethod method, B body, Class<T> responseType, Object... uriVariables) {
-        HttpEntity<B> requestEntity = new HttpEntity<>(body, headers(properties.getTenant(), getToken()));
+        HttpEntity<B> requestEntity = new HttpEntity<>(body, headers(properties.getTenant(), getOkapiToken()));
 
         return okapiRequest(1, url, method, requestEntity, responseType, uriVariables);
     }
@@ -1355,46 +1360,76 @@ public class FolioCatalogService implements CatalogService {
             return restTemplate.exchange(url, method, requestEntity, responseType, uriVariables);
         } catch(RestClientResponseException e) {
             if (e.getRawStatusCode() == HttpStatus.UNAUTHORIZED.value() && attempt == 1) {
-                requestEntity = new HttpEntity<>(requestEntity.getBody(), headers(properties.getTenant(), okapiLogin()));
+                requestEntity = new HttpEntity<>(requestEntity.getBody(), headers(properties.getTenant(), getOkapiToken()));
+
                 return okapiRequest(++attempt, url, method, requestEntity, responseType, uriVariables);
             }
+
             throw e;
         }
     }
 
     /**
-     * Retrieve the Okapi token, which may be cached.
+     * Retrieve the FOLIO tokens, which may be cached.
      *
-     * @return the authentication token.
+     * This performs a login request if the tokens are either not cached or expired.
+     *
+     * @return The FOLIO tokens.
      */
-    private String getToken() {
-        Optional<String> token = TokenUtility.getToken(getName());
-        if (token.isPresent()) {
-            return token.get();
+    private FolioTokens getToken() {
+        final FolioTokens tokens = FolioTokenUtility.getTokens(getName());
+        final ZonedDateTime offsetTime = ZonedDateTime.now().plusSeconds(tokenConfig.getExpireOffset());
+
+        if (tokens == null || tokens.getAccess().getExpire().isBefore(offsetTime)) {
+            return okapiLogin();
         }
-        return okapiLogin();
+
+        return tokens;
     }
 
     /**
-     * Login to Okapi.
+     * Get the Access token as the OKAPI token.
      *
-     * @return the authentication token.
+     * @return The FOLIO tokens.
      */
-    private String okapiLogin() {
-        String url = properties.getBaseOkapiUrl() + "/authn/login";
+    private String getOkapiToken() {
+        return getToken().getAccess().getToken();
+    }
+
+    /**
+     * Log into Okapi.
+     *
+     * @return The FOLIO tokens.
+     *
+     * @throws HttpServerErrorException on Login failure.
+     */
+    private FolioTokens okapiLogin() {
+        String url = properties.getBaseOkapiUrl() + tokenConfig.getLoginPath();
         HttpEntity<Credentials> entity = new HttpEntity<>(properties.getCredentials(), headers(properties.getTenant()));
         ResponseEntity<?> response = restTemplate.postForEntity(url, entity, Object.class);
 
         if (response.getStatusCode().equals(HttpStatus.CREATED)) {
-            String token = response.getHeaders().getFirst(OKAPI_TOKEN_HEADER);
-            TokenUtility.setToken(getName(), token);
-            return token;
+            FolioTokens folioTokens = null;
+
+            for (Map.Entry<String, List<String>> map : response.getHeaders().entrySet()) {
+                if (SET_COOKIE_HEADER.equalsIgnoreCase(map.getKey())) {
+                    folioTokens = extractFolioTokensByName(map.getValue());
+
+                    if (folioTokens != null) {
+                        FolioTokenUtility.setTokens(getName(), folioTokens);
+
+                        return folioTokens;
+                    }
+                }
+            }
+
+            logger.error("Failed to login, missing/invalid token headers: {} and {}.", tokenConfig.getAccessCookieName(),
+                tokenConfig.getRefreshCookieName());
         } else {
-            Integer statusCode = response.getStatusCodeValue();
-            Object body = response.getBody();
-            logger.error("Failed to login {}: {}", statusCode, body);
-            throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Catalog service failed to login into Okapi!");
+            logger.error("Failed to login {}: {}", response.getStatusCodeValue(), response.getBody());
         }
+
+        throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Catalog service failed to login into Okapi!");
     }
 
     /**
@@ -1407,7 +1442,7 @@ public class FolioCatalogService implements CatalogService {
      */
     private HttpHeaders headers(String tenant, String token) {
         HttpHeaders headers = headers(tenant);
-        headers.set(OKAPI_TOKEN_HEADER, token);
+        headers.set(tenantConfig.getHeaderName(), token);
         return headers;
     }
 
@@ -1423,8 +1458,62 @@ public class FolioCatalogService implements CatalogService {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN));
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set(OKAPI_TENANT_HEADER, tenant);
+        headers.set(tenantConfig.getHeaderName(), tenant);
         return headers;
+    }
+
+    /**
+     * Extract the FOLIO tokens from the list of headers.
+     *
+     * This is provided because java.net.HttpCookie fails to provide access to the "Expires" cookie field.
+     *
+     * @param headers An array of cookie headers. This is usually `Set-Cookie` headers.
+     *
+     * @return The FOLIO tokens, if found, or NULL otherwise.
+     */
+    private FolioTokens extractFolioTokensByName(List<String> headers) {
+        if (headers != null) {
+            FolioToken access = null;
+            FolioToken refresh = null;
+
+            for (String header : headers) {
+                Boolean isAccess = null;
+                String token = null;
+                String expires = null;
+
+                for (String field : header.split(";")) {
+                    String[] parts = field.split("=");
+
+                    if (parts.length > 1) {
+                        if (tokenConfig.getAccessCookieName().equalsIgnoreCase(parts[0].trim())) {
+                            isAccess = true;
+                            token = parts[1].trim();
+                        } else if (tokenConfig.getRefreshCookieName().equalsIgnoreCase(parts[0].trim())) {
+                            isAccess = false;
+                            token = parts[1].trim();
+                        } else if (EXPIRES.equalsIgnoreCase(parts[0].trim())) {
+                            expires = parts[1].trim();
+                        }
+                    }
+                }
+
+                if (isAccess != null && token != null && expires != null) {
+                    ZonedDateTime expireDate = FolioDateTime.parseZonedDateTime(expires);
+
+                    if (isAccess) {
+                        access = new FolioToken(token, expireDate);
+                    } else {
+                        refresh = new FolioToken(token, expireDate);
+                    }
+                }
+            }
+
+            if (access != null && refresh != null) {
+                return new FolioTokens(access, refresh);
+            }
+        }
+
+        return null;
     }
 
 }
