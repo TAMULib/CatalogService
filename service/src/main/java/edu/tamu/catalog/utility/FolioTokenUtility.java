@@ -3,12 +3,13 @@ package edu.tamu.catalog.utility;
 import edu.tamu.catalog.model.FolioTokens;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 /**
  * Provide a map for caching FOLIO tokens with a named catalog service.
  */
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class FolioTokenUtility {
 
     private static final Map<String, FolioTokens> map = new HashMap<>();
