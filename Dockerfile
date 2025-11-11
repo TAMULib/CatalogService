@@ -4,7 +4,7 @@ ARG USER_NAME=catalog
 ARG SOURCE_DIR=/$USER_NAME/source
 
 # Maven stage.
-FROM maven:3-openjdk-11-slim as maven
+FROM eclipse-temurin:11-jdk-jammy as maven
 ARG USER_ID
 ARG USER_NAME
 ARG SOURCE_DIR
@@ -16,6 +16,7 @@ RUN groupadd --non-unique -g $USER_ID $USER_NAME && \
 # Update the system and install dependencies.
 RUN apt-get update && \
     apt-get upgrade -y && \
+    apt-get install -y maven && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -41,7 +42,7 @@ USER $USER_NAME
 RUN mvn package -Pjar -DskipTests=true
 
 # Switch to Normal JRE Stage.
-FROM openjdk:11-jre-slim
+FROM eclipse-temurin:11-jre-jammy
 ARG USER_ID
 ARG USER_NAME
 ARG SOURCE_DIR
