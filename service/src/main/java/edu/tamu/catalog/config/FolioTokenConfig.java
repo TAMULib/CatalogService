@@ -11,6 +11,12 @@ import org.springframework.stereotype.Component;
 public class FolioTokenConfig {
 
     /**
+     * FOLIO OKAPI Token HTTP header name.
+     */
+    @Value("${okapi.auth.headerName:X-Okapi-Token}")
+    private String headerName = "X-Okapi-Token";
+
+    /**
      * FOLIO Access Token Cookie header name.
      */
     @Value("${okapi.auth.accessCookieName:folioAccessToken}")
