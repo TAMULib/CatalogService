@@ -441,23 +441,31 @@ public class FolioCatalogService implements CatalogService {
      * @return response entity with response type as body.
      */
     JsonNode okapiRequestJsonNode(String url, HttpMethod method, String message) {
+        String errorReason = null;
+
         try {
             ResponseEntity<JsonNode> response = okapiRequest(url, method, JsonNode.class);
             if (Objects.nonNull(response) && response.getBody().isContainerNode()) {
                 return response.getBody();
             }
+
+            errorReason = "Invalid body in the HTTP response";
         }
         catch (HttpClientErrorException e) {
             throw new HttpClientErrorException(e.getStatusCode(),
-                String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
+                String.format("%s: Catalog service failed to find %s, reason: %s.", e.getStatusText(), message, e.getMessage()));
         }
         catch (HttpServerErrorException e) {
             throw new HttpServerErrorException(e.getStatusCode(),
-                String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
+                String.format("%s: Catalog service failed to find %s, reason: %s.", e.getStatusText(), message, e.getMessage()));
         }
+        catch (Exception e) {
+            errorReason = e.getMessage();
+        }
+
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
         throw new HttpServerErrorException(status,
-            String.format("%s: Catalog service failed to find %s.", status.getReasonPhrase(), message));
+            String.format("%s: Catalog service failed to find %s, reason: %s.", status.getReasonPhrase(), message, errorReason));
     }
 
      /**
@@ -1442,7 +1450,7 @@ public class FolioCatalogService implements CatalogService {
      */
     private HttpHeaders headers(String tenant, String token) {
         HttpHeaders headers = headers(tenant);
-        headers.set(tenantConfig.getHeaderName(), token);
+        headers.set(tokenConfig.getHeaderName(), token);
         return headers;
     }
 
