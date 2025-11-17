@@ -1,5 +1,6 @@
 package edu.tamu.catalog.exception;
 
+import java.time.format.DateTimeParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -76,6 +77,19 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> parseError(IllegalArgumentException e, WebRequest request) {
+        logger.error(e.getMessage());
+
+        if (logger.isDebugEnabled()) {
+            e.printStackTrace();
+        }
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .contentType(MediaType.TEXT_PLAIN)
+            .body(e.getMessage());
+    }
+
+    @ExceptionHandler(DateTimeParseException.class)
+    public ResponseEntity<String> parseError(DateTimeParseException e, WebRequest request) {
         logger.error(e.getMessage());
 
         if (logger.isDebugEnabled()) {

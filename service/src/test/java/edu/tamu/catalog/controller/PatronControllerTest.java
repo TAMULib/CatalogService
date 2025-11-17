@@ -23,8 +23,11 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import edu.tamu.catalog.config.CatalogServiceConfig;
+import edu.tamu.catalog.config.FolioTenantConfig;
+import edu.tamu.catalog.config.FolioTokenConfig;
+import edu.tamu.catalog.config.RestConfig;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -42,12 +45,9 @@ import org.springframework.test.web.client.response.DefaultResponseCreator;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-import edu.tamu.catalog.config.CatalogServiceConfig;
-import edu.tamu.catalog.config.RestConfig;
-
 @WebMvcTest(value = PatronController.class)
 @AutoConfigureRestDocs(outputDir = "target/generated-snippets")
-@Import({ RestConfig.class, CatalogServiceConfig.class })
+@Import({ CatalogServiceConfig.class, RestConfig.class, FolioTenantConfig.class , FolioTokenConfig.class })
 public class PatronControllerTest extends PatronControllerTestBase {
 
     @Test
@@ -469,7 +469,8 @@ public class PatronControllerTest extends PatronControllerTestBase {
             Arguments.of(block, between(0, 1), once(), between(0, 1), respondJsonOk(blUserDuplicateErrorPayload),
                 respondJsonOk(automatedBlocksResponsePayload), USER_ID, status().isInternalServerError()),
             Arguments.of(block, between(0, 1), once(), between(0, 1), respondJsonOk(blUserEmptyErrorPayload),
-                respondJsonOk(automatedBlocksResponsePayload), USER_ID, status().isInternalServerError()));
+                respondJsonOk(automatedBlocksResponsePayload), USER_ID, status().isInternalServerError())
+        );
     }
 
     private static Stream<? extends Arguments> argumentsLoansResponses() throws Exception {

@@ -11,8 +11,15 @@ import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.test.web.client.ExpectedCount.once;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.tamu.catalog.config.CatalogServiceConfig;
+import edu.tamu.catalog.config.FolioTenantConfig;
+import edu.tamu.catalog.config.FolioTokenConfig;
+import edu.tamu.catalog.config.RestConfig;
+import edu.tamu.catalog.test.AbstractTestRestController;
+import edu.tamu.catalog.utility.FolioTokenUtility;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -25,16 +32,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import edu.tamu.catalog.config.CatalogServiceConfig;
-import edu.tamu.catalog.config.RestConfig;
-import edu.tamu.catalog.test.AbstractTestRestController;
-import edu.tamu.catalog.utility.TokenUtility;
-
 @RestClientTest(FolioCatalogService.class)
-@Import({ RestConfig.class, CatalogServiceConfig.class })
+@Import({ CatalogServiceConfig.class, RestConfig.class, FolioTenantConfig.class , FolioTokenConfig.class })
 public class FolioCatalogServiceTest extends AbstractTestRestController {
 
     @Autowired
@@ -46,10 +45,15 @@ public class FolioCatalogServiceTest extends AbstractTestRestController {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private FolioTokenConfig tokenConfig;
+
     @BeforeEach
     public void setup() throws Exception {
         buildRestServer(restTemplate, true);
-        TokenUtility.clearAll();
+        setTokenConfig(tokenConfig);
+
+        FolioTokenUtility.clearAll();
 
         expectOkapiLoginResponse(once(), withStatus(CREATED));
     }
@@ -60,8 +64,7 @@ public class FolioCatalogServiceTest extends AbstractTestRestController {
         if (withJson) {
             JsonNode requestBody = objectMapper.createObjectNode();
             expectOkapiJsonResponse(path, method, once(), respondJsonAuto(requestBody, status));
-        }
-        else {
+        } else {
             expectOkapiResponse(path, method, once(), withStatus(status));
         }
 

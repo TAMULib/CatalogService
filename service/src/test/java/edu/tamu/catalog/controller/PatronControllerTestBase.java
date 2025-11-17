@@ -1,18 +1,16 @@
 package edu.tamu.catalog.controller;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import edu.tamu.catalog.config.FolioTokenConfig;
+import edu.tamu.catalog.test.AbstractTestRestController;
+import edu.tamu.catalog.utility.FolioTokenUtility;
 import java.io.IOException;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.RestTemplate;
-
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-
-import edu.tamu.catalog.test.AbstractTestRestController;
-import edu.tamu.catalog.utility.TokenUtility;
 
 public class PatronControllerTestBase extends AbstractTestRestController {
 
@@ -83,6 +81,9 @@ public class PatronControllerTestBase extends AbstractTestRestController {
     @Autowired
     protected RestTemplate restTemplate;
 
+    @Autowired
+    private FolioTokenConfig tokenConfig;
+
     @BeforeAll
     public static void setupStatic() throws IOException {
         patronAccountPayload = loadPayload("mock/response/patron/account.json");
@@ -117,7 +118,9 @@ public class PatronControllerTestBase extends AbstractTestRestController {
     @BeforeEach
     public void setup() throws JsonParseException, JsonMappingException, IOException {
         buildRestServer(restTemplate, true);
-        TokenUtility.clearAll();
+        setTokenConfig(tokenConfig);
+
+        FolioTokenUtility.clearAll();
     }
 
     protected static String getFinesUrl() {

@@ -8,10 +8,16 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import edu.tamu.catalog.config.FolioTokenConfig;
 import java.io.IOException;
 import java.net.URL;
-
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
+import org.hamcrest.text.MatchesPattern;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -21,31 +27,42 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.client.MockRestServiceServer.MockRestServiceServerBuilder;
 import org.springframework.test.web.client.response.DefaultResponseCreator;
 import org.springframework.web.client.RestTemplate;
-import org.hamcrest.text.MatchesPattern;
-
-import com.fasterxml.jackson.databind.JsonNode;
 
 public abstract class AbstractTestRestController {
 
+    protected static final String ACCESS_TOKEN_VALUE = "e5760fca-95e6-4804-b1f0-4f1cf5a210d2";
+    protected static final String API_KEY = "mock_api_key";
     protected static final String BASE_PATH = "http://localhost:8080/";
+    protected static final String CHARSET = "UTF-8";
+    protected static final String COOKIE_DOMAIN = ".localhost";
+    protected static final String COOKIE_PATH = "/";
     protected static final String OKAPI_BASE_PATH = "http://localhost:9130/";
-    protected static final String OKAPI_LOGIN_PATH = "authn/login";
+    protected static final String OKAPI_LOGIN_PATH = "authn/login-with-expiry";
     protected static final String OKAPI_TOKEN = "mocked_token";
     protected static final String OKAPI_TOKEN_HEADER = "X-Okapi-Token";
     protected static final String OKAPI_TENANT = "diku";
     protected static final String OKAPI_TENANT_HEADER = "X-Okapi-Tenant";
-    protected static final String API_KEY = "mock_api_key";
+    protected static final String REFRESH_TOKEN_VALUE = "de334eaf-dbbb-439c-bfd6-0bb0e631a7a2";
+    protected static final String SET_COOKIE_HEADER = "Set-Cookie";
+    protected static final String TEXT_PLAIN_UTF8_VALUE = MediaType.TEXT_PLAIN_VALUE + ";charset=" + CHARSET;
 
-    protected static final String CHARSET = "UTF-8";
-    protected static final String TEXT_PLAIN_UTF8_VALUE = MediaType.TEXT_PLAIN_VALUE
-        + ";charset=" + CHARSET;
+    protected static final Long EXPIRES_OFFSET = 100000L;
+
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter
+        .ofPattern("EEE, dd MMM yyyy HH:mm:ss z").withZone(ZoneId.of("UTC"));
 
     protected MockRestServiceServer restServer;
+
+    protected FolioTokenConfig tokenConfig;
 
     protected void buildRestServer(RestTemplate restTemplate, boolean ignoreExpectOrder) {
         MockRestServiceServerBuilder builder = MockRestServiceServer.bindTo(restTemplate);
         builder.ignoreExpectOrder(ignoreExpectOrder);
         restServer = builder.build();
+    }
+
+    protected void setTokenConfig(FolioTokenConfig tokenConfig) {
+        this.tokenConfig = tokenConfig;
     }
 
     protected void expectOkapiResponse(String path, HttpMethod method, ExpectedCount count, DefaultResponseCreator response) throws Exception  {
@@ -54,8 +71,8 @@ public abstract class AbstractTestRestController {
 
     protected void expectOkapiResponse(String path, HttpMethod method, ExpectedCount count, DefaultResponseCreator response, Boolean wildcard) throws Exception  {
         HttpHeaders headers = new HttpHeaders();
-        headers.set(OKAPI_TENANT_HEADER, OKAPI_TENANT);
 
+        addSetCookieHeaders(headers);
         expectResponse(getOkapiUrl(path), method, count, response.headers(headers), wildcard);
     }
 
@@ -66,15 +83,15 @@ public abstract class AbstractTestRestController {
     protected void expectOkapiJsonResponse(String path, HttpMethod method, ExpectedCount count, DefaultResponseCreator response, Boolean wildcard) throws Exception  {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set(OKAPI_TENANT_HEADER, OKAPI_TENANT);
 
+        addSetCookieHeaders(headers);
         expectResponse(getOkapiUrl(path), method, count, response.headers(headers), wildcard);
     }
 
     protected void expectOkapiLoginResponse(ExpectedCount count, DefaultResponseCreator response) throws Exception  {
         HttpHeaders headers = new HttpHeaders();
-        headers.add(OKAPI_TOKEN_HEADER, OKAPI_TOKEN);
 
+        addSetCookieHeaders(headers);
         expectPostResponse(getOkapiLoginUrl(), count, response.headers(headers));
     }
 
@@ -98,6 +115,22 @@ public abstract class AbstractTestRestController {
         restServer.expect(count, wildcard ? requestTo(MatchesPattern.matchesPattern(url)) : requestTo(url))
             .andExpect(method(method))
             .andRespond(response);
+    }
+
+    protected void addSetCookieHeaders(HttpHeaders headers) {
+        headers.add(SET_COOKIE_HEADER, buildCookieString(tokenConfig.getAccessCookieName(), ACCESS_TOKEN_VALUE));
+        headers.add(SET_COOKIE_HEADER, buildCookieString(tokenConfig.getRefreshCookieName(), REFRESH_TOKEN_VALUE));
+    }
+
+    protected String buildCookieString(String name, String value) {
+        String formattedDate = ZonedDateTime.now().plusSeconds(EXPIRES_OFFSET).format(DATE_FORMATTER);
+
+        return new StringBuilder()
+            .append(name).append("=").append(value)
+            .append("; domain=").append(COOKIE_DOMAIN)
+            .append("; path=").append(COOKIE_PATH)
+            .append("; expires=").append(formattedDate)
+            .toString();
     }
 
     protected static DefaultResponseCreator respondJsonAuto(JsonNode node, HttpStatus status) throws Exception {
