@@ -32,6 +32,7 @@ import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
 import edu.tamu.catalog.domain.model.Note;
 import edu.tamu.catalog.exception.BibIdNotFoundError;
+import edu.tamu.catalog.exception.HoldingsRequestError;
 import edu.tamu.catalog.exception.RenewFailureException;
 import edu.tamu.catalog.model.FolioHoldCancellation;
 import edu.tamu.catalog.model.FolioToken;
@@ -93,7 +94,6 @@ public class FolioCatalogService implements CatalogService {
     private static final Map<String, JsonNode> SERVICE_POINT_CACHE = new ConcurrentHashMap<>();
     private static final Map<String, JsonNode> LOAN_POLICY_CACHE = new ConcurrentHashMap<>();
 
-    private static final String ERROR_ATTR_CODE = "code";
     private static final String EXPIRES = "expires";
     private static final String METADATA_PREFIX = "marc21_withholdings";
     private static final String NODE_PREFIX = "marc:";
@@ -182,7 +182,7 @@ public class FolioCatalogService implements CatalogService {
     }
 
     @Override
-    public HoldingsRecord getHolding(String instanceId, String holdingId) {
+    public HoldingsRecord getHolding(String instanceId, String holdingId) throws Exception {
         List<HoldingsRecord> holdings = requestHoldings(instanceId, holdingId);
 
         if (holdings.size() > 0) {
@@ -674,12 +674,14 @@ public class FolioCatalogService implements CatalogService {
     /**
      * Process the Holdings.
      *
-     * @param instanceId String
-     * @param holdingId String
+     * @param instanceId The instance ID.
+     * @param holdingId The holdings ID.
      *
-     * @return list of holdings records
+     * @return list of holdings records.
+     *
+     * @throws HoldingsRequestError
      */
-    private List<HoldingsRecord> requestHoldings(String instanceId, String holdingId) {
+    private List<HoldingsRecord> requestHoldings(String instanceId, String holdingId) throws HoldingsRequestError {
         List<HoldingsRecord> finalHoldings = new ArrayList<>();
 
         try {
@@ -707,16 +709,8 @@ public class FolioCatalogService implements CatalogService {
 
             NodeList errorNodes = doc.getElementsByTagName(NODE_ERROR);
 
-            // TODO: this potentially has one or more errors, be sure to determine how to handle the "or more" part.
-            if (errorNodes.getLength() > 0) {
-                Node node = errorNodes.item(0);
-                Node code = node.getAttributes().getNamedItem(ERROR_ATTR_CODE);
-
-                String codeValue = code == null ? "" : code.getTextContent();
-                String nodeValue = node == null ? "" : node.getTextContent();
-
-                // http://www.openarchives.org/OAI/openarchivesprotocol.html#ErrorConditions
-                throw new IOException(String.format("Error '%s': %s", codeValue, nodeValue));
+            if (errorNodes != null && errorNodes.getLength() > 0) {
+                throw new HoldingsRequestError(errorNodes, getName());
             }
 
             NodeList verbNodes = doc.getElementsByTagName(VERB_GET_RECORD);
