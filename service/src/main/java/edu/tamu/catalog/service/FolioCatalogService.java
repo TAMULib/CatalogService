@@ -31,6 +31,7 @@ import edu.tamu.catalog.domain.model.HoldRequest;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
 import edu.tamu.catalog.domain.model.Note;
+import edu.tamu.catalog.exception.BibIdNotFoundError;
 import edu.tamu.catalog.exception.RenewFailureException;
 import edu.tamu.catalog.model.FolioHoldCancellation;
 import edu.tamu.catalog.model.FolioToken;
@@ -143,13 +144,31 @@ public class FolioCatalogService implements CatalogService {
     }
 
     @Override
-    public List<HoldingsRecord> getHoldingsByBibId(String id) {
+    public List<HoldingsRecord> getHoldingsByBibId(String id) throws Exception {
         String instanceId = null;
-        //if it's not a uuid, assume hrid and try to get the uuid from the instance data
+
+        // If it's not a uuid, assume hrid and try to get the uuid from the instance data
         if (!isUUID(id)) {
+            JsonNode instanceData = getInstanceByHrid(id);
+            JsonNode instances = null;
+
+            if (instanceData != null && instanceData.size() > 0) {
+                instances = instanceData.at("/instances");
+            }
+
+            if (instances == null || instances.size() == 0) {
+                throw new BibIdNotFoundError(id, this.getName());
+            }
+
             try {
-                JsonNode instanceData = getInstanceByHrid(id);
-                instanceId = instanceData.at("/instances").get(0).at("/id").asText();
+                JsonNode instance = instances.get(0).at("/id");
+
+                if (instance == null) {
+                    logger.error("Error retrieving instance by hrid: {}", id);
+                    return null;
+                }
+
+                instanceId = instance.asText();
             } catch (Exception e) {
                 logger.error("Error retrieving instance by hrid: {}", id);
                 e.printStackTrace();
@@ -158,6 +177,7 @@ public class FolioCatalogService implements CatalogService {
         } else {
             instanceId = id;
         }
+
         return requestHoldings(instanceId, null);
     }
 
