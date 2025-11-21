@@ -33,6 +33,7 @@ import edu.tamu.catalog.domain.model.LoanItem;
 import edu.tamu.catalog.domain.model.Note;
 import edu.tamu.catalog.exception.BibIdNotFoundError;
 import edu.tamu.catalog.exception.HoldingsRequestError;
+import edu.tamu.catalog.exception.RemoteServerError;
 import edu.tamu.catalog.exception.RenewFailureException;
 import edu.tamu.catalog.model.FolioHoldCancellation;
 import edu.tamu.catalog.model.FolioToken;
@@ -201,7 +202,7 @@ public class FolioCatalogService implements CatalogService {
 
         logger.debug("Asking for fines from: {}", url);
 
-        JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
+        JsonNode node = restGet(url, JsonNode.class, apiKey);
 
         List<FeeFine> list = new ArrayList<>();
 
@@ -236,7 +237,7 @@ public class FolioCatalogService implements CatalogService {
 
         logger.debug("Asking for patron loans from: {}", url);
 
-        JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
+        JsonNode node = restGet(url, JsonNode.class, apiKey);
 
         List<LoanItem> list = new ArrayList<>();
 
@@ -328,7 +329,7 @@ public class FolioCatalogService implements CatalogService {
 
         logger.debug("Asking for patron hold requests from: {}", url);
 
-        JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
+        JsonNode node = restGet(url, JsonNode.class, apiKey);
 
         List<HoldRequest> list = new ArrayList<>();
 
@@ -680,8 +681,9 @@ public class FolioCatalogService implements CatalogService {
      * @return list of holdings records.
      *
      * @throws HoldingsRequestError
+     * @throws RemoteServerError
      */
-    private List<HoldingsRecord> requestHoldings(String instanceId, String holdingId) throws HoldingsRequestError {
+    private List<HoldingsRecord> requestHoldings(String instanceId, String holdingId) throws HoldingsRequestError, RemoteServerError {
         List<HoldingsRecord> finalHoldings = new ArrayList<>();
 
         try {
@@ -698,7 +700,7 @@ public class FolioCatalogService implements CatalogService {
 
             logger.debug("Asking for edge holdings from: {}", url);
 
-            String result = restTemplate.getForObject(url, String.class);
+            String result = restGet(url, String.class);
 
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -1536,6 +1538,28 @@ public class FolioCatalogService implements CatalogService {
         }
 
         return null;
+    }
+
+    /**
+     * Perform the request request, catching the exceptions.
+     *
+     * Catch the remote server client and server exceptions and throw a more controlled one.
+     * This ensures that a proper JSON error response is returned with more detailed system logging. 
+     *
+     * @param <T> The response type.
+     * @param url The request URL.
+     * @param responseType The response type class.
+     * @param uriVariables Any additional variables.
+     *
+     * @return The response result.
+     * @throws RemoteServerError
+     */
+    private <T> T restGet(String url, Class<T> responseType, Object... uriVariables) throws RemoteServerError {
+        try {
+            return restTemplate.getForObject(url, responseType, uriVariables);
+        } catch (HttpServerErrorException | HttpClientErrorException ex) {
+            throw new RemoteServerError("GET", url, getName(), ex.getStatusCode(), ex.getMessage());
+        }
     }
 
 }

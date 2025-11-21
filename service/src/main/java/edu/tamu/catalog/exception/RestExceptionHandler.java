@@ -39,6 +39,17 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return buildApiResponseEntity(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, MediaType.APPLICATION_JSON);
     }
 
+    @ExceptionHandler(RemoteServerError.class)
+    public ResponseEntity<String> restServerError(RemoteServerError e, WebRequest request) {
+        logger.error("Failed to {} {}: {} with response payload:\n\t{}.", e.getMethod(), e.getUrl(), e.getMessage(), e.getDetails());
+
+        if (logger.isDebugEnabled()) {
+            e.printStackTrace();
+        }
+
+        return buildApiResponseEntity(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, MediaType.APPLICATION_JSON);
+    }
+
     @ExceptionHandler(RenewFailureException.class)
     public ResponseEntity<String> renewError(RenewFailureException e, WebRequest request) {
         logErrors(e);
