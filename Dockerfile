@@ -52,7 +52,9 @@ RUN groupadd --non-unique -g $USER_ID $USER_NAME && \
     useradd --non-unique -d /$USER_NAME -m -u $USER_ID -g $USER_ID $USER_NAME
 
 RUN apt-get update -u && \
-    apt-get upgrade -y
+    apt-get upgrade -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Login as user.
 USER $USER_NAME
