@@ -4,7 +4,7 @@ ARG USER_NAME=catalog
 ARG SOURCE_DIR=/$USER_NAME/source
 
 # Maven stage.
-FROM eclipse-temurin:11-jdk-jammy as maven
+FROM eclipse-temurin:11-jdk-noble as maven
 ARG USER_ID
 ARG USER_NAME
 ARG SOURCE_DIR
@@ -42,7 +42,7 @@ USER $USER_NAME
 RUN mvn package -Pjar -DskipTests=true
 
 # Switch to Normal JRE Stage.
-FROM eclipse-temurin:11-jre-jammy
+FROM eclipse-temurin:11-jre-noble
 ARG USER_ID
 ARG USER_NAME
 ARG SOURCE_DIR
@@ -50,6 +50,11 @@ ARG SOURCE_DIR
 # Create the user and group (use a high ID to attempt to avoid conflicts).
 RUN groupadd --non-unique -g $USER_ID $USER_NAME && \
     useradd --non-unique -d /$USER_NAME -m -u $USER_ID -g $USER_ID $USER_NAME
+
+RUN apt-get update -u && \
+    apt-get upgrade -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Login as user.
 USER $USER_NAME
