@@ -31,6 +31,8 @@ import edu.tamu.catalog.domain.model.HoldRequest;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
 import edu.tamu.catalog.domain.model.Note;
+import edu.tamu.catalog.exception.CatalogHttpClientException;
+import edu.tamu.catalog.exception.CatalogHttpServerException;
 import edu.tamu.catalog.exception.RenewFailureException;
 import edu.tamu.catalog.model.FolioHoldCancellation;
 import edu.tamu.catalog.model.FolioToken;
@@ -185,22 +187,24 @@ public class FolioCatalogService implements CatalogService {
 
         List<FeeFine> list = new ArrayList<>();
 
-        JsonNode charges = node.at("/charges");
+        if (node != null) {
+            JsonNode charges = node.at("/charges");
 
-        if (charges.isContainerNode() && charges.isArray()) {
-            Iterator<JsonNode> iter = charges.elements();
+            if (charges.isContainerNode() && charges.isArray()) {
+                Iterator<JsonNode> iter = charges.elements();
 
-            while (iter.hasNext()) {
-                JsonNode charge = iter.next();
-                list.add(FeeFine.builder()
-                    .fineId(getText(charge, "/feeFineId"))
-                    .itemId(getText(charge, "/item/itemId"))
-                    .instanceId(getText(charge, "/item/instanceId"))
-                    .fineType(getText(charge, "/reason"))
-                    .fineDate(getDate(charge, "/accrualDate"))
-                    .itemTitle(getText(charge, "/item/title"))
-                    .amount(getDouble(charge, "/chargeAmount/amount", 0))
-                    .build());
+                while (iter.hasNext()) {
+                    JsonNode charge = iter.next();
+                    list.add(FeeFine.builder()
+                        .fineId(getText(charge, "/feeFineId"))
+                        .itemId(getText(charge, "/item/itemId"))
+                        .instanceId(getText(charge, "/item/instanceId"))
+                        .fineType(getText(charge, "/reason"))
+                        .fineDate(getDate(charge, "/accrualDate"))
+                        .itemTitle(getText(charge, "/item/title"))
+                        .amount(getDouble(charge, "/chargeAmount/amount", 0))
+                        .build());
+                }
             }
         }
 
@@ -443,10 +447,17 @@ public class FolioCatalogService implements CatalogService {
     JsonNode okapiRequestJsonNode(String url, HttpMethod method, String message) {
         String errorReason = null;
 
+        HttpEntity<?> requestEntity = new HttpEntity<>(headers(properties.getTenant(), getOkapiToken()));
+
         try {
-            ResponseEntity<JsonNode> response = okapiRequest(url, method, JsonNode.class);
-            if (Objects.nonNull(response) && response.getBody().isContainerNode()) {
-                return response.getBody();
+            ResponseEntity<JsonNode> response = okapiRequest(url, method, requestEntity, JsonNode.class);
+
+            if (response != null) {
+              JsonNode node = response.getBody();
+
+              if (node != null && node.isContainerNode()) {
+                return node;
+              }
             }
 
             errorReason = "Invalid body in the HTTP response";
@@ -478,18 +489,30 @@ public class FolioCatalogService implements CatalogService {
       * @return response entity with response type as body.
       */
     JsonNode okapiRequestJsonNode(String url, HttpMethod method, String message, Object... uriVariables) {
+
+        HttpEntity<?> requestEntity = new HttpEntity<>(headers(properties.getTenant(), getOkapiToken()));
+
         try {
-            ResponseEntity<JsonNode> response = okapiRequest(url, method, JsonNode.class, uriVariables);
-            if (Objects.nonNull(response) && response.getBody().isContainerNode()) {
-                return response.getBody();
+            ResponseEntity<JsonNode> response = okapiRequest(url, method, requestEntity, JsonNode.class, uriVariables);
+
+            if (response != null) {
+              JsonNode node = response.getBody();
+
+              if (node != null && node.isContainerNode()) {
+                return node;
+              }
             }
         }
         catch (HttpClientErrorException e) {
-            throw new HttpClientErrorException(e.getStatusCode(),
+            logger.error(String.format("%s: Request failed for %s: %s", e.getStatusCode(), url, e.getMessage()));
+
+            throw new CatalogHttpClientException(e.getStatusCode(),
                 String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
         }
         catch (HttpServerErrorException e) {
-            throw new HttpServerErrorException(e.getStatusCode(),
+            logger.error(String.format("%s: Request failed for %s: %s", e.getStatusCode(), url, e.getMessage()));
+
+            throw new CatalogHttpServerException(e.getStatusCode(),
                 String.format("%s: Catalog service failed to find %s.", e.getStatusText(), message));
         }
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -503,15 +526,15 @@ public class FolioCatalogService implements CatalogService {
      * @param <T> generic class for response body type.
      * @param url String
      * @param method HttpMethod
+     * @param requestEntity The entity containing the tenant properties and authentication token.
      * @param responseType Class<T>
      * @param uriVariables Object... uri variables to be expanded into url.
      *
      * @return response entity with response type as body
      */
-    <T> ResponseEntity<T> okapiRequest(String url, HttpMethod method, Class<T> responseType, Object... uriVariables) {
-        HttpEntity<?> requestEntity = new HttpEntity<>(headers(properties.getTenant(), getOkapiToken()));
+    <T> ResponseEntity<T> okapiRequest(String url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType, Object... uriVariables) {
 
-        return okapiRequest(1, url, method, requestEntity, responseType, uriVariables);
+        return okapiRequestRetry(1, url, method, requestEntity, responseType, uriVariables);
     }
 
     /**
@@ -530,7 +553,7 @@ public class FolioCatalogService implements CatalogService {
     <B,T> ResponseEntity<T> okapiRequest(String url, HttpMethod method, B body, Class<T> responseType, Object... uriVariables) {
         HttpEntity<B> requestEntity = new HttpEntity<>(body, headers(properties.getTenant(), getOkapiToken()));
 
-        return okapiRequest(1, url, method, requestEntity, responseType, uriVariables);
+        return okapiRequestRetry(1, url, method, requestEntity, responseType, uriVariables);
     }
 
     /**
@@ -728,73 +751,76 @@ public class FolioCatalogService implements CatalogService {
             }
 
             JsonNode okapiHoldings = getOkapiHoldings(instanceId);
-            okapiHoldings.forEach(holding -> {
-                String hrid = holding.at("/hrid").asText();
-                JsonNode holdingLocationNode = getLocation(holding.at("/permanentLocationId").asText());
-                String fallbackLocationCode = holdingLocationNode.at("/code").asText();
-                String holdingLocationName = holdingLocationNode.at("/discoveryDisplayName").asText();
-                String holdingCallNumber = holding.at("/callNumber").asText();
-                String holdingCallNumberPrefix = holding.at("/callNumberPrefix").asText();
 
-                List<Note> holdingNotes = new ArrayList<Note>();
-                holding.at("/notes").forEach(note -> {
-                    holdingNotes.add(Note.builder().note(note.at("/note").asText()).isStaffOnly(note.at("/staffOnly").asBoolean())
-                        .noteTypeId(note.at("/holdingsNoteTypeId").asText()).build());
-                });
+            if (okapiHoldings != null) {
+              okapiHoldings.forEach(holding -> {
+                  String hrid = holding.at("/hrid").asText();
+                  JsonNode holdingLocationNode = getLocation(holding.at("/permanentLocationId").asText());
+                  String fallbackLocationCode = holdingLocationNode.at("/code").asText();
+                  String holdingLocationName = holdingLocationNode.at("/discoveryDisplayName").asText();
+                  String holdingCallNumber = holding.at("/callNumber").asText();
+                  String holdingCallNumberPrefix = holding.at("/callNumberPrefix").asText();
 
-                List<String> holdingStatements = new ArrayList<String>();
+                  List<Note> holdingNotes = new ArrayList<Note>();
+                  holding.at("/notes").forEach(note -> {
+                      holdingNotes.add(Note.builder().note(note.at("/note").asText()).isStaffOnly(note.at("/staffOnly").asBoolean())
+                          .noteTypeId(note.at("/holdingsNoteTypeId").asText()).build());
+                  });
 
-                ArrayNode holdingsStatements = (ArrayNode) holding.at("/holdingsStatements");
-                logger.info("{} {} is still empty", holdingsStatements, holdingsStatements.isEmpty());
+                  List<String> holdingStatements = new ArrayList<String>();
 
-                holdingsStatements.forEach(statementNode -> {
-                    if (statementNode.has("statement")) {
-                        holdingStatements.add(statementNode.get("statement").asText());
-                    } else {
-                        logger.info("Missing statement on holdings statement.", statementNode.get("statement"));
-                    }
-                });
+                  ArrayNode holdingsStatements = (ArrayNode) holding.at("/holdingsStatements");
+                  logger.info("{} {} is still empty", holdingsStatements, holdingsStatements.isEmpty());
 
-                //get items for holding from okapi
-                Map<String, Map<String,String>> okapiItems = getOkapiItems(holding.at("/id").asText());
+                  holdingsStatements.forEach(statementNode -> {
+                      if (statementNode.has("statement")) {
+                          holdingStatements.add(statementNode.get("statement").asText());
+                      } else {
+                          logger.info("Missing statement on holdings statement.");
+                      }
+                  });
 
-                //combine marc based holding data and direct okapi data
-                HoldingsRecord recordValues = marcHoldings.get(0);
-                HoldingsRecord currentHolding = HoldingsRecord.builder()
-                                .recordId(recordValues.getRecordId())
-                                .marcRecordLeader(recordValues.getMarcRecordLeader())
-                                .mfhd(hrid)
-                                .issn(recordValues.getIssn())
-                                .isbn(recordValues.getIsbn())
-                                .title(recordValues.getTitle())
-                                .author(recordValues.getAuthor())
-                                .publisher(recordValues.getPublisher())
-                                .place(recordValues.getPlace())
-                                .year(recordValues.getYear())
-                                .genre(recordValues.getGenre())
-                                .fallbackLocationCode(fallbackLocationCode)
-                                .holdingLocation(holdingLocationName)
-                                .edition(recordValues.getEdition())
-                                .oclc(recordValues.getOclc())
-                                .recordId(recordValues.getRecordId())
-                                .callNumber(holdingCallNumber)
-                                .callNumberPrefix(holdingCallNumberPrefix)
-                                .largeVolume(recordValues.isLargeVolume())
-                                .catalogItems(okapiItems.size() > 0 ? okapiItems:recordValues.getCatalogItems())
-                                .holdingNotes(holdingNotes)
-                                .holdingStatements(holdingStatements)
-                                .build();
+                  //get items for holding from okapi
+                  Map<String, Map<String,String>> okapiItems = getOkapiItems(holding.at("/id").asText());
 
-                finalHoldings.add(currentHolding);
+                  //combine marc based holding data and direct okapi data
+                  HoldingsRecord recordValues = marcHoldings.get(0);
+                  HoldingsRecord currentHolding = HoldingsRecord.builder()
+                                  .recordId(recordValues.getRecordId())
+                                  .marcRecordLeader(recordValues.getMarcRecordLeader())
+                                  .mfhd(hrid)
+                                  .issn(recordValues.getIssn())
+                                  .isbn(recordValues.getIsbn())
+                                  .title(recordValues.getTitle())
+                                  .author(recordValues.getAuthor())
+                                  .publisher(recordValues.getPublisher())
+                                  .place(recordValues.getPlace())
+                                  .year(recordValues.getYear())
+                                  .genre(recordValues.getGenre())
+                                  .fallbackLocationCode(fallbackLocationCode)
+                                  .holdingLocation(holdingLocationName)
+                                  .edition(recordValues.getEdition())
+                                  .oclc(recordValues.getOclc())
+                                  .recordId(recordValues.getRecordId())
+                                  .callNumber(holdingCallNumber)
+                                  .callNumberPrefix(holdingCallNumberPrefix)
+                                  .largeVolume(recordValues.isLargeVolume())
+                                  .catalogItems(okapiItems.size() > 0 ? okapiItems:recordValues.getCatalogItems())
+                                  .holdingNotes(holdingNotes)
+                                  .holdingStatements(holdingStatements)
+                                  .build();
 
-                logger.debug("Record ID: {}", currentHolding.getRecordId());
-                logger.debug("Marc record leader: {}", currentHolding.getMarcRecordLeader());
-                logger.debug("MFHD: {}", currentHolding.getMfhd());
-                logger.debug("ISBN: {}", currentHolding.getIsbn());
-                logger.debug("Fallback location: {}", currentHolding.getFallbackLocationCode());
-                logger.debug("Call number: {} {}", holdingCallNumberPrefix, holdingCallNumber);
-                logger.debug("Valid large volume: {}", currentHolding.isLargeVolume());
-            });
+                  finalHoldings.add(currentHolding);
+
+                  logger.debug("Record ID: {}", currentHolding.getRecordId());
+                  logger.debug("Marc record leader: {}", currentHolding.getMarcRecordLeader());
+                  logger.debug("MFHD: {}", currentHolding.getMfhd());
+                  logger.debug("ISBN: {}", currentHolding.getIsbn());
+                  logger.debug("Fallback location: {}", currentHolding.getFallbackLocationCode());
+                  logger.debug("Call number: {} {}", holdingCallNumberPrefix, holdingCallNumber);
+                  logger.debug("Valid large volume: {}", currentHolding.isLargeVolume());
+              });
+            }
 
         } catch (DOMException | IOException | ParserConfigurationException | SAXException e) {
             // TODO: consider throwing all of these so that caller can handle more appropriately.
@@ -935,7 +961,7 @@ public class FolioCatalogService implements CatalogService {
         Map<String, Map<String, String>> catalogItems = new HashMap<String, Map<String, String>>();
 
         for (int i = 0; i < marcListCount; i++) {
-            if (nodeNameMatches(marcList.item(i).getNodeName().toString(), NODE_DATA_FIELD) &&
+            if (nodeNameMatches(marcList.item(i).getNodeName(), NODE_DATA_FIELD) &&
                 Marc21Xml.attributeTagMatches(marcList.item(i), "952")) {
                 NodeList childNodes = marcList.item(i).getChildNodes();
                 for (int j = 0; j < childNodes.getLength(); j++) {
@@ -1059,12 +1085,21 @@ public class FolioCatalogService implements CatalogService {
         Integer limit = loanIdsPartitions.size();
         String ids = String.join(" OR ", loanIdsPartitions);
         String url = String.format("%s/circulation/loans?limit={limit}&query=id==({ids})", baseOkapiUrl);
-        ResponseEntity<JsonNode> response = okapiRequest(url, HttpMethod.GET, JsonNode.class, limit, ids);
-        if (response.hasBody()) {
-            JsonNode loansNode = response.getBody().get("loans");
-            if (loansNode.isArray()) {
-                return loansNode;
+
+        HttpEntity<?> requestEntity = new HttpEntity<>(headers(properties.getTenant(), getOkapiToken()));
+
+        ResponseEntity<JsonNode> response = okapiRequest(url, HttpMethod.GET, requestEntity, JsonNode.class, limit, ids);
+
+        if (response != null) {
+          JsonNode node = response.getBody();
+
+          if (node != null) {
+            JsonNode loansNode = node.get("loans");
+
+            if (loansNode != null && loansNode.isArray()) {
+              return loansNode;
             }
+          }
         }
 
         return objectMapper.createObjectNode();
@@ -1102,12 +1137,21 @@ public class FolioCatalogService implements CatalogService {
         Integer limit = instanceIdsBatch.size();
         String ids = String.join(" OR ", instanceIdsBatch);
         String url = String.format("%s/instance-storage/instances?limit={limit}&query=id==({ids})", baseOkapiUrl);
-        ResponseEntity<JsonNode> response = okapiRequest(url, HttpMethod.GET, JsonNode.class, limit, ids);
-        if (response.hasBody()) {
-            JsonNode instancesNode = response.getBody().get("instances");
-            if (instancesNode.isArray()) {
-                return instancesNode;
+
+        HttpEntity<?> requestEntity = new HttpEntity<>(headers(properties.getTenant(), getOkapiToken()));
+
+        ResponseEntity<JsonNode> response = okapiRequest(url, HttpMethod.GET, requestEntity, JsonNode.class, limit, ids);
+
+        if (response != null) {
+          JsonNode node = response.getBody();
+
+          if (node != null) {
+            JsonNode instancesNode = node.get("instances");
+
+            if (instancesNode != null && instancesNode.isArray()) {
+              return instancesNode;
             }
+          }
         }
 
         return objectMapper.createObjectNode();
@@ -1145,12 +1189,21 @@ public class FolioCatalogService implements CatalogService {
         Integer limit = itemIdsBatch.size();
         String ids = String.join(" OR ", itemIdsBatch);
         String url = String.format("%s/inventory/items?limit={limit}&query=id==({ids})", baseOkapiUrl);
-        ResponseEntity<JsonNode> response = okapiRequest(url, HttpMethod.GET, JsonNode.class, limit, ids);
-        if (response.hasBody()) {
-            JsonNode itemsNode = response.getBody().get("items");
-            if (itemsNode.isArray()) {
-                return itemsNode;
+
+        HttpEntity<?> requestEntity = new HttpEntity<>(headers(properties.getTenant(), getOkapiToken()));
+
+        ResponseEntity<JsonNode> response = okapiRequest(url, HttpMethod.GET, requestEntity, JsonNode.class, limit, ids);
+
+        if (response != null) {
+          JsonNode node = response.getBody();
+
+          if (node != null) {
+            JsonNode itemsNode = node.get("items");
+
+            if (itemsNode != null && itemsNode.isArray()) {
+              return itemsNode;
             }
+          }
         }
 
         return objectMapper.createObjectNode();
@@ -1342,12 +1395,14 @@ public class FolioCatalogService implements CatalogService {
      * @throws Exception
      */
     private Date getDate(JsonNode input, String jsonPtrExpr) throws Exception {
+        if (input == null) return null;
+
         JsonNode property = input.at(jsonPtrExpr);
         return property.isValueNode() ? FolioDateTime.parse(property.asText()) : null;
     }
 
     /**
-     * Okapi request method to attempt one token refresh and retry if request unauthorized.
+     * Okapi request method to attempt one token refresh and retry if request unauthorized with retry support.
      *
      * Do not pass "{baseOkapiUrl}".
      * Instead, convert it before sending it to this function because restTemplate.exchange() is always forcing a leading '/'.
@@ -1363,14 +1418,14 @@ public class FolioCatalogService implements CatalogService {
      *
      * @return response entity with response type as body
      */
-    private <T> ResponseEntity<T> okapiRequest(int attempt, String url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType, Object... uriVariables) {
+    private <T> ResponseEntity<T> okapiRequestRetry(int attempt, String url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType, Object... uriVariables) {
         try {
-            return restTemplate.exchange(url, method, requestEntity, responseType, uriVariables);
+          return restTemplate.exchange(url, method, requestEntity, responseType, uriVariables);
         } catch(RestClientResponseException e) {
             if (e.getRawStatusCode() == HttpStatus.UNAUTHORIZED.value() && attempt == 1) {
                 requestEntity = new HttpEntity<>(requestEntity.getBody(), headers(properties.getTenant(), getOkapiToken()));
 
-                return okapiRequest(++attempt, url, method, requestEntity, responseType, uriVariables);
+                return okapiRequestRetry(++attempt, url, method, requestEntity, responseType, uriVariables);
             }
 
             throw e;
@@ -1413,28 +1468,34 @@ public class FolioCatalogService implements CatalogService {
      */
     private FolioTokens okapiLogin() {
         String url = properties.getBaseOkapiUrl() + tokenConfig.getLoginPath();
-        HttpEntity<Credentials> entity = new HttpEntity<>(properties.getCredentials(), headers(properties.getTenant()));
-        ResponseEntity<?> response = restTemplate.postForEntity(url, entity, Object.class);
 
-        if (response.getStatusCode().equals(HttpStatus.CREATED)) {
-            FolioTokens folioTokens = null;
+        try {
+          HttpEntity<Credentials> entity = new HttpEntity<>(properties.getCredentials(), headers(properties.getTenant()));
+          ResponseEntity<?> response = restTemplate.postForEntity(url, entity, Object.class);
 
-            for (Map.Entry<String, List<String>> map : response.getHeaders().entrySet()) {
-                if (SET_COOKIE_HEADER.equalsIgnoreCase(map.getKey())) {
-                    folioTokens = extractFolioTokensByName(map.getValue());
+          if (response.getStatusCode().equals(HttpStatus.CREATED)) {
+              FolioTokens folioTokens = null;
 
-                    if (folioTokens != null) {
-                        FolioTokenUtility.setTokens(getName(), folioTokens);
+              for (Map.Entry<String, List<String>> map : response.getHeaders().entrySet()) {
+                  if (SET_COOKIE_HEADER.equalsIgnoreCase(map.getKey())) {
+                      folioTokens = extractFolioTokensByName(map.getValue());
 
-                        return folioTokens;
-                    }
-                }
-            }
+                      if (folioTokens != null) {
+                          FolioTokenUtility.setTokens(getName(), folioTokens);
 
-            logger.error("Failed to login, missing/invalid token headers: {} and {}.", tokenConfig.getAccessCookieName(),
-                tokenConfig.getRefreshCookieName());
-        } else {
-            logger.error("Failed to login {}: {}", response.getStatusCodeValue(), response.getBody());
+                          return folioTokens;
+                      }
+                  }
+              }
+
+              logger.error("Failed to login, missing/invalid token headers: {} and {}.", tokenConfig.getAccessCookieName(),
+                  tokenConfig.getRefreshCookieName());
+          } else {
+              logger.error("Failed to login {}: {}", response.getStatusCodeValue(), response.getBody());
+          }
+        }
+        catch (Exception e) {
+          logger.error("Catalog service failed to login into Okapi: " + e.getMessage() + "!");
         }
 
         throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Catalog service failed to login into Okapi!");
