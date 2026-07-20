@@ -25,7 +25,7 @@ public class FolioTokenUtility {
     }
 
     /**
-     * Retreive the FOLIO tokens for the given catalog name.
+     * Retrieve the FOLIO tokens for the given catalog name.
      *
      * @param catalog The catalog name.
      *
