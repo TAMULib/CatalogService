@@ -31,6 +31,9 @@ import edu.tamu.catalog.domain.model.HoldRequest;
 import edu.tamu.catalog.domain.model.HoldingsRecord;
 import edu.tamu.catalog.domain.model.LoanItem;
 import edu.tamu.catalog.domain.model.Note;
+import edu.tamu.catalog.exception.BibIdNotFoundError;
+import edu.tamu.catalog.exception.HoldingsRequestError;
+import edu.tamu.catalog.exception.RemoteServerError;
 import edu.tamu.catalog.exception.CatalogHttpClientException;
 import edu.tamu.catalog.exception.CatalogHttpServerException;
 import edu.tamu.catalog.exception.RenewFailureException;
@@ -94,7 +97,6 @@ public class FolioCatalogService implements CatalogService {
     private static final Map<String, JsonNode> SERVICE_POINT_CACHE = new ConcurrentHashMap<>();
     private static final Map<String, JsonNode> LOAN_POLICY_CACHE = new ConcurrentHashMap<>();
 
-    private static final String ERROR_ATTR_CODE = "code";
     private static final String EXPIRES = "expires";
     private static final String METADATA_PREFIX = "marc21_withholdings";
     private static final String NODE_PREFIX = "marc:";
@@ -145,13 +147,31 @@ public class FolioCatalogService implements CatalogService {
     }
 
     @Override
-    public List<HoldingsRecord> getHoldingsByBibId(String id) {
+    public List<HoldingsRecord> getHoldingsByBibId(String id) throws Exception {
         String instanceId = null;
-        //if it's not a uuid, assume hrid and try to get the uuid from the instance data
+
+        // If it's not a uuid, assume hrid and try to get the uuid from the instance data
         if (!isUUID(id)) {
+            JsonNode instanceData = getInstanceByHrid(id);
+            JsonNode instances = null;
+
+            if (instanceData != null && instanceData.size() > 0) {
+                instances = instanceData.at("/instances");
+            }
+
+            if (instances == null || instances.size() == 0) {
+                throw new BibIdNotFoundError(id, this.getName());
+            }
+
             try {
-                JsonNode instanceData = getInstanceByHrid(id);
-                instanceId = instanceData.at("/instances").get(0).at("/id").asText();
+                JsonNode instance = instances.get(0).at("/id");
+
+                if (instance == null) {
+                    logger.error("Error retrieving instance by hrid: {}", id);
+                    return null;
+                }
+
+                instanceId = instance.asText();
             } catch (Exception e) {
                 logger.error("Error retrieving instance by hrid: {}", id);
                 e.printStackTrace();
@@ -160,11 +180,12 @@ public class FolioCatalogService implements CatalogService {
         } else {
             instanceId = id;
         }
+
         return requestHoldings(instanceId, null);
     }
 
     @Override
-    public HoldingsRecord getHolding(String instanceId, String holdingId) {
+    public HoldingsRecord getHolding(String instanceId, String holdingId) throws Exception {
         List<HoldingsRecord> holdings = requestHoldings(instanceId, holdingId);
 
         if (holdings.size() > 0) {
@@ -183,7 +204,7 @@ public class FolioCatalogService implements CatalogService {
 
         logger.debug("Asking for fines from: {}", url);
 
-        JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
+        JsonNode node = restGet(url, JsonNode.class, apiKey);
 
         List<FeeFine> list = new ArrayList<>();
 
@@ -220,7 +241,7 @@ public class FolioCatalogService implements CatalogService {
 
         logger.debug("Asking for patron loans from: {}", url);
 
-        JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
+        JsonNode node = restGet(url, JsonNode.class, apiKey);
 
         List<LoanItem> list = new ArrayList<>();
 
@@ -312,7 +333,7 @@ public class FolioCatalogService implements CatalogService {
 
         logger.debug("Asking for patron hold requests from: {}", url);
 
-        JsonNode node = restTemplate.getForObject(url, JsonNode.class, apiKey);
+        JsonNode node = restGet(url, JsonNode.class, apiKey);
 
         List<HoldRequest> list = new ArrayList<>();
 
@@ -677,12 +698,15 @@ public class FolioCatalogService implements CatalogService {
     /**
      * Process the Holdings.
      *
-     * @param instanceId String
-     * @param holdingId String
+     * @param instanceId The instance ID.
+     * @param holdingId The holdings ID.
      *
-     * @return list of holdings records
+     * @return list of holdings records.
+     *
+     * @throws HoldingsRequestError
+     * @throws RemoteServerError
      */
-    private List<HoldingsRecord> requestHoldings(String instanceId, String holdingId) {
+    private List<HoldingsRecord> requestHoldings(String instanceId, String holdingId) throws HoldingsRequestError, RemoteServerError {
         List<HoldingsRecord> finalHoldings = new ArrayList<>();
 
         try {
@@ -699,7 +723,7 @@ public class FolioCatalogService implements CatalogService {
 
             logger.debug("Asking for edge holdings from: {}", url);
 
-            String result = restTemplate.getForObject(url, String.class);
+            String result = restGet(url, String.class);
 
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -710,16 +734,8 @@ public class FolioCatalogService implements CatalogService {
 
             NodeList errorNodes = doc.getElementsByTagName(NODE_ERROR);
 
-            // TODO: this potentially has one or more errors, be sure to determine how to handle the "or more" part.
-            if (errorNodes.getLength() > 0) {
-                Node node = errorNodes.item(0);
-                Node code = node.getAttributes().getNamedItem(ERROR_ATTR_CODE);
-
-                String codeValue = code == null ? "" : code.getTextContent();
-                String nodeValue = node == null ? "" : node.getTextContent();
-
-                // http://www.openarchives.org/OAI/openarchivesprotocol.html#ErrorConditions
-                throw new IOException(String.format("Error '%s': %s", codeValue, nodeValue));
+            if (errorNodes != null && errorNodes.getLength() > 0) {
+                throw new HoldingsRequestError(errorNodes, getName());
             }
 
             NodeList verbNodes = doc.getElementsByTagName(VERB_GET_RECORD);
@@ -1583,6 +1599,28 @@ public class FolioCatalogService implements CatalogService {
         }
 
         return null;
+    }
+
+    /**
+     * Perform the request request, catching the exceptions.
+     *
+     * Catch the remote server client and server exceptions and throw a more controlled one.
+     * This ensures that a proper JSON error response is returned with more detailed system logging. 
+     *
+     * @param <T> The response type.
+     * @param url The request URL.
+     * @param responseType The response type class.
+     * @param uriVariables Any additional variables.
+     *
+     * @return The response result.
+     * @throws RemoteServerError
+     */
+    private <T> T restGet(String url, Class<T> responseType, Object... uriVariables) throws RemoteServerError {
+        try {
+            return restTemplate.getForObject(url, responseType, uriVariables);
+        } catch (HttpServerErrorException | HttpClientErrorException ex) {
+            throw new RemoteServerError("GET", url, getName(), ex.getStatusCode(), ex.getMessage());
+        }
     }
 
 }
