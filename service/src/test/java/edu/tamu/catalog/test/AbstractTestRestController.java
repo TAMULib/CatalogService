@@ -15,7 +15,6 @@ import java.net.URL;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.text.MatchesPattern;
 import org.springframework.http.HttpHeaders;

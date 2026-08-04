@@ -18,9 +18,9 @@ public interface CatalogService {
 
     String getName();
 
-    List<HoldingsRecord> getHoldingsByBibId(String bibId);
+    List<HoldingsRecord> getHoldingsByBibId(String bibId) throws Exception;
 
-    HoldingsRecord getHolding(String id, String holdingId);
+    HoldingsRecord getHolding(String id, String holdingId) throws Exception;
 
     List<FeeFine> getFeesFines(String uin) throws Exception;
 
