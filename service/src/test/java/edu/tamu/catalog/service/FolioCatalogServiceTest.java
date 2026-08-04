@@ -17,8 +17,12 @@ import edu.tamu.catalog.config.CatalogServiceConfig;
 import edu.tamu.catalog.config.FolioTenantConfig;
 import edu.tamu.catalog.config.FolioTokenConfig;
 import edu.tamu.catalog.config.RestConfig;
+import edu.tamu.catalog.model.FolioToken;
+import edu.tamu.catalog.model.FolioTokens;
 import edu.tamu.catalog.test.AbstractTestRestController;
 import edu.tamu.catalog.utility.FolioTokenUtility;
+import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -27,14 +31,24 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.client.RestClientTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 @RestClientTest(FolioCatalogService.class)
-@Import({ CatalogServiceConfig.class, RestConfig.class, FolioTenantConfig.class , FolioTokenConfig.class })
-public class FolioCatalogServiceTest extends AbstractTestRestController {
+@Import({
+  CatalogServiceConfig.class,
+  RestConfig.class,
+  FolioTenantConfig.class,
+  FolioTokenConfig.class
+})
+class FolioCatalogServiceTest extends AbstractTestRestController {
+
+    private static final ZonedDateTime NEXT_YEAR = ZonedDateTime.now().plusYears(1);
 
     @Autowired
     private FolioCatalogService folioCatalogService;
@@ -48,19 +62,27 @@ public class FolioCatalogServiceTest extends AbstractTestRestController {
     @Autowired
     private FolioTokenConfig tokenConfig;
 
+    @Autowired
+    private FolioTenantConfig folioTenantConfig;
+
+    private FolioTokens folioTokens;
+
     @BeforeEach
-    public void setup() throws Exception {
+    void setup() {
         buildRestServer(restTemplate, true);
         setTokenConfig(tokenConfig);
 
         FolioTokenUtility.clearAll();
 
-        expectOkapiLoginResponse(once(), withStatus(CREATED));
+        FolioToken access = new FolioToken(tokenConfig.getAccessCookieName(), NEXT_YEAR);
+        FolioToken refresh = new FolioToken(tokenConfig.getRefreshCookieName(), NEXT_YEAR);
+
+        folioTokens = new FolioTokens(access, refresh);
     }
 
     @ParameterizedTest
     @MethodSource("performOkapiRequests")
-    public void testOkapiRequests(String path, HttpMethod method, HttpStatus status, boolean withJson) throws Exception {
+    void testOkapiRequests(String path, HttpMethod method, HttpStatus status, boolean withJson) throws Exception {
         if (withJson) {
             JsonNode requestBody = objectMapper.createObjectNode();
             expectOkapiJsonResponse(path, method, once(), respondJsonAuto(requestBody, status));
@@ -68,7 +90,10 @@ public class FolioCatalogServiceTest extends AbstractTestRestController {
             expectOkapiResponse(path, method, once(), withStatus(status));
         }
 
-        ResponseEntity<JsonNode> entity = folioCatalogService.okapiRequest(getOkapiUrl(path), method, JsonNode.class);
+        HttpEntity<?> requestEntity = new HttpEntity<>(headers(folioTenantConfig.getDefaultTenant(), folioTokens.getAccess().getToken()));
+
+        String url = getOkapiUrl(path);
+        ResponseEntity<JsonNode> entity = folioCatalogService.okapiRequest(url, method, requestEntity, JsonNode.class);
 
         assertEquals(status, entity.getStatusCode(), "Received incorrect status for " + method.toString() + " /" + path + "");
         restServer.verify();
@@ -82,6 +107,20 @@ public class FolioCatalogServiceTest extends AbstractTestRestController {
           Arguments.of("locations/uuid", PUT, OK, true),
           Arguments.of("locations/uuid", DELETE, OK, false)
         );
+    }
+
+    private HttpHeaders headers(String tenant, String token) {
+      HttpHeaders headers = headers(tenant);
+      headers.set(tokenConfig.getHeaderName(), token);
+      return headers;
+    }
+
+    private HttpHeaders headers(String tenant) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN));
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set(folioTenantConfig.getHeaderName(), tenant);
+        return headers;
     }
 
 }

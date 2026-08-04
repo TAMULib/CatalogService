@@ -36,7 +36,7 @@ public class CatalogAccessControllerTest {
     }
 
     @Test
-    public void testGetHoldingsSuccess() {
+    public void testGetHoldingsSuccess() throws Exception {
         when(folioCatalogService.getHoldingsByBibId(any(String.class))).thenReturn(new ArrayList<HoldingsRecord>());
 
         ApiResponse response = catalogAccessController.getHoldings(folioCatalogService, "foo");
@@ -44,7 +44,7 @@ public class CatalogAccessControllerTest {
     }
 
     @Test
-    public void testGetHoldingsFailure() {
+    public void testGetHoldingsFailure() throws Exception {
         when(folioCatalogService.getHoldingsByBibId(any(String.class))).thenReturn(null);
 
         ApiResponse response = catalogAccessController.getHoldings(folioCatalogService, "foo");
@@ -52,7 +52,7 @@ public class CatalogAccessControllerTest {
     }
 
     @Test
-    public void testGetHoldingSuccess() {
+    public void testGetHoldingSuccess() throws Exception {
         Map<String, Map<String, String>> catalogItems = new HashMap<>();
         HoldingsRecord holding =  HoldingsRecord.builder()
             .recordId("recordId")
@@ -81,7 +81,7 @@ public class CatalogAccessControllerTest {
     }
 
     @Test
-    public void testGetHoldingFailure() {
+    public void testGetHoldingFailure() throws Exception {
         when(folioCatalogService.getHolding(any(String.class), any(String.class))).thenReturn(null);
 
         ApiResponse response = catalogAccessController.getHolding(folioCatalogService, "foo", "bar");

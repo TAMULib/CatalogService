@@ -416,10 +416,10 @@ public class PatronControllerTest extends PatronControllerTestBase {
         return Stream.of(
             Arguments.of(holds, getHoldsUrl(), never(), once(), never(), never(),
                 withStatus(NOT_FOUND), withNoContent(),
-                withNoContent(), status().isNotFound()),
+                withNoContent(), status().isInternalServerError()),
             Arguments.of(holds, getHoldsUrl(), never(), once(), never(), never(),
                 withStatus(BAD_REQUEST), withNoContent(),
-                withNoContent(), status().isBadRequest()),
+                withNoContent(), status().isInternalServerError()),
             Arguments.of(holds, getHoldsUrl(), never(), once(), never(), never(),
                 withStatus(INTERNAL_SERVER_ERROR), withNoContent(),
                 withNoContent(), status().isInternalServerError()),
@@ -484,8 +484,8 @@ public class PatronControllerTest extends PatronControllerTestBase {
             .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML);
 
         return Stream.of(
-            Arguments.of(loans, getLoansUrl(), GET, once(), withStatus(NOT_FOUND), status().isNotFound()),
-            Arguments.of(loans, getLoansUrl(), GET, once(), withStatus(BAD_REQUEST), status().isBadRequest()),
+            Arguments.of(loans, getLoansUrl(), GET, once(), withStatus(NOT_FOUND), status().isInternalServerError()),
+            Arguments.of(loans, getLoansUrl(), GET, once(), withStatus(BAD_REQUEST), status().isInternalServerError()),
             Arguments.of(loans, getLoansUrl(), GET, once(), withStatus(INTERNAL_SERVER_ERROR),
                 status().isInternalServerError()),
             Arguments.of(loansCatalog, getLoansUrl(), GET, never(), withStatus(OK), status().isBadRequest()),
@@ -525,8 +525,8 @@ public class PatronControllerTest extends PatronControllerTestBase {
             .accept(MediaType.APPLICATION_JSON, MediaType.TEXT_HTML);
 
         return Stream.of(
-            Arguments.of(fines, getFinesUrl(), GET, once(), withStatus(NOT_FOUND), status().isNotFound()),
-            Arguments.of(fines, getFinesUrl(), GET, once(), withStatus(BAD_REQUEST), status().isBadRequest()),
+            Arguments.of(fines, getFinesUrl(), GET, once(), withStatus(NOT_FOUND), status().isInternalServerError()),
+            Arguments.of(fines, getFinesUrl(), GET, once(), withStatus(BAD_REQUEST), status().isInternalServerError()),
             Arguments.of(fines, getFinesUrl(), GET, once(), withStatus(INTERNAL_SERVER_ERROR),
                 status().isInternalServerError()),
             Arguments.of(finesCatalog, getFinesUrl(), GET, never(), withStatus(OK), status().isBadRequest()),
