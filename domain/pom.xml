@@ -8,7 +8,7 @@
   <parent>
     <groupId>edu.tamu.catalog</groupId>
     <artifactId>catalog-parent</artifactId>
-    <version>3.3.2</version>
+    <version>3.4.0-RC1</version>
   </parent>
 
   <properties>
