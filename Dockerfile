@@ -36,7 +36,7 @@ RUN chown -R ${USER_ID}:${USER_ID} ${SOURCE_DIR}
 USER $USER_NAME
 
 # Build.
-RUN mvn package -Pjar -DskipTests=true
+RUN mvn package -Pjar -DskipTests -Dasciidoctor.skip=true -Djacoco.skip=true
 
 # Switch to Normal JRE Stage.
 FROM eclipse-temurin:11-jre-alpine
