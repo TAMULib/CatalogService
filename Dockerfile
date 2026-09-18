@@ -3,7 +3,7 @@ ARG USER_NAME=catalog
 ARG SOURCE_DIR=/$USER_NAME/source
 
 # Maven stage.
-FROM eclipse-temurin:11-jdk-noble as maven
+FROM eclipse-temurin:11-jdk-noble AS maven
 ARG USER_NAME
 ARG SOURCE_DIR
 
