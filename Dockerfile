@@ -8,8 +8,7 @@ ARG USER_NAME
 ARG SOURCE_DIR
 
 # Create the user and group (use a high ID to attempt to avoid conflicts).
-RUN groupadd --non-unique -g $USER_ID $USER_NAME && \
-    useradd --non-unique -d /$USER_NAME -m -u $USER_ID -g $USER_ID $USER_NAME
+RUN useradd -d /$USER_NAME -m $USER_NAME
 
 # Update the system and install dependencies.
 RUN apt-get update && \
