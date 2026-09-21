@@ -1,5 +1,37 @@
-<a name="readme-top"></a>
 # Catalog Service Deployment Guide
+
+This document describes how to use and apply the deployment process.
+
+
+## Navigation
+
+  - [Design](#design)
+  - [Production Deployments](#production-deployments)
+  - [Example Build](#example-build)
+  - [Example Run](#example-run)
+
+
+## Design
+
+The **Docker** files are designed to be operated by *Developers*, *Developer Operations*, and *Operations*.
+Each operator group has different wants and needs.
+These different needs are accommodated using build time arguments and local configuration files.
+
+The **Docker** images are based on appropriate upstream images based on desired functionality.
+The specific versions of the software can be toggled to allow for performing some amount of updates without requiring code changes.
+This should be very useful for security updates.
+
+*Developers* tend to have their projects already built.
+*Developers* also have very little need to perform system updates in the **Docker** images.
+Environment variables are exposed to allow customizing this behavior.
+The default behavior, however, favors production build to ensure that the final image stage has the latest code.
+This default behavior favors good security practices.
+
+*Operations* and *Developer Operations* often do not have the files pre-built.
+Furthermore, they are less likely to know or care about such a process.
+Environment variables are provided to automatically perform these tasks.
+Such images take more time and resources to build, but it saves the user from having to know all of the technical repository specific build needs.
+
 
 ## Production Deployments
 
@@ -11,50 +43,30 @@ For now, **production** deployments are identical to **development** deployments
 <div align="right">(<a href="#readme-top">back to top</a>)</div>
 
 
-## Development Deployment using Docker
+## Example Build
 
-To manually use `docker` rather than `docker-compose`, run the following:
+Either `docker` or `podman` may be used to build.
+The commands are generally interchangeable.
 
-```shell
-docker image build -t catalogservice .
-docker run -it catalogservice
+Both **Build Variables** and **Environment Variables** are described in the [variable.md](variable.md) documentaton.
+
+To build the server without bundling or updating anything:
+```sh
+docker build --tag tamu/catalog_server/manual --build-arg UPDATE_MAVEN="false" --build-arg UPDATE_SERVE="false" --build-arg BUILD_JAR="false" .
 ```
 
-<sub>_* Note: `-t catalogservice` and `-it catalogservice` may be changed to another tag name as desired, such as `-t developing_on_this` and `-it developing_on_this`._</sub><br>
-
-<div align="right">(<a href="#readme-top">back to top</a>)</div>
-
-
-## Development Deployment using Maven
-
-Manual deployment can be summed up by running:
-
-```shell
-mvn spring-boot:run
+To build the server updating and building everything:
+```sh
+docker build --tag tamu/catalog_server/build --build-arg UPDATE_MAVEN="true" --build-arg UPDATE_SERVE="true" --build-arg BUILD_JAR="true" .
 ```
 
-Those steps are a great way to start but they also fail to explain the customization that is often needed.
-There are multiple ways to further configure this for deployment to better meet the desired requirements.
 
-It is highly recommended only to perform *manual installation* when developing.
-For **production** deployment, please use the **Docker** method above.
+## Example Run
 
-<div align="right">(<a href="#readme-top">back to top</a>)</div>
+The named image can be run once the image is built using either `docker` or `podman`.
 
-
-### Directly Configuring the `src/main/resources/application.yml` File
-
-This method of configuration works by altering the configuration file.
-
-With this in mind, the deployment steps now look like:
+The following is an example using the "build the server updating and building everything" example that has tag `tamu/catalog_server/build`:
 
 ```shell
-# Edit 'src/main/resources/application.yml' here.
-
-mvn spring-boot:run
+docker run -it tamu/catalog_server/build
 ```
-
-<div align="right">(<a href="#readme-top">back to top</a>)</div>
-
-
-<!-- LINKS -->
