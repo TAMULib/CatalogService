@@ -1,59 +1,88 @@
 # Settings.
-ARG USER_NAME=catalog
-ARG SOURCE_DIR=/$USER_NAME/source
+ARG USER_ID=3001
+ARG USER_NAME=catalog_user
+ARG DIR_HOME=/home/$USER_NAME/
+ARG DIR_SERVE=$DIR_HOME/serve/
+ARG DIR_SOURCE=/source/
+ARG BUILD_JAR="false"
+ARG JAVA_VERSION=11
+ARG MAVEN_ARGS="clean package -Pjar -DskipTests -Dcheckstyle.skip=true -Dasciidoctor.skip=true -Djacoco.skip=true"
+ARG PATH_JAR=service/target/ROOT.jar
+ARG UPDATE_MAVEN="true"
+ARG UPDATE_SERVE="true"
 
 # Maven stage.
-FROM eclipse-temurin:11-jdk-noble AS maven
-ARG USER_NAME
-ARG SOURCE_DIR
+FROM maven:3-eclipse-temurin-${JAVA_VERSION}-alpine AS maven
+ARG BUILD_JAR
+ARG DIR_SOURCE
+ARG MAVEN_ARGS
+ARG PATH_JAR
+ARG UPDATE_MAVEN
 
-# Create the user and group (use a high ID to attempt to avoid conflicts).
-RUN useradd -d /$USER_NAME -m $USER_NAME
 
-# Update the system and install dependencies.
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y maven && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Make sure source directory exists.
-RUN mkdir -p $SOURCE_DIR && \
-    chown -R $USER_NAME:$USER_NAME $SOURCE_DIR
-
-# Set deployment directory.
-WORKDIR $SOURCE_DIR
+# Switch to the source directory.
+WORKDIR ${DIR_SOURCE}
 
 # Copy files over.
 COPY ./pom.xml ./pom.xml
 COPY ./domain ./domain
 COPY ./service ./service
 
-# Assign file permissions.
-RUN chown -R ${USER_NAME}:${USER_NAME} ${SOURCE_DIR}
+# Conditionally update system.
+RUN \
+  if [[ "${UPDATE_MAVEN}" == "true" ]] ; then \
+    apk -U upgrade --no-cache -a --prune ; \
+  fi
+
+# Conditionally build jar file or designate that the pre-built jar file is copied over.
+RUN \
+  if [[ "${BUILD_JAR}" == "true" ]] ; then \
+    echo "Building JAR file with command: mvn ${MAVEN_ARGS}." ; \
+    mvn ${MAVEN_ARGS} ; \
+  else \
+    echo "Using JAR file from: ${DIR_SOURCE}${PATH_JAR}." ; \
+  fi
+
+# Ensure the JAR file can be accessed from other stage.
+RUN chmod -R ugo+rX ${DIR_SOURCE}
+
+
+# Start the server from the JAR file.
+FROM eclipse-temurin:${JAVA_VERSION}-alpine as serve
+ARG DIR_HOME
+ARG DIR_SERVE
+ARG DIR_SOURCE
+ARG PATH_JAR
+ARG UPDATE_SERVE
+ARG USER_ID
+ARG USER_NAME
+
+# Conditionally update system.
+RUN \
+  if [[ "${UPDATE_SERVE}" == "true" ]] ; then \
+    apk -U upgrade --no-cache -a --prune ; \
+  fi
+
+# Create the group (use a high ID to attempt to avoid potential conflicts).
+RUN addgroup -g ${USER_ID} ${USER_NAME}
+
+# Create the user (use a high ID to attempt to avoid potential conflicts).
+RUN adduser -h ${DIR_HOME} -u ${USER_ID} -G ${USER_NAME} -D ${USER_NAME}
+
+# Create log directory.
+RUN mkdir -p ${DIR_SERVE}logs
+
+# Give user access to the log directory.
+RUN chown ${USER_ID}:${USER_ID} ${DIR_SERVE}logs
 
 # Login as user.
-USER $USER_NAME
+USER ${USER_NAME}
 
-# Build.
-RUN mvn package -Pjar -DskipTests=true -Dasciidoctor.skip=true -Djacoco.skip=true
+# Switch to the serve directory.
+WORKDIR ${DIR_SERVE}
 
-# Switch to Normal JRE Stage.
-FROM eclipse-temurin:11-jre-alpine
-ARG USER_NAME
-ARG SOURCE_DIR=/$USER_NAME/source
-ARG USER_ID=1000
+# Copy over the built artifact from the maven image.
+COPY --from=maven ${DIR_SOURCE}${PATH_JAR} ./catalog-service.jar
 
-RUN apk upgrade --no-cache
-
-# Run directly as the numeric UID/GID (No adduser needed!)
-USER $USER_ID:$USER_ID
-
-# Set deployment directory.
-WORKDIR /app
-
-# Copy over the built artifact and ensure correct numeric ownership
-COPY --chown=1000:1000 --from=maven $SOURCE_DIR/service/target/ROOT.jar ./catalog-service.jar
-
-# Run java command.
-CMD ["java", "-jar", "./catalog-service.jar"]
+# Start the server.
+CMD [ "java", "-jar", "./catalog-service.jar" ]
